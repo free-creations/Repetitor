@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See harness/README in the NetBeans platform -->
+<!-- for some information on what you could do (e.g. targets to override). -->
+<!-- If you delete this file and reopen the project it will be recreated. -->
+<project name="de.free_creations.microsequencer" default="netbeans" basedir=".">
+  <description>Builds, tests, and runs the project de.free_creations.microsequencer.</description>
+  <import file="nbproject/build-impl.xml"/>
+    
+  <!-- see: http://ant.apache.org/manual/Tasks/javadoc.html for more about Ant and Javadoc -->
+  <!-- see: http://www.cs.utexas.edu/users/dsb/CS378/Course/javadoc.html for more about integrating images -->
+  <target name="javadoc-private" depends="build-init,-javadoc-init"
+        description="Build javadoc including private members.">
+    <property name="netbeans.javadoc-private.dir" location="${build.dir}/javadoc-private"/>
+    <mkdir dir="${netbeans.javadoc-private.dir}/${code.name.base.dashes}"/>
+    <javadoc destdir="${netbeans.javadoc-private.dir}/${code.name.base.dashes}" 
+             packagenames="${module.javadoc.packages}" 
+             source="${javac.source}" 
+             windowtitle="${javadoc.title}" 
+             access="private"
+             encoding="UTF-8">
+      <classpath refid="cp"/>
+      <classpath path="${module.run.classpath}"/><!-- XXX #157320 -->
+      <sourcepath location="${src.dir}"/>
+      <doctitle>${javadoc.title}</doctitle>
+      <header>${javadoc.header}</header>
+      
+      <doctitle><![CDATA[<h1>MicroSequencer, detail description</h1>]]>
+      </doctitle>
+      <bottom><![CDATA[<i>Copyright &#169; 2011 Harald Postner. All Rights Reserved.</i>]]>
+      </bottom>
+      
+      <tag name="Todo" scope="all" description="To do:"/>
+      <tag name="ToDo" scope="all" description="To do:"/>
+
+      <tag name="Note" scope="all" description="Note:"/>
+      <link href="http://download.oracle.com/javase/6/docs/api/"/>
+      <link href="http://bits.netbeans.org/dev/javadoc/org-openide-windows/"/>
+      <link href="http://bits.nbextras.org/dev/javadoc/org-openide-nodes/"/>
+      <link href="http://bits.netbeans.org/dev/javadoc/org-openide-loaders/"/>
+    </javadoc>
+    
+    <nbbrowse file="${netbeans.javadoc-private.dir}/${code.name.base.dashes}/index.html"/>
+  </target>
+</project>

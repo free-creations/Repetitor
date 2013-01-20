@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:song xmlns:ns2="repetitormedia" name="Sanctus" schemaVersion="1.0">
+  <description>Faure's Requiem: 3. Sanctus</description>
+  <mastertrack name="Mastertrack">
+    <sequencefile>sanctusOrchestra.mid</sequencefile>
+    <subtracks>
+      <midiSynthesizerTrack name="Orchestra">
+        <builtinSynthesizer>
+          <soundbankfile>Chorium.SF2</soundbankfile>
+        </builtinSynthesizer>
+        <subtracks>
+          <midiTrack name="Horn in F I,II">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>1</midiTrackIndex>
+            <midiChannel>0</midiChannel>
+            <instrumentDescription>61 French Horn</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Horn in F III,IV">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>2</midiTrackIndex>
+            <midiChannel>1</midiChannel>
+            <instrumentDescription>61 French Horn</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Trumpet in F">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>3</midiTrackIndex>
+            <midiChannel>2</midiChannel>
+            <instrumentDescription>57 Trumpet</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Harp">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>4</midiTrackIndex>
+            <midiChannel>3</midiChannel>
+            <instrumentDescription>47 Orchestral Harp</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Soprano">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>5</midiTrackIndex>
+            <midiChannel>4</midiChannel>
+            <instrumentDescription>53 Choir Aahs</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Alto">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>6</midiTrackIndex>
+            <midiChannel>5</midiChannel>
+            <instrumentDescription>53 Choir Aahs</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Tenor">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>7</midiTrackIndex>
+            <midiChannel>6</midiChannel>
+            <instrumentDescription>53 Choir Aahs</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Bass">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>8</midiTrackIndex>
+            <midiChannel>7</midiChannel>
+            <instrumentDescription>53 Choir Aahs</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Violin">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>9</midiTrackIndex>
+            <midiChannel>8</midiChannel>
+            <instrumentDescription>49 String Ensemble 1</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Viola I">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>10</midiTrackIndex>
+            <midiChannel>10</midiChannel>
+            <instrumentDescription>49 String Ensemble 1/46 Pizzicato Strings/49 String Ensemble 1</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Viola II">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>11</midiTrackIndex>
+            <midiChannel>11</midiChannel>
+            <instrumentDescription>49 String Ensemble 1/46 Pizzicato Strings/49 String Ensemble 1</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Cello I">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>12</midiTrackIndex>
+            <midiChannel>12</midiChannel>
+            <instrumentDescription>49 String Ensemble 1/46 Pizzicato Strings/49 String Ensemble 1</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Cello II">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>13</midiTrackIndex>
+            <midiChannel>13</midiChannel>
+            <instrumentDescription>49 String Ensemble 1/46 Pizzicato Strings/49 String Ensemble 1</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Double bass">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>14</midiTrackIndex>
+            <midiChannel>14</midiChannel>
+            <instrumentDescription>46 Pizzicato Strings/49 String Ensemble 1/46 Pizzicato Strings/49 String Ensemble 1</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="Organ">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>15</midiTrackIndex>
+            <midiChannel>15</midiChannel>
+            <instrumentDescription>80 Ocarina/21 Reed Organ/21 Reed Organ/80 Ocarina/80 Ocarina</instrumentDescription>
+          </midiTrack>
+          <midiTrack name="seq by David Siu dss@po.cwru.edu">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>16</midiTrackIndex>
+            <midiChannel>-1</midiChannel>
+          </midiTrack>
+          <midiTrack name="17">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>17</midiTrackIndex>
+            <midiChannel>-1</midiChannel>
+          </midiTrack>
+        </subtracks>
+        <attenuation>0.0</attenuation>
+        <midiTrackIndex>-1</midiTrackIndex>
+        <midiChannel>-1</midiChannel>
+
+      </midiSynthesizerTrack>
+      
+      <midiSynthesizerTrack name="Voices">
+        <sequencefile>sanctusVoices.mid</sequencefile>
+        <builtinSynthesizer>
+          <soundbankfile>Claudio_Piano.SF2</soundbankfile>
+        </builtinSynthesizer>
+        <subtracks>
+          <midiTrack name="Sopran">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>1</midiTrackIndex>
+            <midiChannel>0</midiChannel>
+          </midiTrack>
+          <midiTrack name="Alt">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>2</midiTrackIndex>
+            <midiChannel>1</midiChannel>
+          </midiTrack>
+          <midiTrack name="Tenor">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>3</midiTrackIndex>
+            <midiChannel>2</midiChannel>
+          </midiTrack>
+          <midiTrack name="Bass">
+            <subtracks/>
+            <attenuation>0.0</attenuation>
+            <midiTrackIndex>4</midiTrackIndex>
+            <midiChannel>3</midiChannel>
+          </midiTrack>
+        </subtracks>
+        <attenuation>0.0</attenuation>
+        <midiTrackIndex>-1</midiTrackIndex>
+        <midiChannel>-1</midiChannel>
+      </midiSynthesizerTrack>
+    </subtracks>
+    <attenuation>0.0</attenuation>
+    <midiTrackIndex>0</midiTrackIndex>
+    <midiChannel>-2</midiChannel>
+  </mastertrack>
+</ns2:song>

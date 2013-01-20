@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<container>
+    <rootfiles>
+        <rootfile full-path="file:///dataFile1.xml" media-type="text/repetitormedia+xml"/>
+        <rootfile full-path="file:///dataFile2.xml" media-type="text/repetitormedia+xml"/>
+    </rootfiles>
+</container>

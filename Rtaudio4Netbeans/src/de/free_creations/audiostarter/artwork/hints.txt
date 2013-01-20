@@ -1,0 +1,11 @@
+Some places where we can learn how to draw nice gears:
+
+using Inkscape
+  http://howto.nicubunu.ro/gears/
+
+using Blender
+
+  http://www.swineworld.org/blender/gears/
+
+  http://www.selleri.org/Blender/scripts/bmg-0.0.2.zip
+  http://www.selleri.org/Blender/scripts/text.html

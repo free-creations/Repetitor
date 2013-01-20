@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+OpenIDE-Module: de.free_creations.conductor
+OpenIDE-Module-Layer: de/free_creations/conductor/layer.xml
+OpenIDE-Module-Localizing-Bundle: de/free_creations/conductor/Bundle.properties
+OpenIDE-Module-Requires: org.openide.windows.WindowManager
+OpenIDE-Module-Specification-Version: 1.0
+

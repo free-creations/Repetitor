@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+OpenIDE-Module: de.free_creations.midisong
+OpenIDE-Module-Layer: de/free_creations/netBeansSong/layer.xml
+OpenIDE-Module-Localizing-Bundle: de/free_creations/netBeansSong/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
+
