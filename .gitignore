@@ -1,2 +1,15 @@
 /GuiComponents/nbproject/private/
 /nbproject/private/
+/build/
+/MidiUtil/build/
+/Rtaudio4Netbeans/build/
+/MicroSequencer/build/
+/MidiSong/build/
+/GuiComponents/build/
+/Conductor/build/
+/MediaContainer/build/
+/MediaContainerExplorer/build/
+/SongControl2/build/
+/SongView2/build/
+/TrainingDiary/build/
+/WellcomeWindow/build/
