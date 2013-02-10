@@ -164,13 +164,21 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    */
   private double cycleDuration;
   /**
-   * A Byte buffer that shall receive the audio samples from the synthesiser.
+   * The NIO-Byte-buffer will be used to cast a stream of bytes into a stream of floats.
    */
-  private ByteBuffer outputBuffer;
+  private ByteBuffer soundByteBuffer;
   /**
-   * The byte buffer casted to an array of float.
+   * The NIO-Float-buffer will be mapped onto above Byte buffer and will be used to retrieve the floats.
    */
-  private float[] outputArray;
+  private FloatBuffer soundFloatBuffer;
+  /**
+   * The byte array will be used to write the stream of bytes.
+   */
+  private byte[] soundByteArray;  
+  /**
+   * The float array will be used to read above bytes as floats.
+   */
+  private float[] soundFloatArray;
   /**
    * The stream where the synthesiser will write its output into.
    */
@@ -429,18 +437,21 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
       }
 
       //let the synthesizer render these events
-      synthesizerStream.read(outputBuffer.array());
+      synthesizerStream.read(soundByteArray);
+
       //cast to float
-      outputBuffer.position(0);
-      FloatBuffer outF = outputBuffer.asFloatBuffer();
-      outF.get(outputArray); //<<< quite expensive
+      soundByteBuffer.clear();
+      soundByteBuffer.put(soundByteArray);
+      soundFloatBuffer.rewind();
+      soundFloatBuffer.get(soundFloatArray);
+
 
       // Note: Gervill's "getMicrosecondPosition()" seems to be buggy
       // the statement:   10L*synthesizer.getMicrosecondPosition()
       // seems to return a reasonable time, but why do we have to multiply by 10?
       // So we prefer to calculate our position (in seconds) by our own...
       synthesizerTime = synthesizerTime + cycleDuration;
-      return outputArray;
+      return soundFloatArray;
     }
   }
 
@@ -454,13 +465,23 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
 
       synthesizerTime = 0D;
       cycleDuration = (double) framesPerCycle / (double) samplingRate;
-      outputBuffer = ByteBuffer.allocate(outputChannelCount * framesPerCycle * 4);
-      outputBuffer.order(ByteOrder.nativeOrder());
-      if (!outputBuffer.hasArray()) {
-        throw new RuntimeException("Could not allocate the output buffer.");
-      }
-      outputArray = new float[outputChannelCount * framesPerCycle];
-      Arrays.fill(outputArray, 0F);
+
+      int floatLength = outputChannelCount * framesPerCycle;
+      int byteLenght = floatLength * (Float.SIZE / Byte.SIZE);
+
+      // prepare a NIO Byte buffer to perform byte to float conversion.
+      // Note: the direct buffer is more performant by a factor 10 than the array based version.
+      soundByteBuffer = ByteBuffer.allocateDirect(byteLenght);
+      soundByteBuffer.order(ByteOrder.nativeOrder());
+      soundFloatBuffer = soundByteBuffer.asFloatBuffer();
+      
+      soundByteArray = new byte[byteLenght];
+      Arrays.fill(soundByteArray, (byte)0);      
+      
+      soundFloatArray = new float[floatLength];
+      Arrays.fill(soundFloatArray, 0F);
+      
+      
       //use big endian order if this is the native order.
       boolean useBigEndian = (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
       AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_FLOAT, samplingRate, 32, outputChannelCount, 4 * outputChannelCount, samplingRate, useBigEndian); // ...............bigEndian        - indicates whether the data for a single sample is stored in big-endian byte order
