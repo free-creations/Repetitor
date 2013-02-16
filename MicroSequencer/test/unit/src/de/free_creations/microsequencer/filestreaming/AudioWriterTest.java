@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
+import org.openide.util.Exceptions;
 
 /**
  *
@@ -51,31 +52,156 @@ public class AudioWriterTest {
   }
 
   /**
-   * Test of putNext method, of class AudioWriter.
+   * Test of putNext method, of class AudioWriter. In this version, the file
+   * buffer size is not a multiple of the of the audio array, thus the file
+   * buffers can not be used entirely up to the end.
    */
   @Test
   public void testPutNext() throws FileNotFoundException, IOException, ExecutionException {
+    System.out.printf("testPutNext() %n");
     File testDir = new File("tmp");
-    assertTrue("Please create a directory " + testDir.getAbsolutePath(), testDir.exists());
-    
-    File outFile = new File(testDir, "AudioWriter.test");
-    if(outFile.exists()){
+    assertTrue("Please create a directory named " + testDir.getAbsolutePath(), testDir.exists());
+    assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
+
+    File outFile = new File(testDir, "testPutNext.test");
+    if (outFile.exists()) {
       outFile.delete();
     }
 
     int floatCount = 0;
-    float[] audioArray = new float[997];
+    float[] audioArray = new float[503];
 
     //un matched cache
-    AudioWriter audioWriter = new AudioWriter(new File(testDir, "AudioWriter.test"), 5003);
-    for(int i=0;i<33;i++){
-      for(float sample:audioArray){
-        sample = floatCount;
+    AudioWriter audioWriter = new AudioWriter(outFile, 5003);
+    for (int i = 0; i < 31; i++) {
+      for (int j = 0; j < audioArray.length; j++) {
+        audioArray[j] = floatCount;
         floatCount++;
       }
-      audioWriter.putNext(audioArray);      
+      audioWriter.waitForBufferReady();
+      audioWriter.putNext(audioArray);
     }
     audioWriter.close();
+    long bytesWritten = floatCount * AudioWriter.bytesPerFloat;
+    System.out.printf("...Bytes written: %d %n", floatCount * AudioWriter.bytesPerFloat);
+
+    assertTrue(outFile.exists());
+    assertEquals(bytesWritten, outFile.length());
+    outFile.delete();
+  }
+
+  /**
+   * Test of putNext method, of class AudioWriter. In this version, the file
+   * buffer is a multiple of the of the audio array, thus the file buffers are
+   * used entirely up to the end.
+   */
+  @Test
+  public void testPutNext_1() throws FileNotFoundException, IOException, ExecutionException {
+    System.out.printf("testPutNext_1() %n");
+    File testDir = new File("tmp");
+    assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
+
+    assertTrue("Please create a directory named " + testDir.getAbsolutePath(), testDir.exists());
+
+    File outFile = new File(testDir, "testPutNext_1.test");
+    if (outFile.exists()) {
+      outFile.delete();
+    }
+
+    int floatCount = 0;
+    float[] audioArray = new float[512];
+
+    //matched cache
+    int fileBufferSize = 2 * AudioWriter.bytesPerFloat * audioArray.length;
+    AudioWriter audioWriter = new AudioWriter(outFile, fileBufferSize);
+    for (int i = 0; i < 32; i++) {
+      for (int j = 0; j < audioArray.length; j++) {
+        audioArray[j] = floatCount;
+        floatCount++;
+      }
+      audioWriter.waitForBufferReady();
+      audioWriter.putNext(audioArray);
+    }
+    audioWriter.close();
+    long bytesWritten = floatCount * AudioWriter.bytesPerFloat;
+    System.out.printf("...Bytes written: %d %n", floatCount * AudioWriter.bytesPerFloat);
+
+    assertTrue(outFile.exists());
+    assertEquals(bytesWritten, outFile.length());
+    outFile.delete();
+  }
+
+  /**
+   */
+  @Test
+  //@Ignore("Switch this on if you have can provide a very small partion to perform this test")
+  public void testDiskFull() throws FileNotFoundException, ExecutionException {
+    System.out.printf("testDiskFull %n");
+    File testDir = new File("/media/MEDIONSTICK");
+    assertTrue("Please provide some media with restriced space", testDir.exists());
+    assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
+    long usableSpace = testDir.getUsableSpace();
+    //make sure we are not going to write more than half a gigabyte
+    assertTrue("There is " + usableSpace + " free space, this test will take too long.",
+            usableSpace < 512 * 1024 * 1024);
+
+
+    File outFile = new File(testDir, "testDiskFull.test");
+    if (outFile.exists()) {
+      outFile.delete();
+    }
+
+    int floatCount = 0;
+    float[] audioArray = new float[2048];
+
+    long buffersToWrite = (2 * usableSpace) / audioArray.length;
+
+
+
+    AudioWriter audioWriter = new AudioWriter(outFile);
+    for (long i = 0; i < buffersToWrite; i++) {
+      for (int j = 0; j < audioArray.length; j++) {
+        audioArray[j] = floatCount;
+        floatCount++;
+      }
+      audioWriter.waitForBufferReady();
+      audioWriter.putNext(audioArray);
+    }
+    long bytesWritten = floatCount * AudioWriter.bytesPerFloat;
+
+    System.out.printf("...Attempted to write %d Bytes %n", bytesWritten);
+    boolean thrown = false;
+    try {
+      audioWriter.close();
+    } catch (IOException ex) {
+      thrown = true;
+      System.out.printf("...Exception message: %s%n", ex.getMessage());
+
+    }
+    outFile.delete();
+    assertTrue(thrown);
+  }
+
+  /**
+   */
+  @Test
+  @Ignore("Switch this on if you have can provide a read only partion to perform this test")
+  public void testDiskReadOnly() {
+    System.out.printf("testDiskReadOnly %n");
+    File testDir = new File("/media/MEDIONSTICK");
+    assertTrue("Please provide a read only media", testDir.exists());
+    assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
+    assertFalse("Uups " + testDir.getAbsolutePath() + " is not read-only.", testDir.canWrite());
+
+
+    File outFile = new File(testDir, "testDiskReadOnly.test");
+    boolean thrown = false;
+    try {
+      AudioWriter audioWriter = new AudioWriter(outFile);
+    } catch (FileNotFoundException ex) {
+      thrown = true;
+    }
+    assertTrue(thrown);
 
   }
 }

@@ -41,15 +41,15 @@ import java.util.logging.Logger;
 public class AudioWriter {
 
   private static final Logger logger = Logger.getLogger(AudioWriter.class.getName());
-  private static final int bytesPerFloat = Float.SIZE / Byte.SIZE;
-  private static final int defaultFileBufferSizeByte = 10 * 1000 * 1000;
+  public static final int bytesPerFloat = Float.SIZE / Byte.SIZE;
+  public static final int defaultFileBufferSizeByte = 8 * 1024 * 1024;
   /**
    * The Current-buffers shall take the data provided by "putNext()". These
    * buffers are packed into a future. The underlying Buffer-Pair can be
    * accessed when the buffer is ready to be filled with new data. The access
    * will be blocked during the time the data is being written to file.
    */
-  private Future<BufferPair> currentBuffersReadyToBeFilled;
+  private Future<BufferPair> currentBuffReadyToBeFilled;
   /**
    * The Previous-buffers hold the data that is being written to file. These
    * buffers are packed into a future. The underlying Buffer-Pair can be
@@ -69,14 +69,15 @@ public class AudioWriter {
             public Thread newThread(Runnable r) {
               Thread thread = new Thread(r);
               thread.setPriority(Thread.NORM_PRIORITY);
-              thread.setName("MyFileWriterThread");
+              thread.setName("FreeCreationsAudioWriter");
               return thread;
             }
           });
   private ExecutionException writingException = null;
 
   /**
-   * A BufferPair is a set of a byte- buffer and its corresponding float buffer.
+   * A BufferPair is a set of a byte- buffer and a float- buffer mapped onto the
+   * byte-buffer.
    */
   private class BufferPair {
 
@@ -176,18 +177,26 @@ public class AudioWriter {
     }
   }
 
+  /**
+   * Opens the given file for writing and prepares the file buffers.
+   *
+   * If the file exists but is a directory rather than a regular file, does not
+   * exist but cannot be created, or cannot be opened for any other reason then
+   * a FileNotFoundException is thrown.
+   *
+   * @param file
+   * @throws FileNotFoundException if the file exists but is a directory rather
+   * than a regular file, does not exist but cannot be created, or cannot be
+   * opened for output for any other reason
+   */
   public AudioWriter(File file) throws FileNotFoundException {
     this(file, defaultFileBufferSizeByte);
   }
 
   public AudioWriter(File file, int requestedFileBufferSizeByte) throws FileNotFoundException {
-    
-    //make the file buffer length an exact multiple of float
-    int fileBufferSizeFloat = requestedFileBufferSizeByte / bytesPerFloat;
-    int fileBufferSizeByte = fileBufferSizeFloat * bytesPerFloat;
 
-    ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
-    ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
+    ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(requestedFileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
+    ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(requestedFileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
 
     // open the output file
     FileOutputStream outFile = new FileOutputStream(file);
@@ -195,7 +204,7 @@ public class AudioWriter {
 
     // prepare the current and the previous buffers
     previousBuffReadyToBeFilled = new RealizedFuture(byteBuffer1.asFloatBuffer(), byteBuffer1, false);
-    currentBuffersReadyToBeFilled = new RealizedFuture(byteBuffer2.asFloatBuffer(), byteBuffer2, false);
+    currentBuffReadyToBeFilled = new RealizedFuture(byteBuffer2.asFloatBuffer(), byteBuffer2, false);
 
 
   }
@@ -203,37 +212,45 @@ public class AudioWriter {
   /**
    * Closes the file and disposes the buffers.
    *
-   * @throws IOException when the file could not be closed
-   * @throws ExecutionException when the file could not be written (disk full?)
+   * @throws IOException when the file could not be correctly written.
    */
-  public void close() throws IOException, ExecutionException {
+  public void close() throws IOException {
     try {
       synchronized (closingLock) {
+        if (writingException != null) {
+          closed = true;
+          executor.shutdown();
+          outChannel.close();
+          ExecutionException ex = writingException;
+          writingException = null;
+          if (ex.getCause() instanceof IOException) {
+            throw new IOException(ex.getMessage());
+          }
+          throw new RuntimeException(ex);
+        }
         if (closed) {
           return;
         }
         // setting "closed" to true makes sure that "putNext" will not access the buffers any more.
         closed = true;
-        executor.shutdown();
-        if (writingException != null) {
-          throw writingException;
-        }
       }
       //wait until the previous buffers have been completely written to file
       previousBuffReadyToBeFilled.get();
 
       // write the current buffer to file (method switchBuffers() does this nicely)
-      switchBuffers(currentBuffersReadyToBeFilled.get());
+      switchBuffers(currentBuffReadyToBeFilled.get());
       //wait again until the buffers have been completely written to file
       previousBuffReadyToBeFilled.get();
 
-      currentBuffersReadyToBeFilled = null;
+      currentBuffReadyToBeFilled = null;
       previousBuffReadyToBeFilled = null;
-      outChannel.close();
 
-      closed = true;
-    } catch (InterruptedException ex) {
+    } catch (InterruptedException | ExecutionException ex) {
       throw new RuntimeException(ex);
+    } finally {
+      outChannel.close();
+      executor.shutdown();
+      closed = true;
     }
   }
 
@@ -245,15 +262,15 @@ public class AudioWriter {
 
       // retrieve the current Buffer immediately.
       // ..If the buffer cannot be retrieved because it is still being streamed to
-      // disk we just ignore the current audio data, hoping that the buffer will 
+      // disk, the current audio data will be dropped and we hope that the buffer will 
       // be ready on the next call.
       // ..If the writing thread has abandonned on an exception,
       // we'll do a "dirty close" and store the exception for being thrown
       // when the user attemps to close the stream.
-      // In no case we shall bock or interrupt the audio thread here.
+      // In no case we shall block or interrupt the audio thread here.
       BufferPair thisBuffers;
       try {
-        thisBuffers = currentBuffersReadyToBeFilled.get(0, TimeUnit.MILLISECONDS);
+        thisBuffers = currentBuffReadyToBeFilled.get(0, TimeUnit.MILLISECONDS);
       } catch (InterruptedException ex) {
         // how can this happen?
         writingException = new ExecutionException(ex);
@@ -265,7 +282,7 @@ public class AudioWriter {
         closed = true;
         return;
       } catch (TimeoutException ex) {
-        logger.log(Level.WARNING, "Buffer underrun.");
+        logger.log(Level.WARNING, "Write-Buffer underrun.");
         return;
       }
 
@@ -275,23 +292,30 @@ public class AudioWriter {
       floatBuffer.put(audioArray);
 
       // if we have reached the end of this buffer, switch buffers for the next call.
-      if (floatBuffer.remaining() >= audioArray.length) {
+      if (audioArray.length > floatBuffer.remaining()) {
         switchBuffers(thisBuffers);
       }
     }
   }
 
   /**
-   * This function is only for test.
+   * This function is only for test. It can be used to block the calling thread
+   * until the current buffer is ready, thus avoiding to drop frames.
    *
    * @deprecated only for test
    */
   @Deprecated
   void waitForBufferReady() {
     try {
-      currentBuffersReadyToBeFilled.get();
-    } catch (InterruptedException | ExecutionException ex) {
-      throw new RuntimeException(ex);
+      currentBuffReadyToBeFilled.get();
+    } catch (InterruptedException ex) {
+      // how can this happen?
+      writingException = new ExecutionException(ex);
+      closed = true;
+    } catch (ExecutionException ex) {
+      // writing did not succeed (Disk full?)
+      writingException = ex;
+      closed = true;
     }
   }
 
@@ -299,7 +323,7 @@ public class AudioWriter {
 
     // we'll reuse the previous buffers (crossing the fingers that they will be
     // written to file when "putNext" tries to use them).
-    currentBuffersReadyToBeFilled = previousBuffReadyToBeFilled;
+    currentBuffReadyToBeFilled = previousBuffReadyToBeFilled;
 
     // start the writer thread
     previousBuffReadyToBeFilled =
