@@ -15,17 +15,17 @@
  */
 package de.free_creations.microsequencer.filestreaming;
 
-import com.sun.corba.se.impl.ior.ByteBuffer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import org.junit.Test;
+import java.util.Arrays;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  *
@@ -48,17 +48,63 @@ public class AudioReaderTest {
    * Test of close method, of class AudioReader.
    */
   @Test
-  @Ignore
+  @Ignore("Tested in TestReadXXX procedures")
   public void testClose() throws Exception {
+    //Default call inserted by NetBeans-wizzard (do not delete to avoid regeneration)
   }
 
   /**
    * Test of getNext method, of class AudioReader.
    */
   @Test
+  @Ignore("Tested in TestReadXXX procedures")
   public void testGetNext() throws FileNotFoundException, IOException {
-    File testfile = new File(testDir, "testGetNext.raw");
-    makeTestFile(testfile, 0, 0);
+    //Default call inserted by NetBeans-wizzard (do not delete to avoid regeneration)
+  }
+
+  @Test
+  public void TestEmpty() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestEmpty.tmp");
+
+    ReaderTest(testFile, 0, 0, 512, 4 * 512);
+    testFile.delete();
+
+  }
+
+  private void ReaderTest(
+          File file,
+          int floats,
+          int extraBytes,
+          int audioArraySize,
+          int fileBufferSize) throws FileNotFoundException, IOException {
+
+    makeTestFile(file, floats, extraBytes);
+
+    AudioReader audioReader = new AudioReader(file, fileBufferSize);
+
+    long expectedAudioArrays = (floats / audioArraySize) + 1;
+    long audioArraysCount = 0;
+    long floatCount = 0;
+
+    float[] audioArray = new float[audioArraySize];
+    boolean more = true;
+    while (more) {
+      Arrays.fill(audioArray, 123F);
+      audioReader.waitForBufferReady(); // do this only when testing!
+      more = audioReader.getNext(audioArray);
+      audioArraysCount++;
+      assertTrue(audioArraysCount <= expectedAudioArrays);
+      for (float sample : audioArray) {
+        if (floatCount < floats) {
+          assertEquals(floatCount, (long) sample);
+          floatCount++;
+        } else {
+          assertEquals(0F, sample, 0F);
+        }
+      }
+    }
+
+
   }
 
   private void makeTestFile(File file, int floats, int extraBytes) throws FileNotFoundException, IOException {
