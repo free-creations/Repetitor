@@ -44,19 +44,16 @@ public class AudioReader {
   private static final Logger logger = Logger.getLogger(AudioReader.class.getName());
   public static final int bytesPerFloat = Float.SIZE / Byte.SIZE;
   public static final int defaultFileBufferSizeByte = 8 * 1024 * 1024;
-  public static final int transitionBufferSizeByte = 8 * 1024;
+  public static final int transitionBufferSizeByte = 32 * 1024;
   /**
-   * The Current-buffers provides the data currently retrieved by "getNext()".
-   * The underlying Buffer-Pair can be accessed when the buffer is ready to
-   * retrieved. The access will be blocked during the time the data is being
-   * read from file.
+   * The Current-buffers provides the data for the procedure "getNext()". The
+   * Buffer can be accessed when it is ready to be retrieved. The access will be
+   * blocked during the time the data is being read from file.
    */
   private Future<ByteBuffer> currentBuffReadyToBeConsumed;
   /**
-   * The Next-buffers will hold the data to be retrieved by "getNext()". These
-   * buffers are packed into a future. The underlying Buffer-Pair can be
-   * accessed when the buffer is ready to retrieved. The access will be blocked
-   * during the time the data is being read from file.
+   * The Next-buffer is being prepared while the above current-buffer is being
+   * used.
    */
   private Future<ByteBuffer> nextBuffReadyToBeConsumed;
   /**
@@ -81,6 +78,7 @@ public class AudioReader {
             }
           });
   private ExecutionException readingException = null;
+  private final int fileBufferSizeByte;
 
   /**
    * The FileReadTask takes a Byte-Buffer and fills it with audio data from the
@@ -119,10 +117,10 @@ public class AudioReader {
   }
 
   public AudioReader(File file, int requestedFileBufferSizeByte) throws FileNotFoundException, IOException {
+    fileBufferSizeByte = requestedFileBufferSizeByte;
 
-
-    ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(requestedFileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
-    ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(requestedFileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
+    ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
+    ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
     transitionBuffer = ByteBuffer.allocateDirect(transitionBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
     //mark the buffers as being exhausted
     byteBuffer1.limit(0);
@@ -135,8 +133,8 @@ public class AudioReader {
 
     // start to fill the first buffer
     switchBuffers(byteBuffer1);
-    // wait unti it has completely been read.
-    waitForBufferReady();
+    // wait until it has completely been read.
+    waitForNextBufferReady();
 
     // start to fill the second buffer
     switchBuffers(byteBuffer2);
@@ -175,7 +173,8 @@ public class AudioReader {
   }
 
   public boolean getNext(float[] audioArray) {
-    assert (transitionBufferSizeByte >= audioArray.length);
+    assert (transitionBufferSizeByte >= audioArray.length * bytesPerFloat);
+    assert (fileBufferSizeByte >= audioArray.length * bytesPerFloat);
     synchronized (processingLock) {
       if (closed) {
         Arrays.fill(audioArray, 0F);
@@ -211,26 +210,32 @@ public class AudioReader {
       }
 
       FloatBuffer thisFloatBuffer;
+      int remainingBytes = currentByteBuff.remaining();
 
       // are there left-overs form the previous cycle?
-      if (transitionBuffer.hasRemaining()) {
+      if (transitionBuffer.position() > 0) {
         // there are left-overs
         // so we will copy some bytes from the current byte buffer
-        // into the leftOver buffer so that we can fill an entire audioArray.
+        // into the transition buffer so that we can fill an entire audioArray.
+        // thus we'll have more bytes remaining:
+        remainingBytes += transitionBuffer.position();
         assert (currentByteBuff.position() == 0);
         int byteBuffLimit = currentByteBuff.limit();
-        int bytesToCopy = (audioArray.length * bytesPerFloat) - transitionBuffer.remaining();
+        int bytesToCopy = (audioArray.length * bytesPerFloat) - transitionBuffer.position();
+        assert (bytesToCopy > 0);
         // temporarly shorten the current byte-buffer so as to copy only the bytes we need
         if (byteBuffLimit > bytesToCopy) {
           currentByteBuff.limit(bytesToCopy);
+          assert (currentByteBuff.remaining() == bytesToCopy);
         }
         transitionBuffer.put(currentByteBuff);
         transitionBuffer.flip();
-        //reset the current byte buffer to its original length
+        //reset the current byte-buffer to its original length
         currentByteBuff.limit(byteBuffLimit);
         //the float buffer will be mapped on the transition buffer
-        thisFloatBuffer = currentByteBuff.asFloatBuffer();
-        //mark the transition buffer as empty (the float buffers limit will not be affected)
+        thisFloatBuffer = transitionBuffer.asFloatBuffer();
+        assert (thisFloatBuffer.remaining() <= audioArray.length);
+        //mark the transition-buffer as empty (the float buffers limit will not be affected)
         transitionBuffer.limit(0);
       } else {
         // no left-overs, so the float buffer will be mapped on the current byte buffer
@@ -238,28 +243,33 @@ public class AudioReader {
       }
 
       // fill the audio array 
-      if (audioArray.length > thisFloatBuffer.remaining()) {
+      int remainingFloats = remainingBytes / bytesPerFloat;
+      if (audioArray.length > remainingFloats) {
         // threre are not enough bytes remaining to fill an entire audio array
         // this indicates that we have reached the end of the file
         Arrays.fill(audioArray, 0F);
-        int floatsToCopy = thisFloatBuffer.remaining();
-        thisFloatBuffer.get(audioArray, 0, floatsToCopy);
+        thisFloatBuffer.get(audioArray, 0, remainingFloats);
         // mark the byte buffer as being exhausted
         currentByteBuff.limit(0);
         // we can stop processing here. (Having reached the end of the file, we do not want to flip buffers any more)
         return false;
       } else {
         thisFloatBuffer.get(audioArray);
-        // adjust the position-pointer in the byte buffer for the next cycle
-        currentByteBuff.position(currentByteBuff.position() + (audioArray.length * bytesPerFloat));
+        remainingBytes = remainingBytes - (audioArray.length * bytesPerFloat);
+        remainingFloats = remainingBytes / bytesPerFloat;
       }
+      //adjust the position-pointer of the byte-buffer
+      int newPosition = currentByteBuff.limit() - remainingBytes;
+      currentByteBuff.position(newPosition);
 
       // are there enough floats for the next cycle? 
-      // if not switch buffers.
-      if (audioArray.length > thisFloatBuffer.remaining()) {
-        // save the tail of the current byte buffer into the transition buffer
+      // if not -> switch buffers.
+      if (audioArray.length > remainingFloats) {
+
+        // save the tail of the current byte-buffer into the transition-buffer
         transitionBuffer.clear();
         transitionBuffer.put(currentByteBuff);
+        assert ((audioArray.length * bytesPerFloat) > transitionBuffer.position());
         switchBuffers(currentByteBuff);
       }
       return true;
@@ -267,13 +277,16 @@ public class AudioReader {
   }
 
   /**
-   * Block the calling thread until the current buffer is ready.
+   * Block the calling thread until the next buffer is ready.
    *
    * @throws IOException if there was a problem when reading the file.
    */
-  final void waitForBufferReady() throws IOException {
+  final void waitForNextBufferReady() throws IOException {
+    if (closed) {
+      return;
+    }
     try {
-      currentBuffReadyToBeConsumed.get();
+      nextBuffReadyToBeConsumed.get();
     } catch (InterruptedException ex) {
       // how can this happen?
       throw new RuntimeException(ex);

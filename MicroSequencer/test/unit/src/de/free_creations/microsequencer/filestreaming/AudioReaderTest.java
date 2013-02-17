@@ -33,7 +33,8 @@ import org.junit.Test;
  */
 public class AudioReaderTest {
 
-  File testDir = new File("tmp");
+  //File testDir = new File("tmp");
+  File testDir = new File("/home/harald/rubbish");
 
   public AudioReaderTest() {
   }
@@ -65,24 +66,180 @@ public class AudioReaderTest {
   @Test
   public void TestEmpty() throws FileNotFoundException, IOException {
     File testFile = new File(testDir, "TestEmpty.tmp");
+    int fileSizeFloat = 0;
+    int extraBytes = 0;
+    int audioArraySizeFloat = 512;
+    int fileBufferSizeByte = 4 * audioArraySizeFloat * AudioReader.bytesPerFloat;
 
-    ReaderTest(testFile, 0, 0, 512, 4 * 512);
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestEmptyExtraBytes() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestEmptyExtraBytes.tmp");
+    int fileSizeFloat = 0;
+    int extraBytes = 3;
+    int audioArraySizeFloat = 512;
+    int fileBufferSizeByte = 4 * audioArraySizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestOneFloat() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestEmptyExtraBytes.tmp");
+    int fileSizeFloat = 1;
+    int extraBytes = 0;
+    int audioArraySizeFloat = 512;
+    int fileBufferSizeByte = 4 * audioArraySizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestOneFloatExtraBytes() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestOneFloatExtraBytes.tmp");
+    int fileSizeFloat = 1;
+    int extraBytes = 3;
+    int audioArraySizeFloat = 512;
+    int fileBufferSizeByte = 4 * audioArraySizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestOneBlock() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestOneBlock.tmp");
+    int audioArraySizeFloat = 512;
+    int blockSizeFloat = 4 * audioArraySizeFloat;
+    int fileSizeFloat = 1 * blockSizeFloat;
+    int extraBytes = 0;
+
+    int fileBufferSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestTwoBlocks() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestTwoBlocks.tmp");
+    int audioArraySizeFloat = 512;
+    int blockSizeFloat = 4 * audioArraySizeFloat;
+    int fileSizeFloat = 2 * blockSizeFloat;
+    int extraBytes = 0;
+
+    int fileBufferSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestThreeBlocks() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestThreeBlocks.tmp");
+    int audioArraySizeFloat = 512;
+    int blockSizeFloat = 4 * audioArraySizeFloat;
+    int fileSizeFloat = 3 * blockSizeFloat;
+    int extraBytes = 0;
+
+    int fileBufferSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestThreeBlocksExtraBytes() throws FileNotFoundException, IOException {
+    File testFile = new File(testDir, "TestThreeBlocksExtra.tmp");
+    int audioArraySizeFloat = 512;
+    int blockSizeFloat = 4 * audioArraySizeFloat;
+    int fileSizeFloat = 3 * blockSizeFloat;
+    int extraBytes = 1;
+
+    int fileBufferSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestTransitionBufferLast() throws FileNotFoundException, IOException {
+
+    // set the sizes in such a way as to use the TransitionBuffer for the last read
+    File testFile = new File(testDir, "TestTransitionBufferLast.tmp");
+    int blockSizeFloat = 250;
+    int blockSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
+
+    int audioArraySizeFloat = blockSizeFloat;
+    int fileBufferSizeByte = (blockSizeByte * 2) + 1;
+    int fileSizeFloat = blockSizeFloat * 3;
+    int extraBytes = 0;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  public void TestTransitionBufferButNotLast() throws FileNotFoundException, IOException {
+
+    // set the sizes in such a way as to use the TransitionBuffer but not for the last read
+    File testFile = new File(testDir, "TestTransitionBufferNotLast.tmp");
+    int blockSizeFloat = 250;
+    int blockSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
+
+    int audioArraySizeFloat = blockSizeFloat;
+    int fileBufferSizeByte = (blockSizeByte * 2) + 1;
+    int fileSizeFloat = blockSizeFloat * 4;
+    int extraBytes = 0;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
+    testFile.delete();
+
+  }
+
+  @Test
+  @Ignore
+  public void TestPrimeNumbers() throws FileNotFoundException, IOException {
+
+    // set all sizes to prime numbers so that no buffer aligened with any other.
+    // prime numbers con be found with http://easycalculation.com/prime-number.php
+    File testFile = new File(testDir, "TestPrimeNumbers.tmp");
+    int audioArraySizeFloat = 257;
+    int fileBufferSizeByte = 2063;
+    int fileSizeFloat = 20639;
+    int extraBytes = 1;
+
+    ReaderTest(testFile, fileSizeFloat, extraBytes, audioArraySizeFloat, fileBufferSizeByte);
     testFile.delete();
 
   }
 
   private void ReaderTest(
           File file,
-          int floats,
+          int fileSizeFloat,
           int extraBytes,
           int audioArraySize,
-          int fileBufferSize) throws FileNotFoundException, IOException {
+          int fileBufferSizeByte) throws FileNotFoundException, IOException {
 
-    makeTestFile(file, floats, extraBytes);
+    makeTestFile(file, fileSizeFloat, extraBytes);
 
-    AudioReader audioReader = new AudioReader(file, fileBufferSize);
+    AudioReader audioReader = new AudioReader(file, fileBufferSizeByte);
 
-    long expectedAudioArrays = (floats / audioArraySize) + 1;
+    long expectedAudioArrays = (fileSizeFloat / audioArraySize) + 1;
     long audioArraysCount = 0;
     long floatCount = 0;
 
@@ -90,12 +247,12 @@ public class AudioReaderTest {
     boolean more = true;
     while (more) {
       Arrays.fill(audioArray, 123F);
-      audioReader.waitForBufferReady(); // do this only when testing!
+      audioReader.waitForNextBufferReady(); // do this only when testing!
       more = audioReader.getNext(audioArray);
       audioArraysCount++;
       assertTrue(audioArraysCount <= expectedAudioArrays);
       for (float sample : audioArray) {
-        if (floatCount < floats) {
+        if (floatCount < fileSizeFloat) {
           assertEquals(floatCount, (long) sample);
           floatCount++;
         } else {
@@ -103,17 +260,16 @@ public class AudioReaderTest {
         }
       }
     }
-
-
+    audioReader.close();
   }
 
-  private void makeTestFile(File file, int floats, int extraBytes) throws FileNotFoundException, IOException {
+  private void makeTestFile(File file, int fileSizeFloat, int extraBytes) throws FileNotFoundException, IOException {
     assertTrue(extraBytes <= 4);
     FileOutputStream outFile = new FileOutputStream(file);
     try (FileChannel outChannel = outFile.getChannel()) {
       java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.allocateDirect(AudioWriter.bytesPerFloat).order(ByteOrder.LITTLE_ENDIAN);
 
-      for (int i = 0; i < floats; i++) {
+      for (int i = 0; i < fileSizeFloat; i++) {
         float nextFloat = (float) i;
         byteBuffer.clear();
         byteBuffer.putFloat(nextFloat);
