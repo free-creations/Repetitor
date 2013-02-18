@@ -196,7 +196,7 @@ public class AudioReaderTest {
   @Test
   public void TestTransitionBufferButNotLast() throws FileNotFoundException, IOException {
 
-    // set the sizes in such a way as to use the TransitionBuffer but not for the last read
+    // set the sizes in such a way as to use the TransitionBuffer, but not for the last read.
     File testFile = new File(testDir, "TestTransitionBufferNotLast.tmp");
     int blockSizeFloat = 250;
     int blockSizeByte = blockSizeFloat * AudioReader.bytesPerFloat;
@@ -215,8 +215,8 @@ public class AudioReaderTest {
   @Ignore
   public void TestPrimeNumbers() throws FileNotFoundException, IOException {
 
-    // set all sizes to prime numbers so that no buffer aligened with any other.
-    // prime numbers con be found with http://easycalculation.com/prime-number.php
+    // set all sizes to prime numbers so that all buffers are interleaved.
+    // prime numbers can be found with http://easycalculation.com/prime-number.php
     File testFile = new File(testDir, "TestPrimeNumbers.tmp");
     int audioArraySizeFloat = 257;
     int fileBufferSizeByte = 2063;
@@ -260,7 +260,22 @@ public class AudioReaderTest {
         }
       }
     }
+    //
+    Arrays.fill(audioArray, 123F);
+    more = audioReader.getNext(audioArray);
+    assertFalse(more);
+    for (float sample : audioArray) {
+      assertEquals(0F, sample, 0F);
+    }
+
     audioReader.close();
+    //
+    Arrays.fill(audioArray, 123F);
+    more = audioReader.getNext(audioArray);
+    assertFalse(more);
+    for (float sample : audioArray) {
+      assertEquals(0F, sample, 0F);
+    }
   }
 
   private void makeTestFile(File file, int fileSizeFloat, int extraBytes) throws FileNotFoundException, IOException {
