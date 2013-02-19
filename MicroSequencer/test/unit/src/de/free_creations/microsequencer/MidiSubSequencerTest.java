@@ -16,53 +16,52 @@
  */
 package de.free_creations.microsequencer;
 
-import java.util.Collection;
-import java.util.Set;
-import de.free_creations.midiutil.TempoTrack;
-import java.io.IOException;
-import org.junit.Before;
-import de.free_creations.midiutil.TempoTrack.TimeMap;
-import javax.sound.midi.Transmitter;
-import java.util.List;
-import javax.sound.midi.Patch;
-import javax.sound.midi.Instrument;
-import javax.sound.midi.Soundbank;
-import javax.sound.midi.VoiceStatus;
-import javax.sound.midi.MidiChannel;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.midi.MidiUnavailableException;
-import com.sun.media.sound.AudioSynthesizerPropertyInfo;
-import java.util.Map;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.midi.Receiver;
-import javax.sound.midi.MidiMessage;
-import java.util.TreeMap;
 import com.sun.media.sound.AudioSynthesizer;
+import com.sun.media.sound.AudioSynthesizerPropertyInfo;
 import de.free_creations.midiutil.MidiUtil;
+import de.free_creations.midiutil.TempoTrack;
+import de.free_creations.midiutil.TempoTrack.TimeMap;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import javax.sound.midi.MetaMessage;
-import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Level;
-import javax.sound.midi.ShortMessage;
+import java.util.logging.Logger;
+import javax.sound.midi.Instrument;
 import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Patch;
+import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Soundbank;
 import javax.sound.midi.Track;
+import javax.sound.midi.Transmitter;
+import javax.sound.midi.VoiceStatus;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.SourceDataLine;
 import org.junit.AfterClass;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  *
  * @author Harald Postner <Harald at H-Postner.de>
  */
-public class SubSequencerTest {
+public class MidiSubSequencerTest {
 
-  private static final Logger logger = Logger.getLogger(SubSequencerTest.class.getName());
+  private static final Logger logger = Logger.getLogger(MidiSubSequencerTest.class.getName());
 
-  public SubSequencerTest() {
+  public MidiSubSequencerTest() {
   }
   private TempoTrack tempoTrack;
   Track[] tracks;
@@ -95,18 +94,18 @@ public class SubSequencerTest {
   }
 
   /**
-   * Test of setTracks method, of class SubSequencer.
+   * Test of setTracks method, of class MidiSubSequencer.
    */
   @Test
   public void testSetTracks() throws InvalidMidiDataException, MidiUnavailableException {
     System.out.println("setTracks");
-    SubSequencer instance = new SubSequencer("test", new SynthMockup(), null);
+    MidiSubSequencer instance = new MidiSubSequencer("test", new SynthMockup(), null);
     instance.setTracks(tracks);
     assertArrayEquals(tracks, instance.getTracks());
   }
 
   /**
-   * Run the SubSequencer for a number of cycles and verify that controller
+   * Run the MidiSubSequencer for a number of cycles and verify that controller
    * events are correctly used to initialize the synthesizer.
    */
   @Test
@@ -126,19 +125,19 @@ public class SubSequencerTest {
     int outputChannelCount = 2;
     boolean noninterleaved = false;
     double cycleDuration = (double) framesPerCycle / (double) samplingRate;
-    // we start playing after the pitch bend..
+    // we startOut playing after the pitch bend..
     double thisCycleStartTick = 100D;
     double nextCycleStartTick = 100D;
     double framesInTotal = samplingRate * duration;
     int cycleCount = (int) Math.ceil(framesInTotal / framesPerCycle);
 
     SynthMockup synth = new SynthMockup();
-    SubSequencer instance = new SubSequencer("test", synth, null);
+    MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
 
 
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick);
+    instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    instance.preparePlaying(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a number cycles
     for (int i = 0; i < cycleCount; i++) {
@@ -151,7 +150,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(streamTimeSeconds);
+      instance.processOut(streamTimeSeconds);
     }
 
     // now verify that the events (prepared in initialize) have been send
@@ -169,7 +168,7 @@ public class SubSequencerTest {
   }
 
   /**
-   * Run the SubSequencer for a number of normal cycles and verify that 
+   * Run the MidiSubSequencer for a number of normal cycles and verify that 
    * it sends the correctly timed events to the synthesiser.
    * This test starts at the beginning of the sequence.
    */
@@ -189,10 +188,10 @@ public class SubSequencerTest {
     int cycleCount = (int) Math.ceil(framesInTotal / framesPerCycle);
 
     SynthMockup synth = new SynthMockup();
-    SubSequencer instance = new SubSequencer("test", synth, null);
+    MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick);
+    instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    instance.preparePlaying(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a cycling for about 10 minutes
     long startTime = System.nanoTime();
@@ -206,7 +205,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(streamTimeSeconds);
+      instance.processOut(streamTimeSeconds);
     }
     double usedCPUTime = (System.nanoTime() - startTime) / 1E9;
     double efficiency = duration / usedCPUTime;
@@ -233,10 +232,10 @@ public class SubSequencerTest {
   }
 
   /**
-   * Run the SubSequencer for a number of normal cycles and verify that 
+   * Run the MidiSubSequencer for a number of normal cycles and verify that 
    * it sends the correctly timed events to the synthesiser.
    * This test differs from the previous one in the fact that
-   * we start in near the end of the sequence.
+   * we startOut in near the end of the sequence.
    */
   @Test
   public void testCyclesStartingLater() throws InvalidMidiDataException, MidiUnavailableException, Exception {
@@ -255,10 +254,10 @@ public class SubSequencerTest {
     int cycleCount = (int) Math.ceil(framesInTotal / framesPerCycle);
 
     SynthMockup synth = new SynthMockup();
-    SubSequencer instance = new SubSequencer("test", synth, null);
+    MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick);
+    instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    instance.preparePlaying(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a number of cycles
     for (int i = 0; i < cycleCount; i++) {
@@ -271,7 +270,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(streamTimeSeconds);
+      instance.processOut(streamTimeSeconds);
     }
 
     // now verify that the events (prepared in initialize) have been send
@@ -295,7 +294,7 @@ public class SubSequencerTest {
   }
 
   /**
-   * Run the SubSequencer for a number of cycles and verify that 
+   * Run the MidiSubSequencer for a number of cycles and verify that 
    * it sends the correctly timed events to the synthesiser.
    * This test differs from the previous one in the fact that
    * we effectue one loop.
@@ -320,10 +319,10 @@ public class SubSequencerTest {
     long exactDurationInMicrosec = (long) ((1E06D * cycleCount * framesPerCycle) / (double) samplingRate);
 
     SynthMockup synth = new SynthMockup();
-    SubSequencer instance = new SubSequencer("test", synth, null);
+    MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick);
+    instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    instance.preparePlaying(thisCycleStartTick, null);
     double streamTimeInSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating 7 seconds of cycling (until after event C)
     for (int i = 0; i < cycleCount; i++) {
@@ -336,7 +335,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(streamTimeInSeconds);
+      instance.processOut(streamTimeInSeconds);
     }
 
     // jump backwards to a position one second after the beginning (before event A)
@@ -354,7 +353,7 @@ public class SubSequencerTest {
 
 
     instance.prepareLoopEndCycle(timeMap_1, timeMap_2, thisCycleStartTick, nextCycleStartTick, loopStartTick, loopEndTick);
-    instance.process(streamTimeInSeconds);
+    instance.processOut(streamTimeInSeconds);
 
 
     // and again we are simulating 7 seconds of cycling (until after event C)
@@ -368,7 +367,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(streamTimeInSeconds);
+      instance.processOut(streamTimeInSeconds);
     }
 
 
@@ -428,8 +427,8 @@ public class SubSequencerTest {
     int cycleCount = (int) Math.ceil(framesInTotal / framesPerCycle);
 
     SynthMockup synth = new SynthMockup();
-    SubSequencer instance = new SubSequencer("test", synth, null);
-    instance.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
+    instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
     double msecStreamTime = 24 * 60 * 60; //assume that the stream has allready run a whole day
 
     // add two messages for this test
@@ -446,7 +445,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(msecStreamTime);
+      instance.processOut(msecStreamTime);
       msecStreamTime += cycleDuration;
     }
 
@@ -487,11 +486,11 @@ public class SubSequencerTest {
     int cycleCount = (int) Math.ceil(framesInTotal / framesPerCycle);
 
     SynthMockup synth = new SynthMockup();
-    SubSequencer instance = new SubSequencer("test", synth, null);
-    instance.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
+    instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
     double msecStreamTime = 0;
 
-    instance.preparePlaying(0);
+    instance.preparePlaying(0, null);
     // now we are simulating a number cycles
     for (int i = 0; i < cycleCount; i++) {
 
@@ -502,10 +501,10 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(msecStreamTime);
+      instance.processOut(msecStreamTime);
       msecStreamTime += cycleDuration;
     }
-    //--- here we tell the sub synth to stop playing
+    //--- here we tell the sub synth to stopOut playing
     instance.stopPlaying();
 
     // now we are simulating again a number cycles
@@ -518,7 +517,7 @@ public class SubSequencerTest {
       // this would be done by the master sequencer
       instance.prepareNormalCycle(timeMap, thisCycleStartTick, nextCycleStartTick);
       // this shall be done by the processor
-      instance.process(msecStreamTime);
+      instance.processOut(msecStreamTime);
       msecStreamTime += cycleDuration;
     }
 

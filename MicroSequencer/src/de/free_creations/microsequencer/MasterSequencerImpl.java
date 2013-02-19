@@ -40,8 +40,8 @@ class MasterSequencerImpl implements MasterSequencer {
   private final SubSequencerFactory subSequencerFactory;
   private TempoTrack tempoTrack = null;
   private TimeSignatureTrack timeSignatureTrack = null;
-  private final ArrayList<MasterSequencer.SubSequencer> subSequencers =
-          new ArrayList<MasterSequencer.SubSequencer>();
+  private final ArrayList<MasterSequencer.MidiSubSequencer> subSequencers =
+          new ArrayList<MasterSequencer.MidiSubSequencer>();
   private final Object updateLock = new Object();
   private volatile double tempoFactor = 1.0D;
   private double startPosition = 0D;
@@ -77,10 +77,10 @@ class MasterSequencerImpl implements MasterSequencer {
    *
    */
   @Override
-  public SubSequencer createSubSequencer(String name, Soundbank soundbank) throws MidiUnavailableException {
+  public MidiSubSequencer createMidiSubSequencer(String name, Soundbank soundbank) throws MidiUnavailableException {
     synchronized (updateLock) {
-      //SubSequencer newSubSequencer = new SubSequencer(name, soundbank);
-      SubSequencer newSubSequencer = subSequencerFactory.make(name, soundbank);
+      //SubSequencer newSubSequencer = new MidiSubSequencer(name, soundbank);
+      MidiSubSequencer newSubSequencer = subSequencerFactory.make(name, soundbank);
       synchronized (subSequencers) {
         subSequencers.add(newSubSequencer);
       }
@@ -227,10 +227,10 @@ class MasterSequencerImpl implements MasterSequencer {
         return;
       }
       stopping = false;
-      ArrayList<MasterSequencer.SubSequencer> subSequencersSnapShot;
+      ArrayList<MasterSequencer.MidiSubSequencer> subSequencersSnapShot;
       synchronized (subSequencers) {
         subSequencersSnapShot =
-                new ArrayList<MasterSequencer.SubSequencer>(subSequencers);
+                new ArrayList<MasterSequencer.MidiSubSequencer>(subSequencers);
       }
       activeMasterSequencer =
               new ActiveMasterSequencer(
@@ -421,7 +421,7 @@ class ActiveMasterSequencer {
   // immutable objects
   private final TempoTrack tempoTrack;
   private final TimeSignatureTrack timeSignatureTrack;
-  private final ArrayList<MasterSequencer.SubSequencer> subSequencers;
+  private final ArrayList<MasterSequencer.MidiSubSequencer> subSequencers;
   private final long sequenceLenght;
   private final double loopEndPoint;
   private final double loopStartPoint;
@@ -439,7 +439,7 @@ class ActiveMasterSequencer {
 
   public ActiveMasterSequencer(
           double startPosition,
-          final ArrayList<MasterSequencer.SubSequencer> subSequencers,
+          final ArrayList<MasterSequencer.MidiSubSequencer> subSequencers,
           TempoTrack tempoTrack,
           TimeSignatureTrack timeSignatureTrack,
           long tickLength,
@@ -523,7 +523,7 @@ class ActiveMasterSequencer {
       }
 
       // now inform all the subSequencers
-      for (MasterSequencer.SubSequencer s : subSequencers) {
+      for (MasterSequencer.MidiSubSequencer s : subSequencers) {
         if (isLoopingCycle) {
           s.prepareLoopEndCycle(thisTimeMap, timeMap_2, thisCycleStartTick,
                   nextCycleStartTick, loopStartPoint, loopEndPoint);
@@ -542,8 +542,8 @@ class ActiveMasterSequencer {
   public void startMidi() {
     synchronized (cycleLock) {
       logger.log(Level.FINER, "startMidi()");
-      for (MasterSequencer.SubSequencer s : subSequencers) {
-        s.preparePlaying(thisCycleStartTick);
+      for (MasterSequencer.MidiSubSequencer s : subSequencers) {
+        s.preparePlaying(thisCycleStartTick, MasterSequencer.PlayingMode.MidiOnly);
       }
     }
     firePlayingChanged(true);
@@ -551,7 +551,7 @@ class ActiveMasterSequencer {
 
   public void stopMidi() {
     synchronized (cycleLock) {
-      for (MasterSequencer.SubSequencer s : subSequencers) {
+      for (MasterSequencer.MidiSubSequencer s : subSequencers) {
         s.stopPlaying();
       }
     }

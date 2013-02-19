@@ -76,35 +76,35 @@ public class AudioPortImplTest {
     }
 
     /**
-     * Test of open method, of class AudioPortImpl.
+     * Test of openOut method, of class AudioPortImpl.
      */
     @Test
     public void testOpen() throws Exception {
     }
 
     /**
-     * Test of start method, of class AudioPortImpl.
+     * Test of startOut method, of class AudioPortImpl.
      */
     @Test
     public void testStart() {
     }
 
     /**
-     * Test of close method, of class AudioPortImpl.
+     * Test of closeOut method, of class AudioPortImpl.
      */
     @Test
     public void testClose() {
     }
 
     /**
-     * Test of process method, of class AudioPortImpl.
+     * Test of processOut method, of class AudioPortImpl.
      */
     @Test
     public void testProcess() throws Exception {
     }
 
     /**
-     * Test of stop method, of class AudioPortImpl.
+     * Test of stopOut method, of class AudioPortImpl.
      */
     @Test
     public void testStop() {
@@ -131,27 +131,27 @@ public class AudioPortImplTest {
     private class TestAudioProducer implements AudioProducer {
 
         @Override
-        public void open(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved)  {
+        public void openOut(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved)  {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void close() {
+        public void closeOut() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void start() {
+        public void startOut() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void stop() {
+        public void stopOut() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public float[] process(double streamTime) throws Exception {
+        public float[] processOut(double streamTime) throws Exception {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

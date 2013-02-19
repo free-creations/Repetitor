@@ -31,7 +31,7 @@ import javax.sound.midi.MidiUnavailableException;
 class AudioPortImpl implements AudioPort {
 
   /**
-   * changes in volume (in attenuation) should not be
+   * Sudden changes in volume (in attenuation) should not be
    * effectuated from one frame to the next, because this would
    * produce ugly cracking sounds. Instead the current attenuation will
    * exponentially reach its target value. The time this takes is defined by
@@ -123,21 +123,21 @@ class AudioPortImpl implements AudioPort {
 
     attn_f0 = (float) Math.exp(Math.log(0.5) / (samplingRate * RELAXATIONTIME));
     attn_f1 = 1F - attn_f0;
-    audioProducer.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    audioProducer.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
   }
 
   public void start() {
     Arrays.fill(currentAttenuationVolt, 0F);
     processResult.lazySet(null);
-    audioProducer.start();
+    audioProducer.startOut();
   }
 
   public void close() {
-    audioProducer.close();
+    audioProducer.closeOut();
   }
 
   public float[] process(double streamTime) throws Exception {
-    float[] outputArray = audioProducer.process(streamTime);
+    float[] outputArray = audioProducer.processOut(streamTime);
     int i = 0;
     for (int frame = 0; frame < framesPerCycle; frame++) {
       for (int channel = 0; channel < outputChannelCount; channel++) {
@@ -153,7 +153,7 @@ class AudioPortImpl implements AudioPort {
   }
 
   void stop() {
-    audioProducer.stop();
+    audioProducer.stopOut();
   }
 
   /**

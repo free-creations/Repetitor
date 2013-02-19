@@ -18,7 +18,6 @@ package de.free_creations.microsequencer;
 
 import de.free_creations.midiutil.*;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
-import java.util.concurrent.ExecutorService;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 
@@ -33,16 +32,36 @@ import javax.sound.midi.Soundbank;
  */
 interface MasterSequencer {
 
+  public enum PlayingMode {
+
+    MidiOnly,
+    RecordAudio,
+    Replay
+  }
+
   public void add(SequencerEventListener listener);
 
   public void remove(SequencerEventListener listener);
+  
+    /**
+   * This interface defines the sub-sequencer as it is seen by the
+   * master-sequencer. The sub-sequencer is defined as an interface to make it
+   * easy to unit-test the master-sequencer independently of the sub-sequencer.
+   */
+  public interface SubSequencer {
+
+    public void preparePlaying(double startTick, PlayingMode mode);
+
+    public void stopPlaying();
+  }
+
 
   /**
    * This interface defines the sub-sequencer as it is seen by the
    * master-sequencer. The sub-sequencer is defined as an interface to make it
    * easy to unit-test the master-sequencer independently of the sub-sequencer.
    */
-  public interface SubSequencer {
+  public interface MidiSubSequencer extends SubSequencer{
 
     /**
      * The master-sequencer uses this function to indicate to its sub-sequencers
@@ -81,22 +100,11 @@ interface MasterSequencer {
             double thisCycleStartTick, double nextCycleStartTick,
             double loopStartTick, double loopEndTick);
 
-    /**
-     * Prepares the sub-sequencer to play. In detail this is: collect all events
-     * that are needed to initialise the synthesiser, lock all variables that
-     * shall not change during rendering.
-     *
-     * @param startTick the position, expressed in Midi ticks, from where
-     * playing shall start.
-     */
-    public void preparePlaying(double startTick);
-
-    public void stopPlaying();
   }
 
   public interface SubSequencerFactory {
 
-    public SubSequencer make(final String name, Soundbank soundbank) throws MidiUnavailableException;
+    public MidiSubSequencer make(final String name, Soundbank soundbank) throws MidiUnavailableException;
   }
 
   /**
@@ -106,11 +114,11 @@ interface MasterSequencer {
    * @param name a name for the sub-sequencer.
    * @param soundbank the soundbank that the synthesiser shall use. If null, the
    * built-in soundbank will be used.
-   * @return a newly created {@link SubSequencer}.
+   * @return a newly created {@link MidiSubSequencer}.
    * @throws MidiUnavailableException if the synthesiser does not provide a
    * suitable MIDI-receiver.
    */
-  public SubSequencer createSubSequencer(final String name, Soundbank soundbank) throws MidiUnavailableException;
+  public MidiSubSequencer createMidiSubSequencer(final String name, Soundbank soundbank) throws MidiUnavailableException;
 
   public double getTempoFactor();
 
@@ -129,9 +137,10 @@ interface MasterSequencer {
   public double getCurrentTickPosition(double streamTime);
 
   /**
-   * Determines the speed for a given position in the loaded sequence.
-   * The returned result is expressed in Quarter-Beats per minute.
-   * The result takes into account the tempo factor.
+   * Determines the speed for a given position in the loaded sequence. The
+   * returned result is expressed in Quarter-Beats per minute. The result takes
+   * into account the tempo factor.
+   *
    * @param tickPosition a position in the currently loaded sequence
    * @return the beats per minute at the given position.
    */
@@ -187,8 +196,9 @@ interface MasterSequencer {
    * operation.
    *
    * @param count the number of times playback should loop back from the loop's
-   * end position to the loop's start position, or {@link javax.sound.midi.Sequencer#LOOP_CONTINUOUSLY}
-   * to indicate that looping should continue until interrupted
+   * end position to the loop's start position, or
+   * {@link javax.sound.midi.Sequencer#LOOP_CONTINUOUSLY} to indicate that
+   * looping should continue until interrupted
    */
   public void setLoopCount(int count);
 

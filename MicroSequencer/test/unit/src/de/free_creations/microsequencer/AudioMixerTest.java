@@ -31,9 +31,9 @@ import static org.junit.Assert.*;
 public class AudioMixerTest {
 
   /**
-   * Test of process method, of class AudioMixer.
+   * Test of processOut method, of class AudioMixer.
    * We simulate a AudioMixer with three attached
-   * synthesisers. We let it process thousand cycles
+   * synthesisers. We let it processOut thousand cycles
    * and then we verify that the functions of the synthesisers
    * have been called in the right order and in the right number.
    */
@@ -67,7 +67,7 @@ public class AudioMixerTest {
     //Part 1, verify that sequencer and audio producers have been called for each cycle
     assertEquals(cycleCount, sequencer.prepareCycle_Called);
     assertEquals(cycleCount, audioProducer1.process_Called);
-    //verify that the output buffer has been filled correctly (see AudioProducerMockup.process)
+    //verify that the output buffer has been filled correctly (see AudioProducerMockup.processOut)
     assertEquals(framesPerCycle * outputChannelCount, resultBuffer.length);
     assertEquals(1.0F, resultBuffer[resultBuffer.length - 1], 1E-1);
 
@@ -84,7 +84,7 @@ public class AudioMixerTest {
     assertEquals(2 * cycleCount, audioProducer1.process_Called);
     assertEquals(cycleCount, audioProducer2.process_Called);
     assertEquals(cycleCount, audioProducer2.process_Called);
-    //verify that the output buffer has been filled correctly (see AudioProducerMockup.process)
+    //verify that the output buffer has been filled correctly (see AudioProducerMockup.processOut)
     assertEquals(framesPerCycle * outputChannelCount, resultBuffer.length);
     assertEquals(2.0F, resultBuffer[resultBuffer.length - 1], 1E-1);
 
@@ -99,7 +99,7 @@ public class AudioMixerTest {
     //the cycle count for the audioProducers should not have changed since Part 2.
     assertEquals(2 * cycleCount, audioProducer1.process_Called);
     assertEquals(cycleCount, audioProducer2.process_Called);
-    //verify that the output buffer has been filled correctly (see AudioProducerMockup.process)
+    //verify that the output buffer has been filled correctly (see AudioProducerMockup.processOut)
     assertEquals(framesPerCycle * outputChannelCount, resultBuffer.length);
     assertEquals(0.0F, resultBuffer[resultBuffer.length - 1], 1E-1);
 
@@ -139,35 +139,35 @@ public class AudioMixerTest {
     public State state;
 
     @Override
-    public void open(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved) {
+    public void openOut(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved) {
       open_Called++;
       state = State.OPENED;
       resultBuffer = new float[outputChannelCount * nFrames];
     }
 
     @Override
-    public void close() {
+    public void closeOut() {
       assertTrue(state == State.STOPPED);
       state = State.CLOSED;
       close_Called++;
     }
 
     @Override
-    public void start() {
+    public void startOut() {
       assertTrue(state == State.OPENED);
       state = State.STARTED;
       start_Called++;
     }
 
     @Override
-    public void stop() {
+    public void stopOut() {
       assertTrue(state == State.STARTED);
       state = State.STOPPED;
       stop_Called++;
     }
 
     @Override
-    public float[] process(double streamTime) throws Exception {
+    public float[] processOut(double streamTime) throws Exception {
       assertTrue(state == State.STARTED);
       process_Called++;
       // as a marker,  we set the last item of the result buffer to one
@@ -277,7 +277,7 @@ public class AudioMixerTest {
 
  
     @Override
-    public SubSequencer createSubSequencer(String name, Soundbank soundbank) throws MidiUnavailableException {
+    public MidiSubSequencer createMidiSubSequencer(String name, Soundbank soundbank) throws MidiUnavailableException {
       throw new UnsupportedOperationException("Not supported yet.");
     }
 

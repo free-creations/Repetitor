@@ -16,17 +16,12 @@
  */
 package de.free_creations.microsequencer;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiUnavailableException;
-import javax.sound.midi.Track;
 import com.sun.media.sound.AudioSynthesizer;
 import com.sun.media.sound.SoftSynthesizer;
+import de.free_creations.midiutil.InitializationList;
 import de.free_creations.midiutil.MidiUtil;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
-import de.free_creations.midiutil.InitializationList;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -36,11 +31,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Soundbank;
+import javax.sound.midi.Track;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 
@@ -48,13 +48,13 @@ import javax.sound.sampled.AudioInputStream;
  * A sub-sequencer steers one synthesiser. The events of all the tracks 
  * attached to one sub-sequencer are fed to the synthesiser.
  * <h2>Implementation assumptions</h2>
- * open() is executed before series of process() are invoked.
- * When playing: every process() is preceded by prepareNormalCycle() or prepareLoopEndCycle().
+ * openOut() is executed before series of processOut() are invoked.
+ * When playing: every processOut() is preceded by prepareNormalCycle() or prepareLoopEndCycle().
  * Once preparePlaying() or prepareLoopEndCycle() has executed the values of
  * "thisCycleStartTick" and "nextCycleStartTick" passed in "prepareNormalCycle()"
  * are monotonically increasing.
  * <h2>Threading</h2>
- * The functions open(), close(), prepareLoopEndCycle(), process() are synchronised
+ * The functions openOut(), closeOut(), prepareLoopEndCycle(), processOut() are synchronised
  * by the "processLock". Access to the tracks are synchronised  by
  * the "trackLock" and by the fact that once started, the active-tracks
  * cannot (should not??) change anymore.
@@ -62,8 +62,8 @@ import javax.sound.sampled.AudioInputStream;
  * @Note the prepareLoopEndCycle seems send events that are beyond the 
  * end of the loop. To be investigated...
  */
-class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
-  static final private Logger logger = Logger.getLogger(SubSequencer.class.getName());
+class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProducer {
+  static final private Logger logger = Logger.getLogger(MidiSubSequencer.class.getName());
 
   private final Object trackLock = new Object();
   private final Object processLock = new Object();
@@ -102,12 +102,12 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    */
   private final Receiver synthMidiReceiver;
   /**
-   * The Midi-tick position in the tracks at the start of the current
+   * The Midi-tick position in the tracks at the startOut of the current
    * cycle.
    */
   private double thisCycleStartTick = 0D;
   /**
-   * The Midi-tick position in the tracks at the start of the next
+   * The Midi-tick position in the tracks at the startOut of the next
    * cycle.
    */
   private double nextCycleStartTick = 0D;
@@ -116,7 +116,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    */
   private Track[] activeTracks = new Track[]{};
   /**
-   * The Tracks that should be played when the SubSequencer starts for the next time.
+   * The Tracks that should be played when the MidiSubSequencer starts for the next time.
    */
   private Track[] tracks = new Track[]{};
   /**
@@ -124,7 +124,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    */
   private boolean[] activeMute = new boolean[]{};
   /**
-   * Indicates which tracks (out of tracks) should stay mute when the SubSequencer starts for the next time.
+   * Indicates which tracks (out of tracks) should stay mute when the MidiSubSequencer starts for the next time.
    */
   private boolean[] mute = new boolean[]{};
   /**
@@ -154,7 +154,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    * are jumping back loopStartTick.
    */
   private double loopEndTick;
-  private ArrayList<Integer> nextTrackEventToProcess = new ArrayList<Integer>();
+  private ArrayList<Integer> nextTrackEventToProcess = new ArrayList<>();
   /**
    * The current time of the synthesiser in seconds.
    */
@@ -200,16 +200,16 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    * to those contained in the tracks).
    */
   private final BlockingQueue<TimestampedMessage> messageQueue =
-          new LinkedBlockingQueue<TimestampedMessage>();
+          new LinkedBlockingQueue<>();
 
   /**
-   * Create a new SubSequencer. The Midi events will be rendered on a 
+   * Create a new MidiSubSequencer. The Midi events will be rendered on a 
    * new synthesiser using the given sound-bank.
-   * @param name a name for this SubSequencer
+   * @param name a name for this MidiSubSequencer
    * @param soundbank the sound-bank that the synthesiser shall use (may be null)
    * @throws MidiUnavailableException
    */
-  public SubSequencer(final String name, Soundbank soundbank) throws MidiUnavailableException {
+  public MidiSubSequencer(final String name, Soundbank soundbank) throws MidiUnavailableException {
     this.name = name;
     this.synthesizer = new SoftSynthesizer();
     this.soundbank = soundbank;
@@ -217,14 +217,14 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
   }
 
   /**
-   * Create a new SubSequencer that will render Midi events on the given
+   * Create a new MidiSubSequencer that will render Midi events on the given
    * synthesiser using the given sound-bank.
-   * @param name a name for this SubSequencer.
+   * @param name a name for this MidiSubSequencer.
    * @param synthesizer the synthesiser that shall render the Midi events.
    * @param soundbank the sound-bank that the synthesiser shall use (may be null)
    * @throws MidiUnavailableException 
    */
-  SubSequencer(final String name, AudioSynthesizer synthesizer, Soundbank soundbank) throws MidiUnavailableException {
+  MidiSubSequencer(final String name, AudioSynthesizer synthesizer, Soundbank soundbank) throws MidiUnavailableException {
     this.name = name;
     this.synthesizer = synthesizer;
     this.soundbank = soundbank;
@@ -241,19 +241,19 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
             new MasterSequencer.SubSequencerFactory() {
 
               @Override
-              public MasterSequencer.SubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
-                return new SubSequencer(name, soundbank);
+              public MasterSequencer.MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
+                return new MidiSubSequencer(name, soundbank);
               }
             };
     return newFactory;
   }
 
   @Override
-  public void start() {
+  public void startOut() {
   }
 
   @Override
-  public void stop() {
+  public void stopOut() {
   }
 
   /**
@@ -269,14 +269,14 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
         long timestamp = (long) (1E6 * synthesizerTime);
         synthMidiReceiver.send(soundsOffMessage, timestamp);
       } catch (InvalidMidiDataException ex) {
-        Logger.getLogger(SubSequencer.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(MidiSubSequencer.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
   }
 
   /**
    * Mute (or un-mute) an individual track. The muting will take place only at
-   * the next start.
+   * the next startOut.
    * @TODO this should be activable at any time...
    * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[]) }
    * @param value true - the track should remain quiet, false the track produces sound.
@@ -320,7 +320,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
   }
 
   /**
-   * Sets the tracks that will be played on the next start.
+   * Sets the tracks that will be played on the next startOut.
    * @param tracks
    */
   public void setTracks(Track[] tracks) {
@@ -339,13 +339,13 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
   /**
    * Activate the playback of the attached tracks.
    * This function resets the pointers to the beginning of the
-   * tracks. Thus once this function has executed, the SubSequencer assumes
+   * tracks. Thus once this function has executed, the MidiSubSequencer assumes
    * that the values of
    * "thisCycleStartTick" and "nextCycleStartTick" passed in "prepareLoopEndCycle()"
    * are monotonically increasing.
    */
   @Override
-  public void preparePlaying(double startTick) {
+  public void preparePlaying(double startTick, MasterSequencer.PlayingMode mode) {
     synchronized (trackLock) {
       logger.log(Level.FINER, "{0}:preparePlaying({1})",new Object[]{name,startTick});
       activeTracks = Arrays.copyOf(tracks, tracks.length);
@@ -400,7 +400,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
 
   /**
    * This function is called by the Processor for every cycle.
-   * @param streamTime the time in seconds of the audio stream at the start of
+   * @param streamTime the time in seconds of the audio stream at the startOut of
    * this cycle.
    * @param targetAttenuation the volume of the output signal (0.0 is silence,
    * 1.0 is full volume)
@@ -409,7 +409,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
    * @throws IllegalStateException if the subSequencer is closed.
    */
   @Override
-  public float[] process(double streamTime) throws IOException, IllegalStateException {
+  public float[] processOut(double streamTime) throws IOException, IllegalStateException {
     synchronized (processLock) {
       if (!opened) {
         throw new IllegalStateException("Cannot process in closed state.");
@@ -456,7 +456,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
   }
 
   @Override
-  public void open(int samplingRate, int framesPerCycle, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
+  public void openOut(int samplingRate, int framesPerCycle, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
 
     if (noninterleaved) {
       throw new RuntimeException("Oops..., this version is not able to handle noninterleaved channels.");
@@ -506,7 +506,7 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
   }
 
   @Override
-  public void close() {
+  public void closeOut() {
     synchronized (processLock) {
       synthesizer.close();
       opened = false;
@@ -625,8 +625,8 @@ class SubSequencer implements MasterSequencer.SubSequencer, AudioProducer {
           TimeMap timeMap, double lowerSynthesizerTime) {
 
     if (eventIdx >= activeTracks[trackIdx].size()) {
-      // although there are no more events to process,
-      // we return true to indicate that we can stop to search for more 
+      // although there are no more events to processOut,
+      // we return true to indicate that we can stopOut to search for more 
       // events in *this* cycle.
       return true;
     }

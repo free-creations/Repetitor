@@ -134,7 +134,7 @@ public class AudioWriterTest {
   /**
    */
   @Test
-  //@Ignore("Switch this on if you have can provide a very small partion to perform this test")
+  @Ignore("Switch this on if you have can provide a very small partion to perform this test")
   public void testDiskFull() throws FileNotFoundException, ExecutionException {
     System.out.printf("testDiskFull %n");
     File testDir = new File("/media/MEDIONSTICK");

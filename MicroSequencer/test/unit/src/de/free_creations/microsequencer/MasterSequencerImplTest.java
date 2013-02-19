@@ -18,7 +18,7 @@ package de.free_creations.microsequencer;
 
 import java.util.concurrent.ExecutorService;
 import javax.sound.midi.ShortMessage;
-import de.free_creations.microsequencer.MasterSequencer.SubSequencer;
+import de.free_creations.microsequencer.MasterSequencer.MidiSubSequencer;
 import de.free_creations.midiutil.BeatPosition;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
 import javax.sound.midi.InvalidMidiDataException;
@@ -84,12 +84,12 @@ public class MasterSequencerImplTest {
     // verify....
     assertEquals(120D, instance.tickToEffectiveBPM(0D), 1E-9D);
     assertEquals(30D, instance.tickToEffectiveBPM(1001D), 1E-9D);
-    
+
     // what about tempo factor...
     instance.setTempoFactor(2.0);
     assertEquals(240D, instance.tickToEffectiveBPM(0D), 1E-9D);
     assertEquals(60D, instance.tickToEffectiveBPM(1001D), 1E-9D);
-    
+
   }
 
   @Test
@@ -275,7 +275,7 @@ public class MasterSequencerImplTest {
     MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     double cycleLength = 0.5D; //half a second, 90 ticks per cycle (see initialize)
     double streamTime = 123.0D; //arbitrary start time
@@ -321,7 +321,7 @@ public class MasterSequencerImplTest {
     MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     double cycleLength = 0.5D; //half a second, 90 ticks per cycle (see initialize)
     double streamTime = 123.0D; //arbitrary start time
@@ -377,12 +377,11 @@ public class MasterSequencerImplTest {
     MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     loopEventListenerCount = 0;
 
     instance.add(new SequencerEventListener() {
-
       @Override
       public void loopDone(int newLoopCount) {
         loopEventListenerCount++;
@@ -457,7 +456,7 @@ public class MasterSequencerImplTest {
 
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     double cycleLength = 2.0D; // cycle lenght of 2 seconds (is not realistic but easy to calculate)
     double streamTime = 123.0D; //arbitrary start time
@@ -506,7 +505,7 @@ public class MasterSequencerImplTest {
 
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     double cycleLength = 2.0D; // cycle lenght of 2 seconds (is not realistic but easy to calculate)
     double streamTime = 123D; //arbitrary 
@@ -555,7 +554,7 @@ public class MasterSequencerImplTest {
 
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     double cycleLength = 2.0D; // cycle lenght of 2 seconds (is not realistic but easy to calculate)
     double streamTime = 123.0D; //arbitrary start time
@@ -603,7 +602,7 @@ public class MasterSequencerImplTest {
     tickLength = sequence.getTickLength();
 
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
-    SubsequencerMock subsequencer = (SubsequencerMock) instance.createSubSequencer(null, null);
+    SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
 
     double cycleLength = 2.0D; // cycle lenght of 2 seconds (is not realistic but easy to calculate)
     double streamTime = 123.0D; //arbitrary start time
@@ -726,7 +725,7 @@ public class MasterSequencerImplTest {
 
   }
 
-  private class SubsequencerMock implements MasterSequencer.SubSequencer {
+  private class SubsequencerMock implements MasterSequencer.MidiSubSequencer {
 
     public boolean started = false;
     public TimeMap timeMap_1 = null;
@@ -758,7 +757,7 @@ public class MasterSequencerImplTest {
     }
 
     @Override
-    public void preparePlaying(double startPosition) {
+    public void preparePlaying(double startPosition, MasterSequencer.PlayingMode mode) {
       started = true;
     }
 
@@ -769,9 +768,8 @@ public class MasterSequencerImplTest {
   }
   private MasterSequencer.SubSequencerFactory SubsequencerMockFactory =
           new MasterSequencer.SubSequencerFactory() {
-
             @Override
-            public SubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
+            public MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
               return new SubsequencerMock();
             }
           };

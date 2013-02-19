@@ -1,5 +1,5 @@
 /*
- *  Copyright 2011 Harald Postner <Harald at H-Postner.de>.
+ *  Copyright 2013 Harald Postner <Harald at H-Postner.de>.
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,16 +23,16 @@ import javax.sound.midi.MidiUnavailableException;
  *
  * @author Harald Postner <Harald at H-Postner.de>
  */
-interface AudioProducer {
+interface AudioConsumer {
 
-  public void openOut(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException;
+  public void openIn(int samplingRate, int nFrames, int inputChannelCount, boolean noninterleaved) throws MidiUnavailableException;
 
-  public void closeOut();
+  public void closeIn();
 
-  public void startOut();
+  public void startIn();
 
-  public void stopOut();
+  public void stopIn();
 
-  public abstract float[] processOut(double streamTime) throws Exception;
+  public abstract void processIn(double streamTime, float[] samples) throws Exception;
 
 }

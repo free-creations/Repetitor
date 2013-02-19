@@ -25,15 +25,15 @@ import javax.sound.midi.Track;
 class SequencerPortImpl implements SequencerPort {
 
   public final AudioPort audioPort;
-  public final SubSequencer subsequncer;
+  public final MidiSubSequencer subsequncer;
 
   /**
    * Creates an immutable combination of a given {@link AudioPort}
-   * and a given {@link SubSequencer}.
+   * and a given {@link MidiSubSequencer}.
    * @param audioPort the audio-port on which the sub-sequencer operates.
    * @param subsequncer the sub-sequencer operates that uses the given audio-port.
    */
-  public SequencerPortImpl(AudioPort audioPort, SubSequencer subsequncer) {
+  public SequencerPortImpl(AudioPort audioPort, MidiSubSequencer subsequncer) {
     this.audioPort = audioPort;
     this.subsequncer = subsequncer;
   }
