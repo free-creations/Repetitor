@@ -50,7 +50,7 @@ import javax.sound.sampled.AudioInputStream;
  * <h2>Implementation assumptions</h2>
  * openOut() is executed before series of processOut() are invoked.
  * When playing: every processOut() is preceded by prepareNormalCycle() or prepareLoopEndCycle().
- * Once preparePlaying() or prepareLoopEndCycle() has executed the values of
+ * Once prepareSession() or prepareLoopEndCycle() has executed the values of
  * "thisCycleStartTick" and "nextCycleStartTick" passed in "prepareNormalCycle()"
  * are monotonically increasing.
  * <h2>Threading</h2>
@@ -345,7 +345,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    * are monotonically increasing.
    */
   @Override
-  public void preparePlaying(double startTick, MasterSequencer.PlayingMode mode) {
+  public void prepareSession(double startTick, MasterSequencer.PlayingMode mode) {
     synchronized (trackLock) {
       logger.log(Level.FINER, "{0}:preparePlaying({1})",new Object[]{name,startTick});
       activeTracks = Arrays.copyOf(tracks, tracks.length);
@@ -391,7 +391,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    * De-activate the playback of the attached tracks.
    */
   @Override
-  public void stopPlaying() {
+  public void stopSession() {
     synchronized (trackLock) {
       stopping = true;
 

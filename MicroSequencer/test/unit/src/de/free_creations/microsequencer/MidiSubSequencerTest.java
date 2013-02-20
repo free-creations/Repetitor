@@ -137,7 +137,7 @@ public class MidiSubSequencerTest {
 
     instance.setTracks(tracks);
     instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick, null);
+    instance.prepareSession(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a number cycles
     for (int i = 0; i < cycleCount; i++) {
@@ -191,7 +191,7 @@ public class MidiSubSequencerTest {
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
     instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick, null);
+    instance.prepareSession(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a cycling for about 10 minutes
     long startTime = System.nanoTime();
@@ -257,7 +257,7 @@ public class MidiSubSequencerTest {
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
     instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick, null);
+    instance.prepareSession(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a number of cycles
     for (int i = 0; i < cycleCount; i++) {
@@ -322,7 +322,7 @@ public class MidiSubSequencerTest {
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
     instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
-    instance.preparePlaying(thisCycleStartTick, null);
+    instance.prepareSession(thisCycleStartTick, null);
     double streamTimeInSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating 7 seconds of cycling (until after event C)
     for (int i = 0; i < cycleCount; i++) {
@@ -490,7 +490,7 @@ public class MidiSubSequencerTest {
     instance.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
     double msecStreamTime = 0;
 
-    instance.preparePlaying(0, null);
+    instance.prepareSession(0, null);
     // now we are simulating a number cycles
     for (int i = 0; i < cycleCount; i++) {
 
@@ -505,7 +505,7 @@ public class MidiSubSequencerTest {
       msecStreamTime += cycleDuration;
     }
     //--- here we tell the sub synth to stopOut playing
-    instance.stopPlaying();
+    instance.stopSession();
 
     // now we are simulating again a number cycles
     for (int i = 0; i < cycleCount; i++) {

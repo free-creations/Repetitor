@@ -757,12 +757,12 @@ public class MasterSequencerImplTest {
     }
 
     @Override
-    public void preparePlaying(double startPosition, MasterSequencer.PlayingMode mode) {
+    public void prepareSession(double startPosition, MasterSequencer.PlayingMode mode) {
       started = true;
     }
 
     @Override
-    public void stopPlaying() {
+    public void stopSession() {
       started = false;
     }
   }

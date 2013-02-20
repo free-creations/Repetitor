@@ -15,79 +15,52 @@
  */
 package de.free_creations.microsequencer;
 
-import de.free_creations.microsequencer.MasterSequencer.PlayingMode;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
  * @author Harald Postner
  */
 public class AudioRecorderSubSequencerTest {
-  
+
   public AudioRecorderSubSequencerTest() {
   }
-  
+
   @BeforeClass
   public static void setUpClass() {
   }
-  
+
   @AfterClass
   public static void tearDownClass() {
   }
-  
+
   @Before
   public void setUp() {
   }
-  
+
   @After
   public void tearDown() {
   }
 
-  /**
-   * Test of preparePlaying method, of class AudioRecorderSubSequencer.
-   */
   @Test
-  public void testPreparePlaying() {
-    System.out.println("preparePlaying");
-    double startTick = 0.0;
-    PlayingMode mode = null;
+  public void testConstructor() throws Exception {
+    System.out.println("testConstructor");
     AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.preparePlaying(startTick, mode);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
-  }
-
-  /**
-   * Test of stopPlaying method, of class AudioRecorderSubSequencer.
-   */
-  @Test
-  public void testStopPlaying() {
-    System.out.println("stopPlaying");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.stopPlaying();
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
+    System.out.println("...TempDir:" + instance.getTempDir());
   }
 
   /**
    * Test of openOut method, of class AudioRecorderSubSequencer.
    */
   @Test
+  @Ignore("OpenOut is empty")
   public void testOpenOut() throws Exception {
-    System.out.println("openOut");
-    int samplingRate = 0;
-    int nFrames = 0;
-    int outputChannelCount = 0;
-    boolean noninterleaved = false;
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.openOut(samplingRate, nFrames, outputChannelCount, noninterleaved);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
   }
 
   /**
@@ -96,8 +69,7 @@ public class AudioRecorderSubSequencerTest {
   @Test
   public void testCloseOut() {
     System.out.println("closeOut");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.closeOut();
+
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
   }
@@ -106,28 +78,22 @@ public class AudioRecorderSubSequencerTest {
    * Test of startOut method, of class AudioRecorderSubSequencer.
    */
   @Test
+  @Ignore("method is empty")
   public void testStartOut() {
-    System.out.println("startOut");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.startOut();
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
   }
 
   /**
    * Test of stopOut method, of class AudioRecorderSubSequencer.
    */
   @Test
+  @Ignore("method is empty")
   public void testStopOut() {
-    System.out.println("stopOut");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.stopOut();
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
   }
 
   /**
    * Test of processOut method, of class AudioRecorderSubSequencer.
+   * Specification: If the current mode of operations is "Replay", read samples
+   * from the temp file.
    */
   @Test
   public void testProcessOut() throws Exception {
@@ -145,6 +111,7 @@ public class AudioRecorderSubSequencerTest {
    * Test of openIn method, of class AudioRecorderSubSequencer.
    */
   @Test
+  @Ignore("method is empty")
   public void testOpenIn() throws Exception {
     System.out.println("openIn");
     int samplingRate = 0;
@@ -158,13 +125,14 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Test of closeIn method, of class AudioRecorderSubSequencer.
+   * Test of closeIn method, of class AudioRecorderSubSequencer. Specification:
+   * remove the temporary the temporary output file. If during ProcessIn there
+   * was an error, throw the exception here.
    */
   @Test
   public void testCloseIn() {
     System.out.println("closeIn");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.closeIn();
+
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
   }
@@ -173,28 +141,22 @@ public class AudioRecorderSubSequencerTest {
    * Test of startIn method, of class AudioRecorderSubSequencer.
    */
   @Test
+  @Ignore("method is empty")
   public void testStartIn() {
-    System.out.println("startIn");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.startIn();
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
   }
 
   /**
    * Test of stopIn method, of class AudioRecorderSubSequencer.
    */
   @Test
+  @Ignore("method is empty")
   public void testStopIn() {
-    System.out.println("stopIn");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.stopIn();
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
   }
 
   /**
    * Test of processIn method, of class AudioRecorderSubSequencer.
+   * Specification: if the current mode of operations is "RecordAudio", write
+   * the given samples to the temp file.
    */
   @Test
   public void testProcessIn() throws Exception {
@@ -205,5 +167,37 @@ public class AudioRecorderSubSequencerTest {
     instance.processIn(streamTime, samples);
     // TODO review the generated test code and remove the default call to fail.
     fail("The test case is a prototype.");
+  }
+
+  /**
+   * Test of prepareSession method, of class AudioRecorderSubSequencer.
+   * Specification: Depending on the PlayingMode start the appropriate
+   * file-streamer.
+   */
+  @Test
+  public void testPrepareSession() {
+    System.out.println("prepareSession");
+
+    fail("The test case is a prototype.");
+  }
+
+  /**
+   * Test of stopSession method, of class AudioRecorderSubSequencer.
+   *
+   * Specification:
+   */
+  @Test
+  public void testStopSession() {
+    System.out.println("stopSession");
+
+    fail("The test case is a prototype.");
+  }
+
+  /**
+   * Test of getTempDir method, of class AudioRecorderSubSequencer.
+   */
+  @Test
+  @Ignore("method is trivial")
+  public void testGetTempDir() {
   }
 }

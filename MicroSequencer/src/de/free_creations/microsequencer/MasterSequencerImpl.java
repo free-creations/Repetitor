@@ -543,7 +543,7 @@ class ActiveMasterSequencer {
     synchronized (cycleLock) {
       logger.log(Level.FINER, "startMidi()");
       for (MasterSequencer.MidiSubSequencer s : subSequencers) {
-        s.preparePlaying(thisCycleStartTick, MasterSequencer.PlayingMode.MidiOnly);
+        s.prepareSession(thisCycleStartTick, MasterSequencer.PlayingMode.MidiOnly);
       }
     }
     firePlayingChanged(true);
@@ -552,7 +552,7 @@ class ActiveMasterSequencer {
   public void stopMidi() {
     synchronized (cycleLock) {
       for (MasterSequencer.MidiSubSequencer s : subSequencers) {
-        s.stopPlaying();
+        s.stopSession();
       }
     }
     firePlayingChanged(false);

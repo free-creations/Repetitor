@@ -145,7 +145,7 @@ public class AudioReader {
    *
    * @throws IOException when the file could not be correctly written.
    */
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
 
     synchronized (processingLock) {
       if (readingException != null) {

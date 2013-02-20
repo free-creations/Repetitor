@@ -59,7 +59,7 @@ public class AudioWriter {
   private Future<BufferPair> previousBuffReadyToBeFilled;
   private final FileChannel outChannel;
   private boolean closed = false;
-  private final Object closingLock = new Object();
+  private final Object processingLock = new Object();
   /**
    *
    */
@@ -214,9 +214,9 @@ public class AudioWriter {
    *
    * @throws IOException when the file could not be correctly written.
    */
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
     try {
-      synchronized (closingLock) {
+      synchronized (processingLock) {
         if (writingException != null) {
           closed = true;
           executor.shutdown();
@@ -255,7 +255,7 @@ public class AudioWriter {
   }
 
   public void putNext(float[] audioArray) {
-    synchronized (closingLock) {
+    synchronized (processingLock) {
       if (closed) {
         return;
       }

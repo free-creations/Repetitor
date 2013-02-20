@@ -50,9 +50,9 @@ interface MasterSequencer {
    */
   public interface SubSequencer {
 
-    public void preparePlaying(double startTick, PlayingMode mode);
+    public void prepareSession(double startTick, PlayingMode mode);
 
-    public void stopPlaying();
+    public void stopSession();
   }
 
 
