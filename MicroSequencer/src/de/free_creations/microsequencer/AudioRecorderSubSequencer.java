@@ -42,6 +42,7 @@ class AudioRecorderSubSequencer implements
         MasterSequencer.SubSequencer,
         AudioProducer, AudioConsumer {
 
+  private static final Logger logger = Logger.getLogger(AudioRecorderSubSequencer.class.getName());
   private final File tempDir;
   private final File tempFile;
   private final long minimumFreeSpace = 44100 * 2 * 4 * 60 * 4;
@@ -189,6 +190,10 @@ class AudioRecorderSubSequencer implements
     return tempDir.getAbsolutePath();
   }
 
+  String getTempFile() {
+    return tempFile.getAbsolutePath();
+  }
+
   /**
    * Gets called once when the Audio System is about to open. The calling thread
    * is not time-critical, we can do blocking operations.
@@ -310,16 +315,22 @@ class AudioRecorderSubSequencer implements
   @Override
   public float[] processOut(double streamTime) {
     if (playingMode != PlayingMode.Replay) {
-      Arrays.fill(outputSamples, 0F);
+
+      return outputSamples;
     }
     if (reader == null) {
-      executionException = new ExecutionException(new NullPointerException("writer is null"));
+      executionException = new ExecutionException(new NullPointerException("reader is null"));
       Arrays.fill(outputSamples, 0F);
+      return outputSamples;
     }
     try {
       reader.get(0, TimeUnit.MILLISECONDS).getNext(outputSamples);
-    } catch (InterruptedException | ExecutionException | TimeoutException ex) {
+    } catch (InterruptedException | ExecutionException ex) {
+      Arrays.fill(outputSamples, 0F);
       executionException = new ExecutionException(ex);
+    } catch (TimeoutException ex) {
+      Arrays.fill(outputSamples, 0F);
+      logger.log(Level.WARNING, "Read-Buffer underrun.");
     }
     return outputSamples;
   }
@@ -363,6 +374,9 @@ class AudioRecorderSubSequencer implements
   @Override
   public void prepareSession(double startTick, PlayingMode mode) {
     playingMode = mode;
+    if (outputSamples != null) {
+      Arrays.fill(outputSamples, 0F);
+    }
     switch (playingMode) {
       case MidiOnly:
         return;
@@ -383,6 +397,9 @@ class AudioRecorderSubSequencer implements
    */
   @Override
   public void stopSession() {
+    if (outputSamples != null) {
+      Arrays.fill(outputSamples, 0F);
+    }
     executor.submit(new ClosingTask(writer, reader));
   }
 }
