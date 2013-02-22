@@ -18,6 +18,7 @@ package de.free_creations.midisong;
 
 import de.free_creations.microsequencer.MicroSequencer;
 import de.free_creations.microsequencer.SequencerEventListener;
+import de.free_creations.microsequencer.SequencerMidiPort;
 import de.free_creations.microsequencer.SequencerPort;
 import de.free_creations.midiutil.BeatPosition;
 import de.free_creations.midiutil.RPosition;
@@ -701,7 +702,7 @@ public class SongSession {
    * @throws EInvalidSongFile
    * @throws MidiUnavailableException
    */
-  private void attachTracksToSequencer(GenericTrack[] subtracks, MicroSequencer sequencer, SequencerPort port, ArrayList<Track> tracks) throws EInvalidSongFile, MidiUnavailableException {
+  private void attachTracksToSequencer(GenericTrack[] subtracks, MicroSequencer sequencer, SequencerMidiPort port, ArrayList<Track> tracks) throws EInvalidSongFile, MidiUnavailableException {
     if (subtracks == null) {
       return;
     }
@@ -793,9 +794,9 @@ public class SongSession {
   private class MidiTrackHandler implements GenericTrack.EventHandler {
 
     final int trackIndex;
-    final SequencerPort port;
+    final SequencerMidiPort port;
 
-    public MidiTrackHandler(int trackIndex, SequencerPort port) {
+    public MidiTrackHandler(int trackIndex, SequencerMidiPort port) {
       this.trackIndex = trackIndex;
       this.port = port;
     }
@@ -847,7 +848,7 @@ public class SongSession {
    * @throws EInvalidSongFile
    * @throws MidiUnavailableException
    */
-  private void attachOneTrackToSequencer(GenericTrack track, MicroSequencer sequencer, SequencerPort port, ArrayList<Track> tracks) throws EInvalidSongFile, MidiUnavailableException {
+  private void attachOneTrackToSequencer(GenericTrack track, MicroSequencer sequencer, SequencerMidiPort port, ArrayList<Track> tracks) throws EInvalidSongFile, MidiUnavailableException {
     boolean hasHandler = false;
     if (track.getSongSession() != this) {
       throw new RuntimeException("internal Error in SongSession");

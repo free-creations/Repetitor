@@ -20,6 +20,7 @@ import javax.sound.midi.MidiEvent;
 import de.free_creations.microsequencer.AudioPort;
 import de.free_creations.microsequencer.SequencerEventListener;
 import de.free_creations.microsequencer.MicroSequencer;
+import de.free_creations.microsequencer.SequencerMidiPort;
 import de.free_creations.microsequencer.SequencerPort;
 import de.free_creations.midiutil.BeatPosition;
 import de.free_creations.midiutil.RPosition;
@@ -752,7 +753,7 @@ public class SongSessionTest {
     }
   }
 
-  private class SequencerPortMock implements SequencerPort {
+  private class SequencerPortMock implements SequencerMidiPort {
 
     public final Soundbank soundbank;
     private Track[] tracks = null;
@@ -839,6 +840,7 @@ public class SongSessionTest {
     private int loopCount = 123;
     private long tickPosition = 123L;
     private SequencerEventListener sequencerEventListener = null;
+    private double tempoFactor;
 
     @Override
     public void setSequence(Sequence sequence) {
@@ -958,7 +960,7 @@ public class SongSessionTest {
 
     @Override
     public float getTempoFactor() {
-      throw new UnsupportedOperationException("Not supported yet.");
+      return (float)tempoFactor;
     }
 
     @Override
@@ -1127,7 +1129,7 @@ public class SongSessionTest {
     }
 
     @Override
-    public SequencerPort createDefaultSynthesizerPort(String name, final Soundbank sb) {
+    public SequencerMidiPort createDefaultSynthesizerPort(String name, final Soundbank sb) {
       SequencerPortMock newport = new SequencerPortMock(sb);
       ports.add(newport);
       return newport;
@@ -1135,7 +1137,7 @@ public class SongSessionTest {
 
     @Override
     public void setTempoFactor(double factor) {
-      throw new UnsupportedOperationException("Not supported yet.");
+      this.tempoFactor = factor;
     }
 
     @Override
@@ -1191,6 +1193,11 @@ public class SongSessionTest {
 
     @Override
     public double tickToEffectiveBPM(double tickPosition) {
+      throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public SequencerPort createAudioRecorderPort(String name) throws IOException, MidiUnavailableException {
       throw new UnsupportedOperationException("Not supported yet.");
     }
   }

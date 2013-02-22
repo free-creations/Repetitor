@@ -17,6 +17,7 @@
 package de.free_creations.midisong;
 
 import de.free_creations.microsequencer.AudioPort;
+import de.free_creations.microsequencer.SequencerMidiPort;
 import de.free_creations.microsequencer.SequencerPort;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Soundbank;
@@ -296,7 +297,7 @@ public class MidiSynthesizerTrackTest {
     BuiltinSynthesizer synth = new BuiltinSynthesizer();
     synth.setName(SYNTHNAME);
     synthTrack.setSynthesizer(synth);
-    synth.setPort(new SequencerPort() {
+    synth.setPort(new SequencerMidiPort() {
 
       @Override
       public AudioPort getAudioPort() {
