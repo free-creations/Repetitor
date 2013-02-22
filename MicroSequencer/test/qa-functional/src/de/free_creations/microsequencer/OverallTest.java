@@ -154,8 +154,8 @@ public class OverallTest extends NbTestCase {
       Soundbank voicesSbk = MidiSystem.getSoundbank(voicesSbkFile);
       Soundbank orchestraSbk = MidiSystem.getSoundbank(orchestraSbkFile);
 
-      SequencerPort voicesPort = microSequencer.createDefaultSynthesizerPort("Voices", voicesSbk);
-      SequencerPort orchestraPort = microSequencer.createDefaultSynthesizerPort("Orchestra", orchestraSbk);
+      SequencerMidiPort voicesPort = microSequencer.createDefaultSynthesizerPort("Voices", voicesSbk);
+      SequencerMidiPort orchestraPort = microSequencer.createDefaultSynthesizerPort("Orchestra", orchestraSbk);
 
       voicesPort.setTracks(trackSet_voices);
       orchestraPort.setTracks(trackSet_Orchestra);

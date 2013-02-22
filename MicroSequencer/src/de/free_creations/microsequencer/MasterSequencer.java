@@ -18,6 +18,7 @@ package de.free_creations.microsequencer;
 
 import de.free_creations.midiutil.*;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
+import java.io.IOException;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 
@@ -42,8 +43,8 @@ interface MasterSequencer {
   public void add(SequencerEventListener listener);
 
   public void remove(SequencerEventListener listener);
-  
-    /**
+
+  /**
    * This interface defines the sub-sequencer as it is seen by the
    * master-sequencer. The sub-sequencer is defined as an interface to make it
    * easy to unit-test the master-sequencer independently of the sub-sequencer.
@@ -55,13 +56,12 @@ interface MasterSequencer {
     public void stopSession();
   }
 
-
   /**
    * This interface defines the sub-sequencer as it is seen by the
    * master-sequencer. The sub-sequencer is defined as an interface to make it
    * easy to unit-test the master-sequencer independently of the sub-sequencer.
    */
-  public interface MidiSubSequencer extends SubSequencer{
+  public interface MidiSubSequencer extends SubSequencer {
 
     /**
      * The master-sequencer uses this function to indicate to its sub-sequencers
@@ -99,12 +99,13 @@ interface MasterSequencer {
     public void prepareLoopEndCycle(TimeMap timeMap_1, TimeMap timeMap_2,
             double thisCycleStartTick, double nextCycleStartTick,
             double loopStartTick, double loopEndTick);
-
   }
 
   public interface SubSequencerFactory {
 
     public MidiSubSequencer make(final String name, Soundbank soundbank) throws MidiUnavailableException;
+
+    public SubSequencer makeAudioRecorder(String name)throws IOException;
   }
 
   /**
@@ -119,6 +120,8 @@ interface MasterSequencer {
    * suitable MIDI-receiver.
    */
   public MidiSubSequencer createMidiSubSequencer(final String name, Soundbank soundbank) throws MidiUnavailableException;
+
+  public SubSequencer createAudioRecorderSubSequencer(final String name) throws IOException;
 
   public double getTempoFactor();
 

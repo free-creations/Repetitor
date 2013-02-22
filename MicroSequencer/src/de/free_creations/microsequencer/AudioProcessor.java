@@ -23,16 +23,16 @@ import javax.sound.midi.MidiUnavailableException;
  *
  * @author Harald Postner <Harald at H-Postner.de>
  */
-interface AudioProducer {
+interface AudioProcessor {
 
-  public void openOut(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException;
+  public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException;
 
-  public void closeOut();
+  public void close();
 
-  public void startOut();
+  public void start();
 
-  public void stopOut();
+  public void stop();
 
-  public abstract float[] processOut(double streamTime) throws Exception;
+  public abstract float[] process(double streamTime, float[] input) throws Exception;
 
 }

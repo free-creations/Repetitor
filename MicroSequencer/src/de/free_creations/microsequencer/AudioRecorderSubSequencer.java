@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Soundbank;
 
 /**
  *
@@ -40,7 +42,7 @@ import java.util.logging.Logger;
  */
 class AudioRecorderSubSequencer implements
         MasterSequencer.SubSequencer,
-        AudioProducer, AudioConsumer {
+        AudioProcessor {
 
   private static final Logger logger = Logger.getLogger(AudioRecorderSubSequencer.class.getName());
   private final File tempDir;
@@ -61,6 +63,33 @@ class AudioRecorderSubSequencer implements
   private PlayingMode playingMode = PlayingMode.MidiOnly;
   private ExecutionException executionException;
   private float[] outputSamples;
+  private boolean mute = false;
+
+  /**
+   * Builds a factory object that provides this implementation as sub-sequencer.
+   *
+   * @return a factory that can make sub-sequencer objects.
+   */
+  public static MasterSequencer.SubSequencerFactory getFactory() {
+    MasterSequencer.SubSequencerFactory newFactory =
+            new MasterSequencer.SubSequencerFactory() {
+              @Override
+              public MasterSequencer.MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
+                throw new UnsupportedOperationException("Cannot make an audio recorder.");
+              }
+
+              @Override
+              public MasterSequencer.SubSequencer makeAudioRecorder(String name) throws IOException {
+                return new AudioRecorderSubSequencer(name);
+              }
+            };
+    return newFactory;
+  }
+  private int inputChannelCount;
+
+  void setMute(boolean value) {
+    mute = value;
+  }
 
   private class WriterCreationTask implements Callable<AudioWriter> {
 
@@ -149,8 +178,8 @@ class AudioRecorderSubSequencer implements
    *
    * @throws IOException if a suitable temporary file could not be allocated.
    */
-  public AudioRecorderSubSequencer() throws IOException {
-    this(Files.createTempDirectory("Repetitor").toFile(), true);
+  public AudioRecorderSubSequencer(String name) throws IOException {
+    this(name, Files.createTempDirectory("Repetitor").toFile(), true);
   }
 
   /**
@@ -160,7 +189,7 @@ class AudioRecorderSubSequencer implements
    * @param deleteTempFilesOnExit if false, temporary file are not deleted.
    * @throws IOException
    */
-  AudioRecorderSubSequencer(File tempDir, boolean deleteTempFilesOnExit) throws IOException {
+  AudioRecorderSubSequencer(String name, File tempDir, boolean deleteTempFilesOnExit) throws IOException {
     if (!tempDir.exists()) {
       throw new IOException(tempDir.getAbsolutePath() + " does not exist.");
     }
@@ -207,25 +236,10 @@ class AudioRecorderSubSequencer implements
    * @throws MidiUnavailableException
    */
   @Override
-  public void openOut(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved) {
+  public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) {
+    this.inputChannelCount = inputChannelCount;
     outputSamples = new float[nFrames * outputChannelCount];
     Arrays.fill(outputSamples, 0F);
-  }
-
-  /**
-   * Gets called once when the Audio System is about to open. The calling thread
-   * is not time-critical, we can do blocking operations.
-   *
-   *
-   * @ToDo there is redundancy with openOut
-   * @param samplingRate
-   * @param nFrames
-   * @param inputChannelCount
-   * @param noninterleaved
-   * @throws MidiUnavailableException
-   */
-  @Override
-  public void openIn(int samplingRate, int nFrames, int inputChannelCount, boolean noninterleaved) {
   }
 
   /**
@@ -235,22 +249,7 @@ class AudioRecorderSubSequencer implements
    * If during ProcessOut there was an error we'll throw the exception here.
    */
   @Override
-  public void closeOut() {
-    if (executionException != null) {
-      ExecutionException ex = executionException;
-      executionException = null;
-      throw new RuntimeException(ex);
-    }
-  }
-
-  /**
-   * Gets called once when the Audio System has been closed. The calling thread
-   * is not time-critical, we can do blocking operations.
-   *
-   * @ToDo there is redundancy with closeOut
-   */
-  @Override
-  public void closeIn() {
+  public void close() {
     if (executionException != null) {
       ExecutionException ex = executionException;
       executionException = null;
@@ -266,19 +265,7 @@ class AudioRecorderSubSequencer implements
    *
    */
   @Override
-  public void startOut() {
-  }
-
-  /**
-   * Gets called once when the Audio System is about to start. After returning
-   * from this call, the object must be able to handle the processXX calls.
-   *
-   * There is nothing to do here.
-   *
-   * @ToDo there is redundancy with startOut
-   */
-  @Override
-  public void startIn() {
+  public void start() {
   }
 
   /**
@@ -287,18 +274,13 @@ class AudioRecorderSubSequencer implements
    * There is nothing to do here.
    */
   @Override
-  public void stopOut() {
+  public void stop() {
   }
 
-  /**
-   * Gets called once when the Audio System has stopped.
-   *
-   * There is nothing to do here.
-   *
-   * @ToDo there is redundancy with stopOut
-   */
   @Override
-  public void stopIn() {
+  public float[] process(double streamTime, float[] input) {
+    processIn(streamTime, input);
+    return processOut(streamTime);
   }
 
   /**
@@ -312,16 +294,16 @@ class AudioRecorderSubSequencer implements
    * @return
    * @throws Exception
    */
-  @Override
   public float[] processOut(double streamTime) {
     if (playingMode != PlayingMode.Replay) {
-
-      return outputSamples;
+      return null;
     }
     if (reader == null) {
       executionException = new ExecutionException(new NullPointerException("reader is null"));
-      Arrays.fill(outputSamples, 0F);
-      return outputSamples;
+      return null;
+    }
+    if (mute) {
+      return null;
     }
     try {
       reader.get(0, TimeUnit.MILLISECONDS).getNext(outputSamples);
@@ -346,9 +328,14 @@ class AudioRecorderSubSequencer implements
    * @param samples
    * @throws Exception
    */
-  @Override
   public void processIn(double streamTime, float[] samples) {
     if (playingMode != PlayingMode.RecordAudio) {
+      return;
+    }
+    if (samples == null) {
+      return;
+    }
+    if (inputChannelCount <= 0) {
       return;
     }
     if (writer == null) {

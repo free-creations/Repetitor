@@ -19,23 +19,23 @@ import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Track;
 
 /**
- * Implementation of the {@link SequencerPort} interface.
+ * Implementation of the {@link SequencerMidiPort} interface.
  * @author Harald Postner <Harald at H-Postner.de>
  */
-class SequencerPortImpl implements SequencerPort {
+class RecorderPortImpl implements SequencerPort {
 
   public final AudioPort audioPort;
-  public final MidiSubSequencer subsequncer;
+  public final AudioRecorderSubSequencer subsequencer;
 
   /**
    * Creates an immutable combination of a given {@link AudioPort}
    * and a given {@link MidiSubSequencer}.
    * @param audioPort the audio-port on which the sub-sequencer operates.
-   * @param subsequncer the sub-sequencer operates that uses the given audio-port.
+   * @param subsequencer the sub-sequencer operates that uses the given audio-port.
    */
-  public SequencerPortImpl(AudioPort audioPort, MidiSubSequencer subsequncer) {
+  public RecorderPortImpl(AudioPort audioPort, AudioRecorderSubSequencer subsequencer) {
     this.audioPort = audioPort;
-    this.subsequncer = subsequncer;
+    this.subsequencer = subsequencer;
   }
 
   /**
@@ -46,39 +46,12 @@ class SequencerPortImpl implements SequencerPort {
     return audioPort;
   }
 
-  /**
-   * {@inheritDoc }
-   */
-  @Override
-  public void setTracks(Track[] tracks) {
-    subsequncer.setTracks(tracks);
-  }
 
-  /**
-   * {@inheritDoc }
-   */
-  @Override
-  public void send(MidiMessage message, double streamTime) {
-    subsequncer.send(message, streamTime);
-  }
-
-  @Override
-  public Track[] getTracks() {
-    return subsequncer.getTracks();
-  }
-
-  @Override
-  public void setMute(int trackIndex, boolean value) {
-    subsequncer.setMute(trackIndex,  value);
-  }
 
   @Override
   public void setMute(boolean value) {
-    subsequncer.setMute(value);
+    subsequencer.setMute(value);
   }
 
-  @Override
-  public void setAttenuation(int trackIndex, float value) {
-    subsequncer.setAttenuation(trackIndex,  value);
-  }
+
 }

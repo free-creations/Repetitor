@@ -19,6 +19,7 @@ package de.free_creations.microsequencer;
 import de.free_creations.midiutil.BeatPosition;
 import de.free_creations.midiutil.RPosition;
 import de.free_creations.midiutil.RPositionEx;
+import java.io.IOException;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
@@ -49,9 +50,10 @@ public interface MicroSequencer extends Sequencer {
   void addSequencerEventListener(SequencerEventListener listener);
 
   /**
-   * Removes the specified loop-event listener from this sequencer's list of 
+   * Removes the specified loop-event listener from this sequencer's list of
    * registered listeners, if in fact the listener is registered.
-   * @param listener 
+   *
+   * @param listener
    */
   void removeSequencerEventListener(SequencerEventListener listener);
 
@@ -93,9 +95,10 @@ public interface MicroSequencer extends Sequencer {
 
   /**
    * Sets the sequence that defines the timing of the tracks. The current
-   * implementation differs to the one specified in {@link Sequencer#setSequence(Sequence)}
-   * by the fact that the tracks are ignored. To make tracks play they must be
-   * added to a port that is obtained by {@link #createDefaultSynthesizerPort}
+   * implementation differs to the one specified in
+   * {@link Sequencer#setSequence(Sequence)} by the fact that the tracks are
+   * ignored. To make tracks play they must be added to a port that is obtained
+   * by {@link #createDefaultSynthesizerPort}
    *
    * @param sequence
    */
@@ -114,10 +117,10 @@ public interface MicroSequencer extends Sequencer {
    * duration of a tick in seconds is determined both by the tempo and by the
    * timing resolution stored in the Sequence.)
    *
-   * @param offset an offset in seconds that is added to the current time
-   * so the returned value is the position that will (probably) be reached
-   * in the given time. ("Probably" - because if a sudden tempo-factor change occurs
-   * within the given time interval, the estimation will be wrong.)
+   * @param offset an offset in seconds that is added to the current time so the
+   * returned value is the position that will (probably) be reached in the given
+   * time. ("Probably" - because if a sudden tempo-factor change occurs within
+   * the given time interval, the estimation will be wrong.)
    * @return the position in midi ticks.
    */
   public double getTickPosition(double offset);
@@ -133,7 +136,6 @@ public interface MicroSequencer extends Sequencer {
 //   */
 //  @Deprecated
 //  public BeatPosition getBeatPosition(double offset);
-
   /**
    * Translates a position in the loaded sequence given in Midi-Ticks into a
    * musical position expressed as measure and beat.
@@ -212,7 +214,9 @@ public interface MicroSequencer extends Sequencer {
    * rendered on this port.
    * @throws MidiUnavailableException if the port could not be created.
    */
-  public SequencerPort createDefaultSynthesizerPort(final String name, Soundbank soundbank) throws MidiUnavailableException;
+  public SequencerMidiPort createDefaultSynthesizerPort(final String name, Soundbank soundbank) throws MidiUnavailableException;
+
+  public SequencerPort createAudioRecorderPort(final String name) throws IOException, MidiUnavailableException;
 
   /**
    * Closes all ports and removes them from the process loop.
@@ -229,6 +233,4 @@ public interface MicroSequencer extends Sequencer {
   public double getMaxLoadAndClear();
 
   public double tickToEffectiveBPM(double tickPosition);
-
-
 }

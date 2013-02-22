@@ -48,12 +48,12 @@ class AudioPortImpl implements AudioPort {
   private float attn_f0 = 0F;
   private float attn_f1 = 1F - attn_f0;
   private float[] peakVu = new float[MAXCHANNELS];
-  private AtomicReference<Future<float[]>> processResult = new AtomicReference<Future<float[]>>(null);
-  private final AudioProducer audioProducer;
+  private AtomicReference<Future<float[]>> processResult = new AtomicReference<>(null);
+  private final AudioProcessor audioProcessor;
   private final ExecutorService executor;
 
-  AudioPortImpl(AudioProducer audioProducer, ExecutorService executor) {
-    this.audioProducer = audioProducer;
+  AudioPortImpl(AudioProcessor audioProducer, ExecutorService executor) {
+    this.audioProcessor = audioProducer;
     Arrays.fill(targetAttenuationVolt, 0.0F);
     Arrays.fill(targetAttenuationDecibel, 120F);
     this.executor = executor;
@@ -110,7 +110,7 @@ class AudioPortImpl implements AudioPort {
     }
   }
 
-  public void open(int samplingRate, int framesPerCycle, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
+  public void open(int samplingRate, int framesPerCycle, int inputChannelCount, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
     if (noninterleaved) {
       throw new IllegalArgumentException("This version is not able to handle noninterleaved channels.");
     }
@@ -123,21 +123,21 @@ class AudioPortImpl implements AudioPort {
 
     attn_f0 = (float) Math.exp(Math.log(0.5) / (samplingRate * RELAXATIONTIME));
     attn_f1 = 1F - attn_f0;
-    audioProducer.openOut(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+    audioProcessor.open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
   }
 
   public void start() {
     Arrays.fill(currentAttenuationVolt, 0F);
     processResult.lazySet(null);
-    audioProducer.startOut();
+    audioProcessor.start();
   }
 
   public void close() {
-    audioProducer.closeOut();
+    audioProcessor.close();
   }
 
-  public float[] process(double streamTime) throws Exception {
-    float[] outputArray = audioProducer.processOut(streamTime);
+  public float[] process(double streamTime, float[] input) throws Exception {
+    float[] outputArray = audioProcessor.process(streamTime, input);
     int i = 0;
     for (int frame = 0; frame < framesPerCycle; frame++) {
       for (int channel = 0; channel < outputChannelCount; channel++) {
@@ -153,7 +153,7 @@ class AudioPortImpl implements AudioPort {
   }
 
   void stop() {
-    audioProducer.stopOut();
+    audioProcessor.stop();
   }
 
   /**
@@ -175,12 +175,12 @@ class AudioPortImpl implements AudioPort {
     return executor;
   }
 
-  public void processLater(final double streamTime) {
+  public void processLater(final double streamTime, final float[] input) {
     class AudioProcess implements Callable<float[]> {
 
       @Override
       public float[] call() throws Exception {
-        return AudioPortImpl.this.process(streamTime);
+        return AudioPortImpl.this.process(streamTime, input);
       }
     }
     Future<float[]> futureResult = executor.submit(new AudioProcess());

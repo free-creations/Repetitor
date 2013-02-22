@@ -59,12 +59,12 @@ public class AudioRecorderSubSequencerTest {
   @Test
   public void testConstructor() throws Exception {
     System.out.println("testConstructor");
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
+    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
     System.out.println("...TempDir:" + instance.getTempDir());
   }
 
   /**
-   * Test of openOut method, of class AudioRecorderSubSequencer.
+   * Test of open method, of class AudioRecorderSubSequencer.
    */
   @Test
   @Ignore("OpenOut is empty")
@@ -72,7 +72,7 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Test of closeOut method, of class AudioRecorderSubSequencer.
+   * Test of close method, of class AudioRecorderSubSequencer.
    */
   @Test
   @Ignore("method is trivial")
@@ -80,7 +80,7 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Test of startOut method, of class AudioRecorderSubSequencer.
+   * Test of start method, of class AudioRecorderSubSequencer.
    */
   @Test
   @Ignore("method is empty")
@@ -88,7 +88,7 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Test of stopOut method, of class AudioRecorderSubSequencer.
+   * Test of stop method, of class AudioRecorderSubSequencer.
    */
   @Test
   @Ignore("method is empty")
@@ -96,7 +96,7 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Test of processOut method, of class AudioRecorderSubSequencer.
+   * Test of process method, of class AudioRecorderSubSequencer.
    * Specification: If the current mode of operations is "Replay", read samples
    * from the temp file.
    */
@@ -114,9 +114,9 @@ public class AudioRecorderSubSequencerTest {
     float[] audioArray = new float[audioArraySize];
     int bufferCount = fileSizeFloat / audioArraySize;
 
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
-    instance.openOut(samplingRate, nFrames, outputChannelCount, noninterleaved);
-    instance.openIn(samplingRate, nFrames, inputChannelCount, noninterleaved);
+    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+
 
     // write something to file
     instance.prepareSession(0, MasterSequencer.PlayingMode.RecordAudio);
@@ -142,7 +142,7 @@ public class AudioRecorderSubSequencerTest {
 
     long readStartTime = System.nanoTime();
     while (more) {
-      float[] producedSamples = instance.processOut(-1);
+      float[] producedSamples = instance.process(-1, null);
       for (float sample : producedSamples) {
         if (floatsRead < floatsWritten) {
           assertEquals(floatsRead, (long) sample);
@@ -213,7 +213,7 @@ public class AudioRecorderSubSequencerTest {
     int outputChannelCount = 2;
     boolean noninterleaved = false;
     // prepare an input file
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer();
+    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
     File inputFile = new File(instance.getTempFile());
         long mtfStart = System.nanoTime();
     long fileSizeFloat = makeTestFile(inputFile);
@@ -223,7 +223,7 @@ public class AudioRecorderSubSequencerTest {
     double fileDurationNano = (fileSizeFloat * 1E09) / (samplingRate * outputChannelCount);
 
     // read the file and check the audio buffer
-    instance.openOut(samplingRate, nFrames, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, 0, outputChannelCount, noninterleaved);
     instance.prepareSession(0, MasterSequencer.PlayingMode.Replay);
 
     Thread.sleep(100);
@@ -233,7 +233,7 @@ public class AudioRecorderSubSequencerTest {
     float floatCout = 0;
     long startTime = System.nanoTime();
     while (more) {
-      float[] audioArray = instance.processOut(-1);
+      float[] audioArray = instance.process(-1, null);
       for (float sample : audioArray) {
         if (floatCout < fileSizeFloat) {
           //   assertEquals(floatsRead, (long) sample); slows down to much
@@ -287,7 +287,7 @@ public class AudioRecorderSubSequencerTest {
   private long makeTestFile(File file) throws FileNotFoundException, IOException {
 
     // limit the file to one buffer. So to aviod buffer underruns when no audio real processing is done.
-    long fileSizeFloat = AudioReader.defaultFileBufferSizeByte / AudioReader.bytesPerFloat;
+    long fileSizeFloat = AudioReader.defaultFileBufferSizeByte / (AudioReader.bytesPerFloat *10);
 
     FileOutputStream outFile = new FileOutputStream(file);
     try (FileChannel outChannel = outFile.getChannel()) {

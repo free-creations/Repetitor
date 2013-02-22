@@ -26,10 +26,10 @@ import javax.sound.midi.MidiUnavailableException;
 import rtaudio4java.AudioProcessor_Float32;
 
 /**
- * The audio-mixer takes several steams of audio data
- * (form several {@link AudioPort audioPorts}) and adds them together
- * into one stream which is than output through the sound-card.
- * 
+ * The audio-mixer takes several steams of audio data (form several
+ * {@link AudioPort audioPorts}) and adds them together into one stream which is
+ * than output through the sound-card.
+ *
  */
 class AudioMixer extends AudioProcessor_Float32 {
 
@@ -38,10 +38,10 @@ class AudioMixer extends AudioProcessor_Float32 {
   private volatile int samplingRate;
   private volatile int framesPerCycle;
   private volatile int outputChannelCount;
+  private volatile int inputChannelCount;
   private volatile boolean noninterleaved;
   private volatile boolean streamStarted = false;
   private volatile double maxLoad;
-
 
   class ProcessThreadFactory implements ThreadFactory {
 
@@ -60,7 +60,6 @@ class AudioMixer extends AudioProcessor_Float32 {
   private final CopyOnWriteArrayList<AudioPortImpl> audioPorts = new CopyOnWriteArrayList<AudioPortImpl>();
   private final MasterSequencer masterSequencer;
 
-
   AudioMixer(MasterSequencer masterSequencer) {
     if (masterSequencer == null) {
       throw new IllegalArgumentException("argument \"sequencer\" is null.");
@@ -72,13 +71,14 @@ class AudioMixer extends AudioProcessor_Float32 {
   @Override
   public void onOpenStream(int samplingRate,
           int framesPerCycle,
-          int notUsed,
+          int inputChannelCount,
           int outputChannelCount,
           boolean noninterleaved) throws Throwable {
 
     this.samplingRate = samplingRate;
     this.framesPerCycle = framesPerCycle;
     this.outputChannelCount = outputChannelCount;
+    this.inputChannelCount = inputChannelCount;
     this.noninterleaved = noninterleaved;
 
     cycleLength = (double) framesPerCycle / (double) samplingRate;
@@ -87,7 +87,7 @@ class AudioMixer extends AudioProcessor_Float32 {
 
     ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
     while (portIter.hasNext()) {
-      portIter.next().open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+      portIter.next().open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
     }
     streamOpen = true;
   }
@@ -125,13 +125,13 @@ class AudioMixer extends AudioProcessor_Float32 {
   }
 
   @Override
-  public float[] process(float[] notUsed, double streamTime, int status) throws InterruptedException, ExecutionException {
+  public float[] process(float[] input, double streamTime, int status) throws InterruptedException, ExecutionException {
     long startNano = System.nanoTime();
     masterSequencer.prepareCycle(streamTime, cycleLength);
 
 
     for (AudioPortImpl audioPort : audioPorts) {
-      audioPort.processLater(streamTime);
+      audioPort.processLater(streamTime, input);
     }
 
     Arrays.fill(resultBuffer, 0F);
@@ -139,8 +139,10 @@ class AudioMixer extends AudioProcessor_Float32 {
     for (AudioPortImpl audioPort : audioPorts) {
 
       float[] producerBuffer = audioPort.getProcessResult();
-      for (int i = 0; i < resultBuffer.length; i++) {
-        resultBuffer[i] += producerBuffer[i];
+      if (producerBuffer != null) {
+        for (int i = 0; i < resultBuffer.length; i++) {
+          resultBuffer[i] += producerBuffer[i];
+        }
       }
     }
     long elapseNano = System.nanoTime() - startNano;
@@ -149,10 +151,10 @@ class AudioMixer extends AudioProcessor_Float32 {
     return resultBuffer;
   }
 
-  public AudioPort createPort(AudioProducer producer, ExecutorService executorService) throws MidiUnavailableException {
+  public AudioPort createPort(AudioProcessor producer, ExecutorService executorService) throws MidiUnavailableException {
     AudioPortImpl port = new AudioPortImpl(producer, executorService);
     if (streamOpen) {
-      port.open(samplingRate, framesPerCycle, outputChannelCount, noninterleaved);
+      port.open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
     }
     if (streamStarted) {
       port.start();
@@ -176,6 +178,4 @@ class AudioMixer extends AudioProcessor_Float32 {
     maxLoad = 0D;
     return result;
   }
-
-
 }

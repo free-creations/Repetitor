@@ -18,6 +18,7 @@ package de.free_creations.microsequencer;
 
 import com.sun.media.sound.AudioSynthesizer;
 import com.sun.media.sound.SoftSynthesizer;
+import de.free_creations.microsequencer.MasterSequencer.SubSequencer;
 import de.free_creations.midiutil.InitializationList;
 import de.free_creations.midiutil.MidiUtil;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
@@ -45,35 +46,33 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 
 /**
- * A sub-sequencer steers one synthesiser. The events of all the tracks 
- * attached to one sub-sequencer are fed to the synthesiser.
- * <h2>Implementation assumptions</h2>
- * openOut() is executed before series of processOut() are invoked.
- * When playing: every processOut() is preceded by prepareNormalCycle() or prepareLoopEndCycle().
- * Once prepareSession() or prepareLoopEndCycle() has executed the values of
- * "thisCycleStartTick" and "nextCycleStartTick" passed in "prepareNormalCycle()"
- * are monotonically increasing.
- * <h2>Threading</h2>
- * The functions openOut(), closeOut(), prepareLoopEndCycle(), processOut() are synchronised
- * by the "processLock". Access to the tracks are synchronised  by
- * the "trackLock" and by the fact that once started, the active-tracks
- * cannot (should not??) change anymore.
+ * A sub-sequencer steers one synthesiser. The events of all the tracks attached
+ * to one sub-sequencer are fed to the synthesiser. <h2>Implementation
+ * assumptions</h2> open() is executed before series of process() are
+ * invoked. When playing: every process() is preceded by prepareNormalCycle()
+ * or prepareLoopEndCycle(). Once prepareSession() or prepareLoopEndCycle() has
+ * executed the values of "thisCycleStartTick" and "nextCycleStartTick" passed
+ * in "prepareNormalCycle()" are monotonically increasing. <h2>Threading</h2>
+ * The functions open(), close(), prepareLoopEndCycle(), process() are
+ * synchronised by the "processLock". Access to the tracks are synchronised by
+ * the "trackLock" and by the fact that once started, the active-tracks cannot
+ * (should not??) change anymore.
+ *
  * @author Harald Postner <Harald at H-Postner.de>
- * @Note the prepareLoopEndCycle seems send events that are beyond the 
- * end of the loop. To be investigated...
+ * @Note the prepareLoopEndCycle seems send events that are beyond the end of
+ * the loop. To be investigated...
  */
-class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProducer {
-  static final private Logger logger = Logger.getLogger(MidiSubSequencer.class.getName());
+class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcessor {
 
+  static final private Logger logger = Logger.getLogger(MidiSubSequencer.class.getName());
   private final Object trackLock = new Object();
   private final Object processLock = new Object();
   private final String name;
   /**
-   * changes in volume (in attenuation) should not be
-   * effectuated from one frame to the next, because this would
-   * produce ugly cracking sounds. Instead the current attenuation will
-   * exponentially reach its target value. The time this takes is defined by
-   * the RELAXATIONTIME constant (in seconds).
+   * changes in volume (in attenuation) should not be effectuated from one frame
+   * to the next, because this would produce ugly cracking sounds. Instead the
+   * current attenuation will exponentially reach its target value. The time
+   * this takes is defined by the RELAXATIONTIME constant (in seconds).
    */
   private final double RELAXATIONTIME = 0.1; // in seconds
   private boolean stopping = false;
@@ -98,17 +97,16 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    */
   private final Soundbank soundbank;
   /**
-   * A synthMidiReceiver of the synthesiser that shall receive the midi instructions.
+   * A synthMidiReceiver of the synthesiser that shall receive the midi
+   * instructions.
    */
   private final Receiver synthMidiReceiver;
   /**
-   * The Midi-tick position in the tracks at the startOut of the current
-   * cycle.
+   * The Midi-tick position in the tracks at the start of the current cycle.
    */
   private double thisCycleStartTick = 0D;
   /**
-   * The Midi-tick position in the tracks at the startOut of the next
-   * cycle.
+   * The Midi-tick position in the tracks at the start of the next cycle.
    */
   private double nextCycleStartTick = 0D;
   /**
@@ -116,7 +114,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    */
   private Track[] activeTracks = new Track[]{};
   /**
-   * The Tracks that should be played when the MidiSubSequencer starts for the next time.
+   * The Tracks that should be played when the MidiSubSequencer starts for the
+   * next time.
    */
   private Track[] tracks = new Track[]{};
   /**
@@ -124,34 +123,35 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    */
   private boolean[] activeMute = new boolean[]{};
   /**
-   * Indicates which tracks (out of tracks) should stay mute when the MidiSubSequencer starts for the next time.
+   * Indicates which tracks (out of tracks) should stay mute when the
+   * MidiSubSequencer starts for the next time.
    */
   private boolean[] mute = new boolean[]{};
   /**
    * the mapping between synthesiser-time and Midi ticks, that should be applied
    * at the beginning of the current cycle. If the end of the loop lies within
-   * the current cycle we need also a second time-map, see timeMap_2 for more detail.
+   * the current cycle we need also a second time-map, see timeMap_2 for more
+   * detail.
    */
   private TimeMap timeMap_1;
   /**
-   * This parameter is only relevant if the end of the loop lies within
-   * the current cycle. In this case timeMap_2 gives the mapping between 
-   * synthesiser-time and Midi ticks, that should be applied
-   * after the cursor has jumped back to the beginning of the loop. 
-   * A null value indicates that the midi sequence can be traversed 
-   * sequentially without jumping backwards.
+   * This parameter is only relevant if the end of the loop lies within the
+   * current cycle. In this case timeMap_2 gives the mapping between
+   * synthesiser-time and Midi ticks, that should be applied after the cursor
+   * has jumped back to the beginning of the loop. A null value indicates that
+   * the midi sequence can be traversed sequentially without jumping backwards.
    */
   private TimeMap timeMap_2;
   /**
-   * This parameter is only relevant if the end of the loop lies within
-   * the current cycle. In this case it indicates where to restart once
-   * loopEndTick has been reached.
+   * This parameter is only relevant if the end of the loop lies within the
+   * current cycle. In this case it indicates where to restart once loopEndTick
+   * has been reached.
    */
   private double loopStartTick;
   /**
-   * This parameter is only relevant if the end of the loop lies within
-   * the current cycle. In this case it indicates how far we shall go until we
-   * are jumping back loopStartTick.
+   * This parameter is only relevant if the end of the loop lies within the
+   * current cycle. In this case it indicates how far we shall go until we are
+   * jumping back loopStartTick.
    */
   private double loopEndTick;
   private ArrayList<Integer> nextTrackEventToProcess = new ArrayList<>();
@@ -164,17 +164,19 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    */
   private double cycleDuration;
   /**
-   * The NIO-Byte-buffer will be used to cast a stream of bytes into a stream of floats.
+   * The NIO-Byte-buffer will be used to cast a stream of bytes into a stream of
+   * floats.
    */
   private ByteBuffer soundByteBuffer;
   /**
-   * The NIO-Float-buffer will be mapped onto above Byte buffer and will be used to retrieve the floats.
+   * The NIO-Float-buffer will be mapped onto above Byte buffer and will be used
+   * to retrieve the floats.
    */
   private FloatBuffer soundFloatBuffer;
   /**
    * The byte array will be used to write the stream of bytes.
    */
-  private byte[] soundByteArray;  
+  private byte[] soundByteArray;
   /**
    * The float array will be used to read above bytes as floats.
    */
@@ -203,10 +205,12 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
           new LinkedBlockingQueue<>();
 
   /**
-   * Create a new MidiSubSequencer. The Midi events will be rendered on a 
-   * new synthesiser using the given sound-bank.
+   * Create a new MidiSubSequencer. The Midi events will be rendered on a new
+   * synthesiser using the given sound-bank.
+   *
    * @param name a name for this MidiSubSequencer
-   * @param soundbank the sound-bank that the synthesiser shall use (may be null)
+   * @param soundbank the sound-bank that the synthesiser shall use (may be
+   * null)
    * @throws MidiUnavailableException
    */
   public MidiSubSequencer(final String name, Soundbank soundbank) throws MidiUnavailableException {
@@ -219,10 +223,12 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   /**
    * Create a new MidiSubSequencer that will render Midi events on the given
    * synthesiser using the given sound-bank.
+   *
    * @param name a name for this MidiSubSequencer.
    * @param synthesizer the synthesiser that shall render the Midi events.
-   * @param soundbank the sound-bank that the synthesiser shall use (may be null)
-   * @throws MidiUnavailableException 
+   * @param soundbank the sound-bank that the synthesiser shall use (may be
+   * null)
+   * @throws MidiUnavailableException
    */
   MidiSubSequencer(final String name, AudioSynthesizer synthesizer, Soundbank soundbank) throws MidiUnavailableException {
     this.name = name;
@@ -232,32 +238,37 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Builds a factory object that provides this implementation
-   * as sub-sequencer.
+   * Builds a factory object that provides this implementation as sub-sequencer.
+   *
    * @return a factory that can make sub-sequencer objects.
    */
   public static MasterSequencer.SubSequencerFactory getFactory() {
     MasterSequencer.SubSequencerFactory newFactory =
             new MasterSequencer.SubSequencerFactory() {
-
               @Override
               public MasterSequencer.MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
                 return new MidiSubSequencer(name, soundbank);
+              }
+
+              @Override
+              public SubSequencer makeAudioRecorder(String name) {
+                throw new UnsupportedOperationException("Cannot make an audio recorder.");
               }
             };
     return newFactory;
   }
 
   @Override
-  public void startOut() {
+  public void start() {
   }
 
   @Override
-  public void stopOut() {
+  public void stop() {
   }
 
   /**
    * send an "all sounds off" message to all channels.
+   *
    * @param synthesizerTime the point in time (in the synthesizers time space,
    * expressed in seconds) when the synthesizer should execute the message.
    */
@@ -276,27 +287,33 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
 
   /**
    * Mute (or un-mute) an individual track. The muting will take place only at
-   * the next startOut.
+   * the next start.
+   *
    * @TODO this should be activable at any time...
-   * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[]) }
-   * @param value true - the track should remain quiet, false the track produces sound.
+   * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[])
+   * }
+   * @param value true - the track should remain quiet, false the track produces
+   * sound.
    */
   void setMute(int trackIndex, boolean value) {
     mute[trackIndex] = value;
   }
 
   /**
-   * Mute (or un-mute) the whole sub-sequencer. 
-   * @param value true - all tracks should remain quiet, false - the track 
-   * may produce sound (tracks that have been muted individually must stay mute).
+   * Mute (or un-mute) the whole sub-sequencer.
+   *
+   * @param value true - all tracks should remain quiet, false - the track may
+   * produce sound (tracks that have been muted individually must stay mute).
    */
   void setMute(boolean value) {
     System.out.println("Not yet implemented SubSequencer.setAttenuation");
   }
 
   /**
-   * Set the attenuation of an individual track. 
-   * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[]) }
+   * Set the attenuation of an individual track.
+   *
+   * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[])
+   * }
    * @param value the value in decibels
    */
   void setAttenuation(int trackIndex, float value) {
@@ -304,12 +321,14 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Sends a MIDI message to the attached synthesiser. The timestamp
-   * is given relative to the current time of the Audio-System.
-   * If the given streamTime is negative, the sequencer will do the
-   * its best effort to send the message as soon as possible.
+   * Sends a MIDI message to the attached synthesiser. The timestamp is given
+   * relative to the current time of the Audio-System. If the given streamTime
+   * is negative, the sequencer will do the its best effort to send the message
+   * as soon as possible.
+   *
    * @param message the MIDI message to send.
-   * @param streamTime the stream-time in seconds when the message should be processed
+   * @param streamTime the stream-time in seconds when the message should be
+   * processed
    * @throws IllegalStateException if the subSequencer is closed.
    */
   public void send(MidiMessage message, double streamTime) {
@@ -320,7 +339,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Sets the tracks that will be played on the next startOut.
+   * Sets the tracks that will be played on the next start.
+   *
    * @param tracks
    */
   public void setTracks(Track[] tracks) {
@@ -337,17 +357,16 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Activate the playback of the attached tracks.
-   * This function resets the pointers to the beginning of the
-   * tracks. Thus once this function has executed, the MidiSubSequencer assumes
-   * that the values of
-   * "thisCycleStartTick" and "nextCycleStartTick" passed in "prepareLoopEndCycle()"
-   * are monotonically increasing.
+   * Activate the playback of the attached tracks. This function resets the
+   * pointers to the beginning of the tracks. Thus once this function has
+   * executed, the MidiSubSequencer assumes that the values of
+   * "thisCycleStartTick" and "nextCycleStartTick" passed in
+   * "prepareLoopEndCycle()" are monotonically increasing.
    */
   @Override
   public void prepareSession(double startTick, MasterSequencer.PlayingMode mode) {
     synchronized (trackLock) {
-      logger.log(Level.FINER, "{0}:preparePlaying({1})",new Object[]{name,startTick});
+      logger.log(Level.FINER, "{0}:preparePlaying({1})", new Object[]{name, startTick});
       activeTracks = Arrays.copyOf(tracks, tracks.length);
       activeMute = Arrays.copyOf(mute, mute.length);
       resetTrackEventsToProcess();
@@ -358,15 +377,15 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * This function shall be called before starting the rendering of 
-   * the attached tracks.
-   * The function goes through all attached tracks and searches for 
-   * controller events that lay before the starting position 
-   * but should nevertheless be send
-   * to the sequencer.
-   * @param startPosition the midi tick in the sequence where we are starting rendering
-   * @param synthesizerTime the time in seconds when the synthesizer should excute
-   * the initialization.
+   * This function shall be called before starting the rendering of the attached
+   * tracks. The function goes through all attached tracks and searches for
+   * controller events that lay before the starting position but should
+   * nevertheless be send to the sequencer.
+   *
+   * @param startPosition the midi tick in the sequence where we are starting
+   * rendering
+   * @param synthesizerTime the time in seconds when the synthesizer should
+   * excute the initialization.
    */
   private void initializeControllers(double startPosition, double synthesizerTime) {
     // first reset all controllers on all channels
@@ -400,8 +419,9 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
 
   /**
    * This function is called by the Processor for every cycle.
-   * @param streamTime the time in seconds of the audio stream at the startOut of
-   * this cycle.
+   *
+   * @param streamTime the time in seconds of the audio stream at the start
+   * of this cycle.
    * @param targetAttenuation the volume of the output signal (0.0 is silence,
    * 1.0 is full volume)
    * @return the audio output for the next cycle.
@@ -409,7 +429,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
    * @throws IllegalStateException if the subSequencer is closed.
    */
   @Override
-  public float[] processOut(double streamTime) throws IOException, IllegalStateException {
+  public float[] process(double streamTime, float[] input) throws IOException, IllegalStateException {
     synchronized (processLock) {
       if (!opened) {
         throw new IllegalStateException("Cannot process in closed state.");
@@ -442,7 +462,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
       //cast to float
       soundByteBuffer.clear();
       soundByteBuffer.put(soundByteArray);
-      soundFloatBuffer.rewind();
+      soundFloatBuffer.clear();
       soundFloatBuffer.get(soundFloatArray);
 
 
@@ -456,7 +476,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   @Override
-  public void openOut(int samplingRate, int framesPerCycle, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
+  public void open(int samplingRate, int framesPerCycle, int inputChannelCount, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
 
     if (noninterleaved) {
       throw new RuntimeException("Oops..., this version is not able to handle noninterleaved channels.");
@@ -474,14 +494,14 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
       soundByteBuffer = ByteBuffer.allocateDirect(byteLenght);
       soundByteBuffer.order(ByteOrder.nativeOrder());
       soundFloatBuffer = soundByteBuffer.asFloatBuffer();
-      
+
       soundByteArray = new byte[byteLenght];
-      Arrays.fill(soundByteArray, (byte)0);      
-      
+      Arrays.fill(soundByteArray, (byte) 0);
+
       soundFloatArray = new float[floatLength];
       Arrays.fill(soundFloatArray, 0F);
-      
-      
+
+
       //use big endian order if this is the native order.
       boolean useBigEndian = (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
       AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_FLOAT, samplingRate, 32, outputChannelCount, 4 * outputChannelCount, samplingRate, useBigEndian); // ...............bigEndian        - indicates whether the data for a single sample is stored in big-endian byte order
@@ -506,7 +526,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   @Override
-  public void closeOut() {
+  public void close() {
     synchronized (processLock) {
       synthesizer.close();
       opened = false;
@@ -560,8 +580,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Inspect the attached tracks and send all events related to this cycle to the
-   * synthesiser.
+   * Inspect the attached tracks and send all events related to this cycle to
+   * the synthesiser.
    */
   private void sendTrackEvents() {
     double upperLimit_1 = nextCycleStartTick;
@@ -580,13 +600,15 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Inspect the attached tracks and send all events laying
-   * between the given limits.
+   * Inspect the attached tracks and send all events laying between the given
+   * limits.
+   *
    * @param lowerTickLimit events below this limit are not send.
    * @param upperTickLimit events below this limit are send.
-   * @param timeMap the time-map that shall be used to convert midi ticks into real seconds
-   * @param  lowerSynthesizerTime the synthesiser time-position corresponding
-   * to the lower-limit-tick
+   * @param timeMap the time-map that shall be used to convert midi ticks into
+   * real seconds
+   * @param lowerSynthesizerTime the synthesiser time-position corresponding to
+   * the lower-limit-tick
    */
   private void sendTrackEvents(double lowerTickLimit, double upperTickLimit,
           TimeMap timeMap, double lowerSynthesizerTime) {
@@ -605,19 +627,21 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Send a specific event to the synthesiser. The event is identified
-   * by its index in a specific track. Before sending the event to the
-   * synthesiser, this function verifies whether the event lays in between
-   * the lower and upper tick limit. Only events that lay in this interval are
-   * send to the synthesiser. If the event should be considered for a future
-   * cycle, this is flagged by returning true.
+   * Send a specific event to the synthesiser. The event is identified by its
+   * index in a specific track. Before sending the event to the synthesiser,
+   * this function verifies whether the event lays in between the lower and
+   * upper tick limit. Only events that lay in this interval are send to the
+   * synthesiser. If the event should be considered for a future cycle, this is
+   * flagged by returning true.
+   *
    * @param eventIdx the index of the event in the track.
    * @param trackIdx the index of the track.
    * @param lowerTickLimit events below this limit are not send.
    * @param upperTickLimit events below this limit are send.
-   * @param timeMap the time-map that shall be used to convert midi ticks into real seconds
-   * @param lowerSynthesizerTime the synthesiser time-position corresponding
-   * to the lower-limit-tick
+   * @param timeMap the time-map that shall be used to convert midi ticks into
+   * real seconds
+   * @param lowerSynthesizerTime the synthesiser time-position corresponding to
+   * the lower-limit-tick
    * @return true if the event should be considered in a later cycle.
    */
   private boolean sendTrackEvent(int eventIdx, int trackIdx,
@@ -625,8 +649,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
           TimeMap timeMap, double lowerSynthesizerTime) {
 
     if (eventIdx >= activeTracks[trackIdx].size()) {
-      // although there are no more events to processOut,
-      // we return true to indicate that we can stopOut to search for more 
+      // although there are no more events to process,
+      // we return true to indicate that we can stop to search for more 
       // events in *this* cycle.
       return true;
     }
@@ -645,8 +669,9 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
   }
 
   /**
-   * Sends the queued messages to the synthesiser. Messages who's timestamp
-   * is after the current cycle's end are not send but re-queued.
+   * Sends the queued messages to the synthesiser. Messages who's timestamp is
+   * after the current cycle's end are not send but re-queued.
+   *
    * @param cycleEndStreamTime the stream-time when the cycle ends (in seconds)
    * @param offsetTime the offset between stream-time and synthesiser-time.
    */
@@ -680,7 +705,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
 
   /**
    * Creates a "resest all controller" Midi message.
-   * @param channel the Midi channel 
+   *
+   * @param channel the Midi channel
    * @return a "resest all controller" Midi message for the given Midi channel.
    */
   private MidiMessage createResetAllControllersMessage(int channel) {
@@ -689,7 +715,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProduce
       message.setMessage(
               ShortMessage.CONTROL_CHANGE, //command,
               channel, //channel,
-//              MidiUtil.contAllControllersOff, //data2)
+              //              MidiUtil.contAllControllersOff, //data2)
               MidiUtil.contAllNotesOff, //data2)
               0);//data2)
     } catch (InvalidMidiDataException ex) {

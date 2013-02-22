@@ -16,24 +16,25 @@
  */
 package de.free_creations.microsequencer;
 
-import java.util.concurrent.ExecutorService;
-import javax.sound.midi.ShortMessage;
 import de.free_creations.microsequencer.MasterSequencer.MidiSubSequencer;
+import de.free_creations.microsequencer.MasterSequencer.SubSequencer;
 import de.free_creations.midiutil.BeatPosition;
+import de.free_creations.midiutil.TempoTrack;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
+import de.free_creations.midiutil.TimeSignatureTrack;
+import java.io.IOException;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
-import de.free_creations.midiutil.TempoTrack;
-import de.free_creations.midiutil.TimeSignatureTrack;
+import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Track;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -66,7 +67,7 @@ public class MasterSequencerImplTest {
   @Test
   public void testTickToEffectiveBPM() throws InvalidMidiDataException {
     System.out.println("testTickToEffectiveBPM");
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     //if no tempo track, it should always report the default tempo of 120 BPM.
     assertEquals(120D, instance.tickToEffectiveBPM(123D), 1E-9D);
 
@@ -95,7 +96,7 @@ public class MasterSequencerImplTest {
   @Test
   public void testGetTickPosition() {
     System.out.println("testGetTickPosition");
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     //if no tempo track, it should always report to be at position zero.
     assertEquals(0D, instance.getCurrentTickPosition(123D), 1E-9D);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
@@ -127,7 +128,7 @@ public class MasterSequencerImplTest {
   @Test
   public void testGetTickPositionWithTempoFactor() {
     System.out.println("testGetTickPositionWithTempoFactor");
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     instance.setTempoFactor(2D);
     //if no tempo track, it should always report to be at position zero.
     assertEquals(0D, instance.getCurrentTickPosition(123D), 1E-9D);
@@ -157,7 +158,7 @@ public class MasterSequencerImplTest {
   @Test
   public void testGetBeatPosition() {
     System.out.println("testGetBeatPosition");
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     //if no tempo track, it should always report to be at measure 0 in beat 0
     BeatPosition position = instance.getCurrentBeatPosition(123);
     assertEquals(0, position.getMeasure());
@@ -209,7 +210,7 @@ public class MasterSequencerImplTest {
   @Test
   public void testGetBeatPosition2() throws InvalidMidiDataException {
     System.out.println("testGetBeatPosition2");
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     Sequence sequence = new Sequence(Sequence.PPQ, 360, 16);
 
     Track[] newTracks = sequence.getTracks();
@@ -272,7 +273,7 @@ public class MasterSequencerImplTest {
     System.out.println("testSequentialProcessing");
 
     //create a test-candidate and add the sequence created in the initialize() step
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
     SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
@@ -318,7 +319,7 @@ public class MasterSequencerImplTest {
     System.out.println("testLoopingProcessing_1");
 
     //create a test-candidate and add the sequence created in the initialize() step
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
     SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
@@ -374,7 +375,7 @@ public class MasterSequencerImplTest {
     System.out.println("testLoopingProcessingLoopCount()");
 
     //create a test-candidate and add the sequence created in the initialize() step
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
     instance.setMasterTrack(tempoTrack, timeSignatureTrack, tickLength);
 
     SubsequencerMock subsequencer = (SubsequencerMock) instance.createMidiSubSequencer(null, null);
@@ -440,7 +441,7 @@ public class MasterSequencerImplTest {
     System.out.println("testCycleLength_1()");
 
     //create a test-candidate and a sequence
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
 
     Sequence sequence = new Sequence(Sequence.PPQ, 360, 16);
     Track[] newTracks = sequence.getTracks();
@@ -486,7 +487,7 @@ public class MasterSequencerImplTest {
     System.out.println("testCycleLength_2()");
 
     //create a test-candidate and a sequence
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
 
     Sequence sequence = new Sequence(Sequence.PPQ, 360, 16);
     Track[] newTracks = sequence.getTracks();
@@ -536,7 +537,7 @@ public class MasterSequencerImplTest {
     System.out.println("testCycleLength_3()");
 
     //create a test-candidate and a sequence
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
 
     Sequence sequence = new Sequence(Sequence.PPQ, 360, 16);
     Track[] newTracks = sequence.getTracks();
@@ -584,7 +585,7 @@ public class MasterSequencerImplTest {
     System.out.println("testLoopingProcessingLoopCount()");
 
     //create a test-candidate and a sequence
-    MasterSequencerImpl instance = new MasterSequencerImpl(SubsequencerMockFactory);
+    MasterSequencerImpl instance = new MasterSequencerImpl(MidiSubsequencerMockFactory, null);
 
     Sequence sequence = new Sequence(Sequence.PPQ, 360, 16);
     Track[] newTracks = sequence.getTracks();
@@ -766,11 +767,16 @@ public class MasterSequencerImplTest {
       started = false;
     }
   }
-  private MasterSequencer.SubSequencerFactory SubsequencerMockFactory =
+  private MasterSequencer.SubSequencerFactory MidiSubsequencerMockFactory =
           new MasterSequencer.SubSequencerFactory() {
             @Override
             public MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
               return new SubsequencerMock();
+            }
+
+            @Override
+            public SubSequencer makeAudioRecorder(String name) throws IOException {
+              throw new RuntimeException("Not allowed.");
             }
           };
 }

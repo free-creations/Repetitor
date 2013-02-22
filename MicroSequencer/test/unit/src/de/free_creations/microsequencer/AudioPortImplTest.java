@@ -76,35 +76,35 @@ public class AudioPortImplTest {
     }
 
     /**
-     * Test of openOut method, of class AudioPortImpl.
+     * Test of open method, of class AudioPortImpl.
      */
     @Test
     public void testOpen() throws Exception {
     }
 
     /**
-     * Test of startOut method, of class AudioPortImpl.
+     * Test of start method, of class AudioPortImpl.
      */
     @Test
     public void testStart() {
     }
 
     /**
-     * Test of closeOut method, of class AudioPortImpl.
+     * Test of close method, of class AudioPortImpl.
      */
     @Test
     public void testClose() {
     }
 
     /**
-     * Test of processOut method, of class AudioPortImpl.
+     * Test of process method, of class AudioPortImpl.
      */
     @Test
     public void testProcess() throws Exception {
     }
 
     /**
-     * Test of stopOut method, of class AudioPortImpl.
+     * Test of stop method, of class AudioPortImpl.
      */
     @Test
     public void testStop() {
@@ -128,30 +128,30 @@ public class AudioPortImplTest {
 
     }
 
-    private class TestAudioProducer implements AudioProducer {
+    private class TestAudioProducer implements AudioProcessor {
 
         @Override
-        public void openOut(int samplingRate, int nFrames, int outputChannelCount, boolean noninterleaved)  {
+        public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved)  {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void closeOut() {
+        public void close() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void startOut() {
+        public void start() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void stopOut() {
+        public void stop() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public float[] processOut(double streamTime) throws Exception {
+        public float[] process(double streamTime, float[] input) throws Exception {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

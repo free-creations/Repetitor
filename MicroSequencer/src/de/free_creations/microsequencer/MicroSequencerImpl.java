@@ -29,8 +29,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.midi.*;
-import rtaudio4java.AudioSystem.StreamParameters;
 import rtaudio4java.*;
+import rtaudio4java.AudioSystem.StreamParameters;
 
 /**
  *
@@ -45,12 +45,11 @@ class MicroSequencerImpl implements MicroSequencer {
   private int provideExecutorCount = 0;
   private boolean opened = false;
   private final MasterSequencer masterSequencer =
-          new MasterSequencerImpl(MidiSubSequencer.getFactory());
+          new MasterSequencerImpl(MidiSubSequencer.getFactory(),AudioRecorderSubSequencer.getFactory());
   private final AudioMixer audioMixer = new AudioMixer(masterSequencer);
   private AudioSystem audioSystem;
-  private final List<ExecutorService> executors = new ArrayList<ExecutorService>();
+  private final List<ExecutorService> executors = new ArrayList<>();
   private final ThreadFactory threadFactory = new ThreadFactory() {
-
     private int threadCount = 0;
 
     @Override
@@ -77,7 +76,7 @@ class MicroSequencerImpl implements MicroSequencer {
   /**
    * Starts playback of the MIDI data in the currently loaded sequence. Playback
    * will begin from the current position. Loop handling is not implemented, so
-   * playback will continue to play to the end of the sequence and then stopOut.
+   * playback will continue to play to the end of the sequence and then stop.
    */
   @Override
   public void start() {
@@ -97,8 +96,9 @@ class MicroSequencerImpl implements MicroSequencer {
 
   /**
    * Indicates whether the Sequencer is currently running. The default is false.
-   * The Sequencer starts running when either startOut() is called. isRunning then
-   * returns true until playback of the sequence completes or stopOut() is called.
+   * The Sequencer starts running when either start() is called. isRunning
+   * then returns true until playback of the sequence completes or stop() is
+   * called.
    *
    * @return true if the Sequencer is running, otherwise false
    */
@@ -219,9 +219,9 @@ class MicroSequencerImpl implements MicroSequencer {
 
   /**
    * Sets the sequencer position in MIDI ticks. At the next invocation of
-   * startOut(), the sequencer will startOut from this position.
+   * start(), the sequencer will start from this position.
    *
-   * @param tick the tick to startOut from.
+   * @param tick the tick to start from.
    */
   @Override
   public void setTickPosition(long tick) {
@@ -230,9 +230,9 @@ class MicroSequencerImpl implements MicroSequencer {
 
   /**
    * Sets the sequencer position in MIDI ticks. At the next invocation of
-   * startOut(), the sequencer will startOut from this position.
+   * start(), the sequencer will start from this position.
    *
-   * @param tick the tick to startOut from.
+   * @param tick the tick to start from.
    */
   @Override
   public void setTickPosition(double tick) {
@@ -248,12 +248,12 @@ class MicroSequencerImpl implements MicroSequencer {
    * sequence. The starting point must be lower than or equal to the ending
    * point, and it must fall within the size of the loaded sequence.
    *
-   * A sequencer's loop startOut point defaults to startOut of the sequence.
+   * A sequencer's loop start point defaults to start of the sequence.
    *
    * @param tick the loop's starting position, in MIDI ticks (zero-based)
-   * @throws IllegalArgumentException if the requested loop startOut point cannot
-   * be set, usually because it falls outside the sequence's duration or because
-   * the startOut point is after the end point
+   * @throws IllegalArgumentException if the requested loop start point
+   * cannot be set, usually because it falls outside the sequence's duration or
+   * because the start point is after the end point
    */
   @Override
   public void setLoopStartPoint(long tick) {
@@ -261,9 +261,9 @@ class MicroSequencerImpl implements MicroSequencer {
   }
 
   /**
-   * Obtains the startOut position of the loop, in MIDI ticks.
+   * Obtains the start position of the loop, in MIDI ticks.
    *
-   * @return the startOut position of the loop, in MIDI ticks (zero-based)
+   * @return the start position of the loop, in MIDI ticks (zero-based)
    */
   @Override
   public long getLoopStartPoint() {
@@ -646,7 +646,7 @@ class MicroSequencerImpl implements MicroSequencer {
 
   /**
    * Sets the number of repetitions of the loop for playback. When the playback
-   * position reaches the loop end point, it will loop back to the loop startOut
+   * position reaches the loop end point, it will loop back to the loop start
    * point count times, after which playback will continue to play to the end of
    * the sequence.
    *
@@ -655,16 +655,17 @@ class MicroSequencerImpl implements MicroSequencer {
    * looping, unless the loop end point is changed subsequently.
    *
    * A count value of 0 disables looping: playback will continue at the loop end
-   * point, and it will not loop back to the loop startOut point. This is a
+   * point, and it will not loop back to the loop start point. This is a
    * sequencer's default.
    *
    * If playback is stopped during looping, the current loop status is cleared;
-   * subsequent startOut requests are not affected by an interrupted loop
+   * subsequent start requests are not affected by an interrupted loop
    * operation.
    *
    * @param count the number of times playback should loop back from the loop's
-   * end position to the loop's startOut position, or {@link javax.sound.midi.Sequencer#LOOP_CONTINUOUSLY}
-   * to indicate that looping should continue until interrupted
+   * end position to the loop's start position, or
+   * {@link javax.sound.midi.Sequencer#LOOP_CONTINUOUSLY} to indicate that
+   * looping should continue until interrupted
    */
   @Override
   public void setLoopCount(int count) {
@@ -720,11 +721,7 @@ class MicroSequencerImpl implements MicroSequencer {
       if (!audioSystem.isStreamRunning()) {
         throw new MidiUnavailableException("Clould not start the stream.");
       }
-    } catch (RtErrorInvalidUse ex) {
-      throw new MidiUnavailableException(ex.getMessage());
-    } catch (RtErrorProcessError ex) {
-      throw new MidiUnavailableException(ex.getMessage());
-    } catch (RtErrorInavalidParameter ex) {
+    } catch (RtErrorInvalidUse | RtErrorProcessError | RtErrorInavalidParameter ex) {
       throw new MidiUnavailableException(ex.getMessage());
     }
     opened = true;
@@ -746,11 +743,7 @@ class MicroSequencerImpl implements MicroSequencer {
     try {
       audioSystem.stopStream().get();
       audioSystem.closeStream().get();
-    } catch (InterruptedException ex) {
-      throw new RuntimeException(ex);
-    } catch (ExecutionException ex) {
-      throw new RuntimeException(ex);
-    } catch (RtErrorInvalidUse ex) {
+    } catch (InterruptedException | ExecutionException | RtErrorInvalidUse ex) {
       throw new RuntimeException(ex);
     }
 
@@ -758,9 +751,9 @@ class MicroSequencerImpl implements MicroSequencer {
   }
 
   /**
-   * Reports whether the device is openOut.
+   * Reports whether the device is open.
    *
-   * @return true if the device is openOut, otherwise false
+   * @return true if the device is open, otherwise false
    */
   @Override
   public boolean isOpen() {
@@ -851,16 +844,26 @@ class MicroSequencerImpl implements MicroSequencer {
    * @throws Exception
    */
   @Override
-  public SequencerPort createDefaultSynthesizerPort(final String name, Soundbank soundbank) throws MidiUnavailableException {
+  public SequencerMidiPort createDefaultSynthesizerPort(final String name, Soundbank soundbank) throws MidiUnavailableException {
     ExecutorService executorService = provideExecutor();
     MidiSubSequencer subsequncer = (MidiSubSequencer) masterSequencer.createMidiSubSequencer(name, soundbank);
     AudioPort audioPort = audioMixer.createPort(subsequncer, executorService);
-    SequencerPortImpl sequencerPort = new SequencerPortImpl(audioPort, subsequncer);
+    SequencerMidiPortImpl sequencerPort = new SequencerMidiPortImpl(audioPort, subsequncer);
+    return sequencerPort;
+  }
+
+  @Override
+  public SequencerPort createAudioRecorderPort(String name) throws IOException, MidiUnavailableException {
+    ExecutorService executorService = provideExecutor();
+    AudioRecorderSubSequencer recorderSubsequncer;
+    recorderSubsequncer = (AudioRecorderSubSequencer) masterSequencer.createAudioRecorderSubSequencer(name);
+    AudioPort audioPort = audioMixer.createPort(recorderSubsequncer, executorService);
+    RecorderPortImpl sequencerPort = new RecorderPortImpl(audioPort, recorderSubsequncer);
     return sequencerPort;
   }
 
   /**
-   * Closes all ports and removes them from the processOut loop.
+   * Closes all ports and removes them from the process loop.
    */
   @Override
   public void removeAllPorts() {
