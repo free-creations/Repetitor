@@ -23,14 +23,14 @@ import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
 @OptionsPanelController.TopLevelRegistration(
-id = "1_AudioSettings2",
+id = "1_AudioSettings",
 categoryName = "#OptionsCategory_Name_AudioSettings",
-iconBase = "de/free_creations/nbAudioconfig/phoneNew.png",
+iconBase = "de/free_creations/nbAudioconfig/phone.png",
 keywords = "#OptionsCategory_Keywords_AudioSettings",
 keywordsCategory = "AudioSettings2")
 @org.openide.util.NbBundle.Messages({
-  "OptionsCategory_Name_AudioSettings=AudioSettings2",
-  "OptionsCategory_Keywords_AudioSettings=Audio Settings 2"})
+  "OptionsCategory_Name_AudioSettings=AudioSettings",
+  "OptionsCategory_Keywords_AudioSettings=Audio Settings"})
 public final class AudioSettingsOptionsPanelController extends OptionsPanelController {
 
   private AudioSettingsPanel panel;

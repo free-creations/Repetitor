@@ -16,15 +16,15 @@
  */
 package de.free_creations.netBeansSong;
 
-import de.free_creations.audioconfig.Audioconfig;
 import de.free_creations.microsequencer.MicroSequencer;
 import de.free_creations.microsequencer.MicroSequencerManager;
 import de.free_creations.midisong.EInvalidSongFile;
 import de.free_creations.midisong.Song;
 import de.free_creations.midisong.SongSession;
-import java.awt.Component;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 import javax.sound.midi.MidiUnavailableException;
 import javax.swing.SwingWorker;
 import org.netbeans.api.progress.ProgressHandle;
@@ -38,24 +38,17 @@ import org.openide.util.Exceptions;
  * currently active session. When the first session is activated, the sound
  * system is booted. Booting the sound system is done in a background thread.
  * The publishing (firePropertyChange) is done in the AWT thread. This class
- * should also be used as the factory class to create new {@link SongSession SongSessions}.
+ * should also be used as the factory class to create new
+ * {@link SongSession SongSessions}.
  *
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class SongSessionManager {
 
+  private static final Logger logger = Logger.getLogger(SongSessionManager.class.getName());
   static private final SongSessionManager instance = new SongSessionManager();
-  /**
-   * The currently active song session. This variable is protected by the
-   * activeSongSessionLock.
-   */
-  static private SongSession activeSongSession = null;
-  /**
-   * Lock that protects the active song session and makes access to the active
-   * song session sequential.
-   */
-  static private final Object activeSongSessionLock = new Object();
   public static final String PROP_ACTIVESONGSESSION = "activeSongSession";
+  private static volatile SessionActivationTask currentSessionActivationTask = null;
   private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
   /**
@@ -73,171 +66,101 @@ public class SongSessionManager {
     return songSession;
   }
 
-  private static class SessionActivationTask_1 implements Audioconfig.ConfigDialogEndListener {
-
-    private final SongSession toBeActivated;
-    private final Component component;
-
-    public SessionActivationTask_1(SongSession toBeActivated, Component component) {
-      this.toBeActivated = toBeActivated;
-      this.component = component;
-    }
+  private static class SessionActivationTask extends SwingWorker<SongSession, Void> {
 
     /**
-     * This method is invoked when the user has selected a valid Audio
-     * configuration
-     */
-    @Override
-    public void dialogClosed() {
-      synchronized (activeSongSessionLock) {
-        if (activeSongSession != toBeActivated) {
-          SessionActivationTask_2 task = new SessionActivationTask_2(toBeActivated, component);
-          task.execute();
-        }
-      }
-    }
-  }
-
-  private static class SessionActivationTask_2 extends SwingWorker<Void, Void> {
-
-    /**
-     * the songsession that shall become the new active session *
+     * the SongSession that shall become the new active session *
      */
     private final SongSession newSongSession;
-    private SongSession oldSongSession;
+    private final SongSession oldSongSession;
     private final ProgressHandle progressHandle;
     private MicroSequencer microSequencer;
-    private final Component component;
 
-    public SessionActivationTask_2(SongSession newSongSession) {
+    public SessionActivationTask(SongSession newSongSession, SongSession oldSongSession) {
       super();
       progressHandle = ProgressHandleFactory.createHandle("Connecting to Audio Hardware.");
 
       this.newSongSession = newSongSession;
-      component = null;
-    }
+      this.oldSongSession = oldSongSession;
 
-    /**
-     *
-     * @param newSongSession
-     * @param component a call to redraw this component will be executed when
-     * the session is activated (this parameter is optional, if not used set it
-     * to null)
-     */
-    private SessionActivationTask_2(SongSession newSongSession, Component component) {
-      super();
-      progressHandle = ProgressHandleFactory.createHandle("Connecting to Audio Hardware.");
-
-      this.newSongSession = newSongSession;
-      this.component = component;
     }
 
     @Override
-    protected Void doInBackground() {
+    protected SongSession doInBackground() throws EInvalidSongFile, MidiUnavailableException  {
       progressHandle.start();
-      try {
-        microSequencer = initializeAudioSystem();
-        synchronized (activeSongSessionLock) {
-          oldSongSession = activeSongSession;
-          // if the new session is already active there is nothing to be done.
-          if (newSongSession == activeSongSession) {
-            return null;
-          }
-          // desactivate the currently active song
-          if (activeSongSession != null) {
-            activeSongSession.setPlaying(false);
-            activeSongSession.detachSequencer();
-          }
-          if (newSongSession != null) {
-            newSongSession.attachSequencer(microSequencer);
-          }
-          activeSongSession = newSongSession;
-        }
-      } catch (Exception ex) {
-        activeSongSession = null;
-        Exceptions.printStackTrace(ex);
+
+      microSequencer = initializeAudioSystem();
+      if (microSequencer == null) {
+        logger.warning("The Audio System is not correctly initialized.");
+        return null;
       }
-      return null;
+
+      // if the new session is already active there is nothing to be done.
+      if (oldSongSession == newSongSession) {
+        return oldSongSession;
+      }
+      // desactivate the currently active song
+      if (oldSongSession != null) {
+        oldSongSession.setPlaying(false);
+        oldSongSession.detachSequencer();
+      }
+      if (newSongSession != null) {
+        newSongSession.attachSequencer(microSequencer);
+      }
+      return newSongSession;
     }
 
     @Override
     protected void done() {
       progressHandle.finish();
-      /**
-       * @TODO calling "firePropertyChange" here can lead to trouble because the
-       * active session could have changed again when this function is
-       * scheduled... On the other hand, calling propertyChangeSupport outside
-       * the AWT thread is also dangerous...
-       */
-      if (oldSongSession != activeSongSession) {
+      if (oldSongSession != newSongSession) {
         instance.propertyChangeSupport.firePropertyChange(PROP_ACTIVESONGSESSION, oldSongSession, newSongSession);
       }
-      if (component != null) {
-        component.repaint();
+
+    }
+  }
+
+  /**
+   * Asynchronously activates a song session. An active song session has access
+   * to the sequencer and the sound system. There can only be one session active
+   * at the same time. The SongSessionManager first deactivates the currently
+   * active session and then tries to activate the given session. It is assumed
+   * that the calling thread is the AWT thread, therefore the reconnecting work
+   * is done in a separate thread.
+   *
+   * Note1: if the session could not be activated (because the audio system is
+   * not correctly configured), this function will silently fail.
+   *
+   * Note2: if this function is called while an other session is being activated
+   * this function will block until the other session is ready.
+   *
+   * @param songSession the song session to be activated (if null, the currently
+   * active session is deactivated)
+   */
+  public static void activate(SongSession songSession) throws InterruptedException, ExecutionException {
+    SongSession previousSession = null;
+    if (currentSessionActivationTask != null) {
+      if (!currentSessionActivationTask.isDone()) {
+        logger.warning("Attempt to activate two sessions in parallel.");
       }
+      previousSession = currentSessionActivationTask.get();
     }
+    currentSessionActivationTask = new SessionActivationTask(songSession, previousSession);
+    currentSessionActivationTask.execute();
   }
 
   /**
-   * Asynchronously activates a song session. An active song session has access
-   * to the sequencer and the sound system. There can only be one session active
-   * at the same time. The SongSessionManager first deactivates the currently
-   * active session and then tries to activate the given session. It is assumed
-   * that the calling thread is the AWT thread, therefore the reconnecting work
-   * is done in a separate thread.
+   * make sure that there is no more active session.
    *
-   * @param songSession the song session to be activated (if null, the currently
-   * active session is deactivated)
+   * @param ignored this parameter is ignored
    */
-  public static void activate(SongSession songSession) {
-    /**
-     * @ToDo Instead of synchronising on one active Session it might be a better
-     * to queue the activation requests.
-     */
-    SessionActivationTask_1 task = new SessionActivationTask_1(songSession, null);
-    if (Audioconfig.isProbed()) {
-      task.dialogClosed();
-    } else {
-      Audioconfig.showConfigDialog(task, "Please configure the audio system.");
-    }
-  }
-
-  /**
-   * Asynchronously activates a song session. An active song session has access
-   * to the sequencer and the sound system. There can only be one session active
-   * at the same time. The SongSessionManager first deactivates the currently
-   * active session and then tries to activate the given session. It is assumed
-   * that the calling thread is the AWT thread, therefore the reconnecting work
-   * is done in a separate thread.
-   *
-   * @param songSession the song session to be activated (if null, the currently
-   * active session is deactivated)
-   * @param component a call to redraw this component will be executed when the
-   * session is activated (this parameter is optional, if not used set it to
-   * null)
-   * @deprecated doing a callback on the calling component was not a good idea
-   */
-  @Deprecated
-  public static void activate(SongSession songSession, Component component) {
-    /**
-     * @ToDo Remove this and all calls on it.
-     */
-    SessionActivationTask_1 task = new SessionActivationTask_1(songSession, component);
-    if (Audioconfig.isProbed()) {
-      task.dialogClosed();
-    } else {
-      Audioconfig.showConfigDialog(task, "Please configure the audio system.");
-    }
-  }
-
-  /**
-   * make sure that the given session is no more active.
-   *
-   * @param session
-   */
-  public static void deactivate(SongSession session) {
-    if (activeSongSession == session) {
+  public static void deactivate(SongSession ignored) {
+    try {
       activate(null);
+    } catch (InterruptedException ex) {
+      Exceptions.printStackTrace(ex);
+    } catch (ExecutionException ex) {
+      Exceptions.printStackTrace(ex);
     }
   }
 
@@ -259,10 +182,29 @@ public class SongSessionManager {
     instance.propertyChangeSupport.removePropertyChangeListener(listener);
   }
 
-  private static MicroSequencer initializeAudioSystem() throws MidiUnavailableException {
+  /**
+   * Tries to open the unique instance of the microSequencer.
+   *
+   * @return the unique instance of the micro sequencer. Note: if the
+   * instantiation failed (because no suitable audio configuration could be
+   * found), this function returns null.
+   * @throws MidiUnavailableException
+   */
+  private static MicroSequencer initializeAudioSystem() {
     MicroSequencer microSequencer = MicroSequencerManager.getInstance();
+    if (microSequencer == null) {
+      return null;
+    }
     if (!microSequencer.isOpen()) {
-      microSequencer.open();
+      try {
+        microSequencer.open();
+      } catch (MidiUnavailableException ex) {
+        Exceptions.printStackTrace(ex);
+      }
+    }
+    if (!microSequencer.isOpen()) {
+      logger.warning("Could not open the sequencer.");
+      return null;
     }
     return microSequencer;
   }
@@ -271,7 +213,21 @@ public class SongSessionManager {
     MicroSequencerManager.closeInstance();
   }
 
-  public static SongSession getActiveSongSession() {
-    return activeSongSession;
+  /**
+   * Returns the currently active session.
+   *
+   * Note: if this function is called while a session is being
+   * activated this function will block until the session gets active.
+   *
+   * @return the currently active session.
+   * @throws InterruptedException
+   * @throws ExecutionException
+   */
+  public static SongSession getActiveSongSession() throws InterruptedException, ExecutionException {
+    SongSession currentSession = null;
+    if (currentSessionActivationTask != null) {
+      currentSession = currentSessionActivationTask.get();
+    }
+    return currentSession;
   }
 }

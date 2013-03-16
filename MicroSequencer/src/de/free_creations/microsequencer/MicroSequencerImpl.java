@@ -16,7 +16,8 @@
  */
 package de.free_creations.microsequencer;
 
-import de.free_creations.audioconfig.Audioconfig;
+import de.free_creations.audioconfig.AudioSystemInfo;
+import de.free_creations.audioconfig.StoredConfig;
 import de.free_creations.midiutil.*;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +31,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.midi.*;
 import rtaudio4java.*;
-import rtaudio4java.AudioSystem.StreamParameters;
 
 /**
  *
@@ -43,9 +43,10 @@ class MicroSequencerImpl implements MicroSequencer {
    * The number of times the function provideExecutor() has been called.
    */
   private int provideExecutorCount = 0;
+  private final Object openCloseLock = new Object();
   private boolean opened = false;
   private final MasterSequencer masterSequencer =
-          new MasterSequencerImpl(MidiSubSequencer.getFactory(),AudioRecorderSubSequencer.getFactory());
+          new MasterSequencerImpl(MidiSubSequencer.getFactory(), AudioRecorderSubSequencer.getFactory());
   private final AudioMixer audioMixer = new AudioMixer(masterSequencer);
   private AudioSystem audioSystem;
   private final List<ExecutorService> executors = new ArrayList<>();
@@ -80,9 +81,13 @@ class MicroSequencerImpl implements MicroSequencer {
    */
   @Override
   public void start() {
-    logger.log(Level.FINER, "started");
-    masterSequencer.startMidi();
-
+    synchronized (openCloseLock) {
+      if (!opened) {
+        throw new RuntimeException("Sequencer cannot start when not opened.");
+      }
+      logger.log(Level.FINER, "started");
+      masterSequencer.startMidi();
+    }
   }
 
   /**
@@ -90,15 +95,16 @@ class MicroSequencerImpl implements MicroSequencer {
    */
   @Override
   public void stop() {
-    logger.log(Level.FINER, "stop()");
-    masterSequencer.stopMidi();
+    synchronized (openCloseLock) {
+      logger.log(Level.FINER, "stop()");
+      masterSequencer.stopMidi();
+    }
   }
 
   /**
    * Indicates whether the Sequencer is currently running. The default is false.
-   * The Sequencer starts running when either start() is called. isRunning
-   * then returns true until playback of the sequence completes or stop() is
-   * called.
+   * The Sequencer starts running when either start() is called. isRunning then
+   * returns true until playback of the sequence completes or stop() is called.
    *
    * @return true if the Sequencer is running, otherwise false
    */
@@ -251,9 +257,9 @@ class MicroSequencerImpl implements MicroSequencer {
    * A sequencer's loop start point defaults to start of the sequence.
    *
    * @param tick the loop's starting position, in MIDI ticks (zero-based)
-   * @throws IllegalArgumentException if the requested loop start point
-   * cannot be set, usually because it falls outside the sequence's duration or
-   * because the start point is after the end point
+   * @throws IllegalArgumentException if the requested loop start point cannot
+   * be set, usually because it falls outside the sequence's duration or because
+   * the start point is after the end point
    */
   @Override
   public void setLoopStartPoint(long tick) {
@@ -696,7 +702,7 @@ class MicroSequencerImpl implements MicroSequencer {
   }
 
   /**
-   * Opens the synthesiser and the the required audio resources. <p> Note that
+   * Opens the synthesizer and the the required audio resources. <p> Note that
    * once closed, it cannot be reopened. Attempts to reopen this device will
    * always result in a MidiUnavailableException. </p>
    *
@@ -704,49 +710,86 @@ class MicroSequencerImpl implements MicroSequencer {
    */
   @Override
   public void open() throws MidiUnavailableException {
-    try {
-      if (!Audioconfig.isProbed()) {
-        throw new MidiUnavailableException("Audioconfig not probed. Cause: " + Audioconfig.getProbeMessage());
+    synchronized (openCloseLock) {
+
+      // Query the Operating System about the installed Audio Hardware
+      AudioSystemInfo availableAudioDevices;
+      try {
+        availableAudioDevices = new AudioSystemInfo();
+      } catch (Throwable ex) {
+        logger.log(Level.SEVERE, null, ex);
+        throw new MidiUnavailableException(ex.getMessage());
       }
-      audioSystem = AudioSystemFactory.getRtAudioInstance(Audioconfig.getSystemNumber());
-      StreamParameters outParams = new StreamParameters(Audioconfig.getOutputDeviceNumber(), Audioconfig.getFirstChannel(), Audioconfig.getNumberOfChannels());
-      audioSystem.openStream(outParams, null,
-              Audioconfig.getSampleRate(),
-              Audioconfig.getBufferSize(),
-              audioMixer, null);
+      // retrieve the prefered audio configuration
+      StoredConfig storedConfig = new StoredConfig();
+      //try to match the prefered configuration with the installed Audio Hardware
+      StoredConfig.ConfigRecord requestedConfig = storedConfig.match(availableAudioDevices);
+
+      if (requestedConfig == null) {
+        logger.log(Level.SEVERE, "The requested audio architecture is not available.");
+        throw new MidiUnavailableException("The requested audio architecture is not available.");
+      }
+      audioSystem = AudioSystemFactory.getRtAudioInstance(requestedConfig.getArchitectureNumber());
+      // print messages to stderr.
+      audioSystem.showWarnings(true);
+
+      // Set our stream parameters for output only.
+      AudioSystem.StreamParameters oParams = requestedConfig.getOutputParameters();
+      if (oParams == null) {
+        logger.log(Level.SEVERE, "Not a valid output device.");
+        throw new MidiUnavailableException("The requested output device is not available.");
+      }
+      logger.log(Level.INFO, "output device = {0}", oParams.deviceId);
+      AudioSystem.StreamOptions options = requestedConfig.getOptions();
+      try {
+        audioSystem.openStream(oParams,
+                null,
+                requestedConfig.getSampleRate(),
+                requestedConfig.getBufferSize(),
+                audioMixer,
+                options);
+      } catch (RtErrorProcessError | RtErrorInavalidParameter ex) {
+        logger.log(Level.SEVERE, null, ex);
+        throw new MidiUnavailableException(ex.getMessage());
+      }
+
       if (!audioSystem.isStreamOpen()) {
-        throw new MidiUnavailableException("Clould not open the stream.");
+        logger.log(Level.SEVERE, "Could not open the stream.");
+        throw new MidiUnavailableException("Could not open the stream.");
       }
-      audioSystem.startStream();
+      try {
+        audioSystem.startStream();
+      } catch (RtErrorInvalidUse ex) {
+        logger.log(Level.SEVERE, null, ex);
+        throw new MidiUnavailableException(ex.getMessage());
+      }
       if (!audioSystem.isStreamRunning()) {
+        logger.log(Level.SEVERE, "Clould not start the stream.");
         throw new MidiUnavailableException("Clould not start the stream.");
       }
-    } catch (RtErrorInvalidUse | RtErrorProcessError | RtErrorInavalidParameter ex) {
-      throw new MidiUnavailableException(ex.getMessage());
+      opened = true;
     }
-    opened = true;
-
   }
 
   /**
-   * Closes the synthesiser and and the audio system. <p> Note that once closed,
+   * Closes the synthesizer and and the audio system. <p> Note that once closed,
    * it cannot be reopened. </p> Attempts to reopen this device will always
    * result in a MidiUnavailableException.
    */
   @Override
   public void close() {
-
-    if (!opened) {
-      return;
+    synchronized (openCloseLock) {
+      if (!opened) {
+        return;
+      }
+      opened = false;
+      try {
+        audioSystem.stopStream().get();
+        audioSystem.closeStream().get();
+      } catch (InterruptedException | ExecutionException | RtErrorInvalidUse ex) {
+        throw new RuntimeException(ex);
+      }
     }
-    opened = false;
-    try {
-      audioSystem.stopStream().get();
-      audioSystem.closeStream().get();
-    } catch (InterruptedException | ExecutionException | RtErrorInvalidUse ex) {
-      throw new RuntimeException(ex);
-    }
-
 
   }
 
@@ -757,7 +800,9 @@ class MicroSequencerImpl implements MicroSequencer {
    */
   @Override
   public boolean isOpen() {
-    return opened;
+    synchronized (openCloseLock) {
+      return opened;
+    }
   }
 
   /**

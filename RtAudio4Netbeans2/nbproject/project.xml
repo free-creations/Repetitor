@@ -49,7 +49,10 @@
                     </test-dependency>
                 </test-type>
             </test-dependencies>
-            <public-packages/>
+            <public-packages>
+                <package>de.free_creations.audioconfig</package>
+                <package>rtaudio4java</package>
+            </public-packages>
             <class-path-extension>
                 <runtime-relative-path>ext/rtaudio4java.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/rtaudio4java.jar</binary-origin>

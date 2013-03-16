@@ -20,8 +20,10 @@ import de.free_creations.netBeansSong.SongSessionManager;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
+import org.openide.util.Exceptions;
 import org.openide.windows.CloneableTopComponent;
 import org.openide.windows.TopComponent;
 
@@ -231,6 +233,15 @@ public abstract class SongTopComponent extends CloneableTopComponent {
   @Override
   public void componentOpened() {
     super.componentOpened();
+    
+    SongSession activeSongSession = null;
+    try {
+      activeSongSession = SongSessionManager.getActiveSongSession();
+    } catch (InterruptedException ex) {
+      Exceptions.printStackTrace(ex);
+    } catch (ExecutionException ex) {
+      Exceptions.printStackTrace(ex);
+    }
 
     // simulate a "PROP_ACTIVESONGSESSION" message in order to connect to the currenly active 
     // song.
@@ -239,7 +250,7 @@ public abstract class SongTopComponent extends CloneableTopComponent {
             this, //source
             SongSessionManager.PROP_ACTIVESONGSESSION, //property name
             null, //oldValue
-            SongSessionManager.getActiveSongSession())); // newValue
+            activeSongSession)); // newValue
 
     //connect to the SongSessionManager, as to get notification when
     //the currently active song changes.

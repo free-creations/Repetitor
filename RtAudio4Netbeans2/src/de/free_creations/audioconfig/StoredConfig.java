@@ -24,7 +24,6 @@ import rtaudio4java.AudioSystem.StreamOptions;
 import rtaudio4java.AudioSystem.StreamParameters;
 import rtaudio4java.AudioSystemFactory;
 import rtaudio4java.DeviceInfo;
-//import org.netbeans.api.options.OptionsDisplayer;
 
 /**
  * This class is responsible to persistently store and retrieve the Audio

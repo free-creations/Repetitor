@@ -638,7 +638,13 @@ public class SongView2TopComponent extends SongTopComponent {
   @Override
   protected void componentActivated() {
     super.componentActivated();
-    SongSessionManager.activate(session);
+    try {
+      SongSessionManager.activate(session);
+    } catch (InterruptedException ex) {
+      Exceptions.printStackTrace(ex);
+    } catch (ExecutionException ex) {
+      Exceptions.printStackTrace(ex);
+    }
   }
 
   @Override
