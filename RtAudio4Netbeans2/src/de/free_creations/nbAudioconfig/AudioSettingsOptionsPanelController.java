@@ -1,22 +1,20 @@
 /*
- *  Copyright 2011 harald.
- * 
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- * 
- *       http://www.apache.org/licenses/LICENSE-2.0
- * 
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *  under the License.
+ * Copyright 2013 harald.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-package de.free_creations.audioconfig;
+package de.free_creations.nbAudioconfig;
 
-import de.free_creations.audioconfig.Audioconfig.ConfigDialogEndListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import javax.swing.JComponent;
@@ -24,32 +22,20 @@ import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
-/**
- * Provides the dialog to manage the
- * audio- configuration.
- *
- * @author Harald Postner <Harald at H-Postner.de>
- */
-@OptionsPanelController.TopLevelRegistration(id = "XXAudioSettings",
+@OptionsPanelController.TopLevelRegistration(
+id = "1_AudioSettings2",
 categoryName = "#OptionsCategory_Name_AudioSettings",
-iconBase = "de/free_creations/audioconfig/phone.png",
+iconBase = "de/free_creations/nbAudioconfig/phoneNew.png",
 keywords = "#OptionsCategory_Keywords_AudioSettings",
-keywordsCategory = "AudioSettings")
+keywordsCategory = "AudioSettings2")
+@org.openide.util.NbBundle.Messages({
+  "OptionsCategory_Name_AudioSettings=AudioSettings2",
+  "OptionsCategory_Keywords_AudioSettings=Audio Settings 2"})
 public final class AudioSettingsOptionsPanelController extends OptionsPanelController {
 
-  private static String message = null;
   private AudioSettingsPanel panel;
   private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
   private boolean changed;
-  static private ConfigDialogEndListener endListener = null;
-
-  static public void setConfigDialogEndListener(ConfigDialogEndListener listnener) {
-    endListener = listnener;
-  }
-
-  static public void setMessage(String s) {
-    message = s;
-  }
 
   @Override
   public void update() {
@@ -60,17 +46,12 @@ public final class AudioSettingsOptionsPanelController extends OptionsPanelContr
   @Override
   public void applyChanges() {
     getPanel().store();
-    getPanel().stopPlaying();
     changed = false;
-    if (endListener != null) {
-      endListener.dialogClosed();
-      endListener = null;
-    }
   }
 
   @Override
   public void cancel() {
-        getPanel().stopPlaying();
+    // need not do anything special, if no changes have been persisted yet
   }
 
   @Override
@@ -107,11 +88,6 @@ public final class AudioSettingsOptionsPanelController extends OptionsPanelContr
     if (panel == null) {
       panel = new AudioSettingsPanel(this);
     }
-    if(message != null){
-      panel.setMessage(message);
-      message = null;
-    }
-
     return panel;
   }
 

@@ -62,6 +62,6 @@ public class Installer extends ModuleInstall {
      *  }
      * AudioSystemFactory.loadNativeLibray(myLibraryPath);
      * */
-    AudioSystemFactory.loadNativeLibray(null);
+   // AudioSystemFactory.loadNativeLibray(null);
   }
 }
