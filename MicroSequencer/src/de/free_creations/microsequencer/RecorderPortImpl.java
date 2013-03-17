@@ -15,9 +15,6 @@
  */
 package de.free_creations.microsequencer;
 
-import javax.sound.midi.MidiMessage;
-import javax.sound.midi.Track;
-
 /**
  * Implementation of the {@link SequencerMidiPort} interface.
  * @author Harald Postner <Harald at H-Postner.de>
@@ -29,7 +26,7 @@ class RecorderPortImpl implements SequencerPort {
 
   /**
    * Creates an immutable combination of a given {@link AudioPort}
-   * and a given {@link MidiSubSequencer}.
+   * and a given {@link AudioRecorderSubSequencer}.
    * @param audioPort the audio-port on which the sub-sequencer operates.
    * @param subsequencer the sub-sequencer operates that uses the given audio-port.
    */

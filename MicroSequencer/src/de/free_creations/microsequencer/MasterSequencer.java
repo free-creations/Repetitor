@@ -33,13 +33,6 @@ import javax.sound.midi.Soundbank;
  */
 interface MasterSequencer {
 
-  public enum PlayingMode {
-
-    MidiOnly,
-    RecordAudio,
-    Replay
-  }
-
   public void add(SequencerEventListener listener);
 
   public void remove(SequencerEventListener listener);
@@ -168,7 +161,7 @@ interface MasterSequencer {
    */
   public void prepareCycle(double streamTime, double cycleLength);
 
-  public void startMidi();
+  public void startMidi(PlayingMode playingMode);
 
   public void stopMidi();
 

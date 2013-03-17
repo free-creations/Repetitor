@@ -78,15 +78,22 @@ class MicroSequencerImpl implements MicroSequencer {
    * Starts playback of the MIDI data in the currently loaded sequence. Playback
    * will begin from the current position. Loop handling is not implemented, so
    * playback will continue to play to the end of the sequence and then stop.
+   * 
+   * @deprecated use start(PlayingMode playingMode)
    */
   @Override
   public void start() {
+    start(PlayingMode.MidiOnly);
+  }
+
+  @Override
+  public void start(PlayingMode playingMode) {
     synchronized (openCloseLock) {
       if (!opened) {
         throw new RuntimeException("Sequencer cannot start when not opened.");
       }
       logger.log(Level.FINER, "started");
-      masterSequencer.startMidi();
+      masterSequencer.startMidi(playingMode);
     }
   }
 

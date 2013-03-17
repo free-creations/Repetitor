@@ -20,18 +20,14 @@ import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Track;
 
 /**
+ * A specialized {@link SequencerPort} for Midi reproduction.
  * A sequencer port permits to define which tracks should be played on which
- * synthesiser.
+ * synthesizer.
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public interface SequencerMidiPort extends SequencerPort {
 
-  /**
-   * 
-   * @return the {@link AudioPort} on which the audio stream is output.
-   */
-  @Override
-  public AudioPort getAudioPort();
+
 
   /**
    * Set the tracks that shall be rendered on this port.

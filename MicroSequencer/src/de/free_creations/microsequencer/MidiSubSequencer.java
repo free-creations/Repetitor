@@ -364,7 +364,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
    * "prepareLoopEndCycle()" are monotonically increasing.
    */
   @Override
-  public void prepareSession(double startTick, MasterSequencer.PlayingMode mode) {
+  public void prepareSession(double startTick, PlayingMode mode) {
     synchronized (trackLock) {
       logger.log(Level.FINER, "{0}:preparePlaying({1})", new Object[]{name, startTick});
       activeTracks = Arrays.copyOf(tracks, tracks.length);

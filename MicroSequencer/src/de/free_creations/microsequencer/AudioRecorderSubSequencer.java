@@ -15,7 +15,6 @@
  */
 package de.free_creations.microsequencer;
 
-import de.free_creations.microsequencer.MasterSequencer.PlayingMode;
 import de.free_creations.microsequencer.filestreaming.AudioReader;
 import de.free_creations.microsequencer.filestreaming.AudioWriter;
 import java.io.File;
@@ -61,8 +60,9 @@ class AudioRecorderSubSequencer implements
   private Future<AudioWriter> writer = null;
   private Future<AudioReader> reader = null;
   private PlayingMode playingMode = PlayingMode.MidiOnly;
-  private ExecutionException executionException;
+  private Exception executionException;
   private float[] outputSamples;
+  private float[] nullSamples;
   private boolean mute = false;
 
   /**
@@ -86,6 +86,7 @@ class AudioRecorderSubSequencer implements
     return newFactory;
   }
   private int inputChannelCount;
+  private final String name;
 
   void setMute(boolean value) {
     mute = value;
@@ -207,11 +208,13 @@ class AudioRecorderSubSequencer implements
     }
 
     this.tempDir = tempDir;
+    this.name = name;
 
     this.tempFile = new File(tempDir, "RepetitorTmp.raw");
     if (deleteTempFilesOnExit) {
-      tempDir.deleteOnExit();
       tempFile.deleteOnExit();
+      tempDir.deleteOnExit();
+
     }
   }
 
@@ -239,7 +242,9 @@ class AudioRecorderSubSequencer implements
   public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) {
     this.inputChannelCount = inputChannelCount;
     outputSamples = new float[nFrames * outputChannelCount];
+    nullSamples = new float[nFrames * outputChannelCount];
     Arrays.fill(outputSamples, 0F);
+    Arrays.fill(nullSamples, 0F);
   }
 
   /**
@@ -251,7 +256,7 @@ class AudioRecorderSubSequencer implements
   @Override
   public void close() {
     if (executionException != null) {
-      ExecutionException ex = executionException;
+      Exception ex = executionException;
       executionException = null;
       throw new RuntimeException(ex);
     }
@@ -287,34 +292,36 @@ class AudioRecorderSubSequencer implements
    * Gets called on each cycle. The calling thread is time-critical, no blocking
    * operations allowed here.
    *
-   * If the current mode of operations is "Replay", read samples from the temp
-   * file.
+   * If the current mode of operations is "PlayAudio", read samples from the
+   * temp file.
    *
    * @param streamTime
    * @return
    * @throws Exception
    */
   public float[] processOut(double streamTime) {
-    if (playingMode != PlayingMode.Replay) {
-      return null;
-    }
-    if (reader == null) {
-      executionException = new ExecutionException(new NullPointerException("reader is null"));
-      return null;
+    if (playingMode != PlayingMode.PlayAudio) {
+      return nullSamples;
     }
     if (mute) {
-      return null;
+      return nullSamples;
+    }
+    if (reader == null) {
+      return nullSamples;
     }
     try {
+
       reader.get(0, TimeUnit.MILLISECONDS).getNext(outputSamples);
-    } catch (InterruptedException | ExecutionException ex) {
-      Arrays.fill(outputSamples, 0F);
-      executionException = new ExecutionException(ex);
+      return outputSamples;
+
     } catch (TimeoutException ex) {
-      Arrays.fill(outputSamples, 0F);
       logger.log(Level.WARNING, "Read-Buffer underrun.");
+      return nullSamples;
+    } catch (Exception ex) {
+      executionException = ex;
+      return nullSamples;
     }
-    return outputSamples;
+
   }
 
   /**
@@ -338,14 +345,13 @@ class AudioRecorderSubSequencer implements
     if (inputChannelCount <= 0) {
       return;
     }
-    if (writer == null) {
-      executionException = new ExecutionException(new NullPointerException("writer is null"));
-      return;
-    }
     try {
+      if (writer == null) {
+        throw new NullPointerException("writer is null");
+      }
       writer.get(0, TimeUnit.MILLISECONDS).putNext(samples);
-    } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-      executionException = new ExecutionException(ex);
+    } catch (NullPointerException | InterruptedException | ExecutionException | TimeoutException ex) {
+      executionException = ex;
     }
   }
 
@@ -370,7 +376,7 @@ class AudioRecorderSubSequencer implements
       case RecordAudio:
         writer = executor.submit(new WriterCreationTask(tempFile, writer, reader));
         return;
-      case Replay:
+      case PlayAudio:
         if (tempFile.exists()) {
           reader = executor.submit(new ReaderCreationTask(tempFile, writer, reader));
         }
@@ -388,5 +394,10 @@ class AudioRecorderSubSequencer implements
       Arrays.fill(outputSamples, 0F);
     }
     executor.submit(new ClosingTask(writer, reader));
+  }
+
+  @Override
+  public String toString() {
+    return "AudioRecorderSubSequencer{" + "name=" + name + '}';
   }
 }

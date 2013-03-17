@@ -44,7 +44,7 @@ public class AudioReader {
   private static final Logger logger = Logger.getLogger(AudioReader.class.getName());
   public static final int bytesPerFloat = Float.SIZE / Byte.SIZE;
   public static final int defaultFileBufferSizeByte = 8 * 1024 * 1024;
-  public static final int transitionBufferSizeByte = 32 * 1024;
+  public static final int transitionBufferSizeByte = 32 * 2048;
   /**
    * The Current-buffers provides the data for the procedure "getNext()". The
    * Buffer can be accessed when it is ready to be retrieved. The access will be
@@ -239,6 +239,10 @@ public class AudioReader {
         transitionBuffer.limit(0);
       } else {
         // no left-overs, so the float buffer will be mapped on the current byte buffer
+        /** 
+         * @ToDo re-mapping the byte buffer to a float buffer on each cycle 
+         * reduces the performance by a factor of 8!!!
+         ***/
         thisFloatBuffer = currentByteBuff.asFloatBuffer();
       }
 

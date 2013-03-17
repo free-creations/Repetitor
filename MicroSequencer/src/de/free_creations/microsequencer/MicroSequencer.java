@@ -233,4 +233,22 @@ public interface MicroSequencer extends Sequencer {
   public double getMaxLoadAndClear();
 
   public double tickToEffectiveBPM(double tickPosition);
+
+  /**
+   * Starts playback of the MIDI data in the currently loaded sequence. Playback
+   * will begin from the current position. Loop handling is not implemented, so
+   * playback will continue to play to the end of the sequence and then stop.
+   *
+   * @deprecated use start(PlayingMode playingMode)
+   */
+  @Override
+  @Deprecated
+  public void start();
+
+  /**
+   * Starts playback and recording as defined by the playingMode parameter.
+   *
+   * @param playingMode the requested playing mode.
+   */
+  public void start(PlayingMode playingMode);
 }

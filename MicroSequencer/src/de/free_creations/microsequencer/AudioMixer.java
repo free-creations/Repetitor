@@ -87,7 +87,7 @@ class AudioMixer extends AudioProcessor_Float32 {
 
     ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
     while (portIter.hasNext()) {
-      portIter.next().open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+      portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
     }
     streamOpen = true;
   }

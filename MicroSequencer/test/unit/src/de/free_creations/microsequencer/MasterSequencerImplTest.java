@@ -113,7 +113,7 @@ public class MasterSequencerImplTest {
     // doing a cycle in not started state should not change the current tick position
     assertEquals(startPosition, instance.getCurrentTickPosition(0D), 1E-9D);
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     instance.prepareCycle(1D, 1D);
     instance.prepareCycle(2D, 1D);
     //now the tick position should have moved by one second -> 180 Ticks
@@ -146,7 +146,7 @@ public class MasterSequencerImplTest {
     // doing a cycle in not started state should not change the current tick position
     assertEquals(startPosition, instance.getCurrentTickPosition(0D), 1E-9D);
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     instance.prepareCycle(1D, 1D);
     instance.prepareCycle(2D, 1D);
     //now the tick position should have moved by one second -> 180 Ticks
@@ -192,7 +192,7 @@ public class MasterSequencerImplTest {
 
     //let's do some cycles
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     instance.prepareCycle(0D, 6D);
     instance.prepareCycle(6D, 6D);
     //now the tick position should have moved by one measure
@@ -287,7 +287,7 @@ public class MasterSequencerImplTest {
     instance.setTickPosition(startTick);
 
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
 
     //--do the first cycle
@@ -336,7 +336,7 @@ public class MasterSequencerImplTest {
     instance.setLoopEndPoint(loopEndTick);
     instance.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
 
     //--the first cycle is like in testSequentialProcessing() above.
@@ -408,7 +408,7 @@ public class MasterSequencerImplTest {
     instance.setLoopCount(LOOPCOUNT);
     propPlaying = false;
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
     assertTrue(propPlaying);
 
@@ -468,7 +468,7 @@ public class MasterSequencerImplTest {
 
     instance.setTickPosition(startTick);
     instance.setLoopCount(0);
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
 
     instance.prepareCycle(streamTime, cycleLength);
@@ -517,7 +517,7 @@ public class MasterSequencerImplTest {
 
     instance.setTickPosition(startTick);
     instance.setLoopCount(0);
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
 
     instance.prepareCycle(streamTime, cycleLength);
@@ -566,7 +566,7 @@ public class MasterSequencerImplTest {
 
     instance.setTickPosition(startTick);
     instance.setLoopCount(0);
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
 
     instance.prepareCycle(streamTime, cycleLength);
@@ -620,7 +620,7 @@ public class MasterSequencerImplTest {
     instance.setLoopCount(LOOPCOUNT);
 
 
-    instance.startMidi();
+    instance.startMidi(PlayingMode.MidiOnly);
     assertTrue(subsequencer.started);
 
     instance.prepareCycle(streamTime, cycleLength);
@@ -758,7 +758,7 @@ public class MasterSequencerImplTest {
     }
 
     @Override
-    public void prepareSession(double startPosition, MasterSequencer.PlayingMode mode) {
+    public void prepareSession(double startPosition, PlayingMode mode) {
       started = true;
     }
 

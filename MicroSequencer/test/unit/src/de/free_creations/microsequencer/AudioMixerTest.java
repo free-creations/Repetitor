@@ -204,12 +204,7 @@ public class AudioMixerTest {
     @Override
     public void prepareCycle(double streamTime, double cycleLength) {
       prepareCycle_Called++;
-    }
-
-    @Override
-    public void startMidi() {
-      throw new UnsupportedOperationException("Not supported yet.");
-    }
+    } 
 
     @Override
     public void stopMidi() {
@@ -309,6 +304,11 @@ public class AudioMixerTest {
 
     @Override
     public SubSequencer createAudioRecorderSubSequencer(String name) throws IOException {
+      throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void startMidi(PlayingMode playingMode) {
       throw new UnsupportedOperationException("Not supported yet.");
     }
   }
