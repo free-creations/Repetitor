@@ -24,11 +24,15 @@ import de.free_creations.midisong.SongSession;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.midi.MidiUnavailableException;
 import javax.swing.SwingWorker;
+import org.netbeans.api.options.OptionsDisplayer;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.util.Exceptions;
 
 /**
@@ -75,6 +79,7 @@ public class SongSessionManager {
     private final SongSession oldSongSession;
     private final ProgressHandle progressHandle;
     private MicroSequencer microSequencer;
+    private boolean success = false;
 
     public SessionActivationTask(SongSession newSongSession, SongSession oldSongSession) {
       super();
@@ -86,8 +91,9 @@ public class SongSessionManager {
     }
 
     @Override
-    protected SongSession doInBackground() throws EInvalidSongFile, MidiUnavailableException  {
+    protected SongSession doInBackground() throws EInvalidSongFile, MidiUnavailableException {
       progressHandle.start();
+      success = false;
 
       microSequencer = initializeAudioSystem();
       if (microSequencer == null) {
@@ -107,12 +113,18 @@ public class SongSessionManager {
       if (newSongSession != null) {
         newSongSession.attachSequencer(microSequencer);
       }
+      success = true;
       return newSongSession;
     }
 
     @Override
     protected void done() {
       progressHandle.finish();
+
+      if (!success) {
+
+        showConfigDialog();
+      }
       if (oldSongSession != newSongSession) {
         instance.propertyChangeSupport.firePropertyChange(PROP_ACTIVESONGSESSION, oldSongSession, newSongSession);
       }
@@ -199,14 +211,32 @@ public class SongSessionManager {
       try {
         microSequencer.open();
       } catch (MidiUnavailableException ex) {
-        Exceptions.printStackTrace(ex);
+        logger.warning("Could not open the sequencer.");
+        //logger.log(Level.SEVERE, null, ex);
+        return null;
       }
     }
     if (!microSequencer.isOpen()) {
-      logger.warning("Could not open the sequencer.");
+      logger.severe("Could not open the sequencer.");
       return null;
     }
     return microSequencer;
+  }
+
+  /**
+   * A temporal workaround to indicate to the user that he should reconfigure
+   * the audio settings. this procedure must be called from within the AWT
+   * thread.
+   */
+  private static void showConfigDialog() {
+    NotifyDescriptor d =
+            new NotifyDescriptor.Message("The Audio Hardware could not be accessed. "
+            + "Please re-configure your audio settings "
+            + "and than open the song again.",
+            NotifyDescriptor.INFORMATION_MESSAGE);
+    DialogDisplayer.getDefault().notify(d);
+    OptionsDisplayer displayer = OptionsDisplayer.getDefault();
+    displayer.open("1_AudioSettings");
   }
 
   public static void closeAudioSystem() {
@@ -216,8 +246,8 @@ public class SongSessionManager {
   /**
    * Returns the currently active session.
    *
-   * Note: if this function is called while a session is being
-   * activated this function will block until the session gets active.
+   * Note: if this function is called while a session is being activated this
+   * function will block until the session gets active.
    *
    * @return the currently active session.
    * @throws InterruptedException
