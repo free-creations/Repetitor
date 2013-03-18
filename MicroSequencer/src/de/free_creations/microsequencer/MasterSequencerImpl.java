@@ -575,7 +575,7 @@ class ActiveMasterSequencer {
     synchronized (cycleLock) {
       logger.log(Level.FINER, "startMidi()");
       for (MasterSequencer.SubSequencer s : audioAndMidiSequencers) {
-        s.prepareSession(thisCycleStartTick, PlayingMode.MidiOnly);
+        s.prepareSession(thisCycleStartTick, playingMode);
       }
     }
     firePlayingChanged(true);

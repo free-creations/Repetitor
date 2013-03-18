@@ -172,13 +172,13 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Test always a number corresponding to the output channels is recorded.
+   * Test that always a number corresponding to the output channels is recorded.
    *
    * Specification: If there are n input channels and m output channels and if n
    * is larger than m, only the m first input channels are recorded.
    */
   @Test
-  public void testUnbalancedChannels() throws Exception {
+  public void testUnbalancedChannels1() throws Exception {
     System.out.println("testUnbalancedChannels");
     int samplingRate = 44100;
     int nFrames = 256;
@@ -212,7 +212,7 @@ public class AudioRecorderSubSequencerTest {
     instance.checkAndClearExecutionException();
 
 
-    // 
+    // Here we verify only the first two channels have been recorded
     instance.prepareSession(0, PlayingMode.PlayAudio);
     Thread.sleep(100);
 
@@ -226,6 +226,75 @@ public class AudioRecorderSubSequencerTest {
                   + "frame(" + frame
                   + "), channel(" + channel + ")",
                   channel, (int) producedSamples[sample]);
+          sample++;
+        }
+      }
+    }
+
+    instance.stopSession();
+    instance.close();
+  }
+
+  /**
+   * Test that always a number corresponding to the output channels is recorded.
+   *
+   * Specification: If there are n input channels and m output channels and if m
+   * is larger than n, only the highest input channel is repeated so to record
+   * m channels.
+   */
+  @Test
+  public void testUnbalancedChannels2() throws Exception {
+    System.out.println("testUnbalancedChannels2");
+    int samplingRate = 44100;
+    int nFrames = 256;
+    int inputChannelCount = 2;
+    int outputChannelCount = 7;
+    boolean noninterleaved = false;
+    int inAudioArraySize = inputChannelCount * nFrames;
+    float[] inAudioArray = new float[inAudioArraySize];
+    int outAudioArraySize = outputChannelCount * nFrames;
+    int bufferCount = 10;//fileSizeFloat / outAudioArraySize;
+
+    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+
+
+    //Here we proceed to the test: in each sample we'll write its channel
+    instance.prepareSession(0, PlayingMode.RecordAudio);
+    Thread.sleep(100);
+    int sample;
+    for (int i = 0; i < bufferCount; i++) {
+      sample = 0;
+      for (int frame = 0; frame < nFrames; frame++) {
+        for (int channel = 0; channel < inputChannelCount; channel++) {
+          inAudioArray[sample] = channel;
+          sample++;
+        }
+      }
+      instance.processIn(-1, inAudioArray);
+    }
+    instance.stopSession();
+    instance.checkAndClearExecutionException();
+
+
+    // Here we verify the second channel has been repeated
+    instance.prepareSession(0, PlayingMode.PlayAudio);
+    Thread.sleep(100);
+
+    for (int i = 0; i < bufferCount; i++) {
+      float[] producedSamples = instance.process(-1, null);
+      assertEquals(outAudioArraySize, producedSamples.length);
+      sample = 0;
+      for (int frame = 0; frame < nFrames; frame++) {
+        for (int channel = 0; channel < outputChannelCount; channel++) {
+          int expected = channel;
+          if(channel >= inputChannelCount ){
+            expected = inputChannelCount-1;
+          }
+          assertEquals("Error buffer(" + i + "), "
+                  + "frame(" + frame
+                  + "), channel(" + channel + ")",
+                  expected, (int) producedSamples[sample]);
           sample++;
         }
       }
@@ -330,14 +399,14 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Verify that the AudioRecorderSubSequencer handles non- existent input file
-   * .
+   * Verify that the AudioRecorderSubSequencer handles a non- existent input
+   * file.
    *
    * Specification: if no temporary data has been written, "PlayAudio" must
    * nevertheless be able to run, the returned samples must be all be 0.0F
    */
   @Test
-  public void testProcessInNotThere() throws Exception {
+  public void testProcessIn_NoInputFile() throws Exception {
     System.out.println("testProcessInEmpty");
     int samplingRate = 44100;
     int nFrames = 256;
@@ -376,9 +445,9 @@ public class AudioRecorderSubSequencerTest {
   }
 
   /**
-   * Verify that the AudioRecorderSubSequencer handles an empty input file .
+   * Verify that the AudioRecorderSubSequencer handles an empty input file.
    *
-   * Specification: if no temporary data has been written, "PlayAudio" must
+   * Specification: if the temporary file is empty, "PlayAudio" must
    * nevertheless be able to run, the returned samples must be all be 0.0F
    */
   @Test

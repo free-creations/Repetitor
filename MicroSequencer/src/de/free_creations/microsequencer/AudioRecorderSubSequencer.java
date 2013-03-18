@@ -84,7 +84,7 @@ class AudioRecorderSubSequencer implements
             new MasterSequencer.SubSequencerFactory() {
               @Override
               public MasterSequencer.MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
-                throw new UnsupportedOperationException("Cannot make an audio recorder.");
+                throw new UnsupportedOperationException("Cannot make a MidiSubSequencer.");
               }
 
               @Override
@@ -397,8 +397,20 @@ class AudioRecorderSubSequencer implements
         }
       }
       return balancedInputSamples;
+    } else {
+      //(outputChannelCount >inputChannelCount)
+      for (int frame = 0; frame < nFrames; frame++) {
+        for (int channel = 0; channel < outputChannelCount; channel++) {
+          int inChannel = channel;
+          if (channel >= inputChannelCount) {
+            inChannel = inputChannelCount - 1;
+          }
+          balancedInputSamples[(frame * outputChannelCount) + channel] =
+                  samples[(frame * inputChannelCount) + inChannel];
+        }
+      }
+      return balancedInputSamples;
     }
-    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   /**
