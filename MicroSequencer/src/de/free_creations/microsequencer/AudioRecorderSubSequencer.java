@@ -63,7 +63,16 @@ class AudioRecorderSubSequencer implements
   private Exception executionException;
   private float[] outputSamples;
   private float[] nullSamples;
+  private float[] balancedInputSamples;
   private boolean mute = false;
+  /**
+   * The maximum timeout admissible when processing one cycle, expressed in
+   * nanoseconds (1E-09 second).
+   */
+  private long cycleTimeoutNano = 0;
+  private int inputChannelCount;
+  private final String name;
+  private int outputChannelCount;
 
   /**
    * Builds a factory object that provides this implementation as sub-sequencer.
@@ -85,8 +94,7 @@ class AudioRecorderSubSequencer implements
             };
     return newFactory;
   }
-  private int inputChannelCount;
-  private final String name;
+  private int nFrames;
 
   void setMute(boolean value) {
     mute = value;
@@ -116,7 +124,7 @@ class AudioRecorderSubSequencer implements
       if (previousWriter != null) {
         previousWriter.get().close();
       }
-      return new AudioWriter(outputFile);
+      return new AudioWriter(outputFile, cycleTimeoutNano);
     }
   }
 
@@ -144,7 +152,7 @@ class AudioRecorderSubSequencer implements
       if (previousWriter != null) {
         previousWriter.get().close();
       }
-      return new AudioReader(outputFile);
+      return new AudioReader(outputFile, cycleTimeoutNano);
     }
   }
 
@@ -163,7 +171,7 @@ class AudioRecorderSubSequencer implements
 
     @Override
     public Void call() throws InterruptedException, InterruptedException, ExecutionException, IOException {
-      // close reader and writer
+      // close reader and writer and wait
       if (closingReader != null) {
         closingReader.get().close();
       }
@@ -241,10 +249,16 @@ class AudioRecorderSubSequencer implements
   @Override
   public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) {
     this.inputChannelCount = inputChannelCount;
+    this.outputChannelCount = outputChannelCount;
+    this.nFrames = nFrames;
     outputSamples = new float[nFrames * outputChannelCount];
+    balancedInputSamples = new float[nFrames * outputChannelCount];
     nullSamples = new float[nFrames * outputChannelCount];
     Arrays.fill(outputSamples, 0F);
     Arrays.fill(nullSamples, 0F);
+    Arrays.fill(balancedInputSamples, 0F);
+    long cycleDurationNano = (1000 * 1000 * 1000 * nFrames) / samplingRate;
+    cycleTimeoutNano = cycleDurationNano / 10;
   }
 
   /**
@@ -255,6 +269,15 @@ class AudioRecorderSubSequencer implements
    */
   @Override
   public void close() {
+    checkAndClearExecutionException();
+  }
+
+  /**
+   * Can be used to test if a buffer overflow occurred during processing.
+   *
+   * @throws RuntimeException if there was a problem in processing.
+   */
+  public void checkAndClearExecutionException() {
     if (executionException != null) {
       Exception ex = executionException;
       executionException = null;
@@ -311,7 +334,7 @@ class AudioRecorderSubSequencer implements
     }
     try {
 
-      reader.get(0, TimeUnit.MILLISECONDS).getNext(outputSamples);
+      reader.get(cycleTimeoutNano, TimeUnit.NANOSECONDS).getNext(outputSamples);
       return outputSamples;
 
     } catch (TimeoutException ex) {
@@ -345,14 +368,37 @@ class AudioRecorderSubSequencer implements
     if (inputChannelCount <= 0) {
       return;
     }
+    assert (samples.length == inputChannelCount * nFrames);
     try {
       if (writer == null) {
         throw new NullPointerException("writer is null");
       }
-      writer.get(0, TimeUnit.MILLISECONDS).putNext(samples);
+      AudioWriter audioWriter = writer.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
+      float[] balancedSamples = balanceChannels(samples);
+      audioWriter.putNext(balancedSamples);
     } catch (NullPointerException | InterruptedException | ExecutionException | TimeoutException ex) {
       executionException = ex;
     }
+  }
+
+  private float[] balanceChannels(float[] samples) {
+    assert (samples != null);
+    assert (samples.length == inputChannelCount * nFrames);
+
+    if (outputChannelCount == inputChannelCount) {
+      return samples;
+    }
+
+    if (inputChannelCount > outputChannelCount) {
+      for (int frame = 0; frame < nFrames; frame++) {
+        for (int channel = 0; channel < outputChannelCount; channel++) {
+          balancedInputSamples[(frame * outputChannelCount) + channel] =
+                  samples[(frame * inputChannelCount) + channel];
+        }
+      }
+      return balancedInputSamples;
+    }
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   /**

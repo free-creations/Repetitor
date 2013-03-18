@@ -20,11 +20,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.Ignore;
-import org.openide.util.Exceptions;
+import org.junit.Test;
 
 /**
  *
@@ -72,7 +71,7 @@ public class AudioWriterTest {
     float[] audioArray = new float[503];
 
     //un matched cache
-    AudioWriter audioWriter = new AudioWriter(outFile, 5003);
+    AudioWriter audioWriter = new AudioWriter(outFile, 0, 5003);
     for (int i = 0; i < 31; i++) {
       for (int j = 0; j < audioArray.length; j++) {
         audioArray[j] = floatCount;
@@ -113,7 +112,7 @@ public class AudioWriterTest {
 
     //matched cache
     int fileBufferSize = 2 * AudioWriter.bytesPerFloat * audioArray.length;
-    AudioWriter audioWriter = new AudioWriter(outFile, fileBufferSize);
+    AudioWriter audioWriter = new AudioWriter(outFile, 0, fileBufferSize);
     for (int i = 0; i < 32; i++) {
       for (int j = 0; j < audioArray.length; j++) {
         audioArray[j] = floatCount;
@@ -158,7 +157,7 @@ public class AudioWriterTest {
 
 
 
-    AudioWriter audioWriter = new AudioWriter(outFile);
+    AudioWriter audioWriter = new AudioWriter(outFile, 0);
     for (long i = 0; i < buffersToWrite; i++) {
       for (int j = 0; j < audioArray.length; j++) {
         audioArray[j] = floatCount;
@@ -197,7 +196,7 @@ public class AudioWriterTest {
     File outFile = new File(testDir, "testDiskReadOnly.test");
     boolean thrown = false;
     try {
-      AudioWriter audioWriter = new AudioWriter(outFile);
+      AudioWriter audioWriter = new AudioWriter(outFile, 0);
     } catch (FileNotFoundException ex) {
       thrown = true;
     }

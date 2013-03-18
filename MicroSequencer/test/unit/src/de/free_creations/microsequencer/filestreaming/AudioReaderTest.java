@@ -237,7 +237,7 @@ public class AudioReaderTest {
 
     makeTestFile(file, fileSizeFloat, extraBytes);
 
-    AudioReader audioReader = new AudioReader(file, fileBufferSizeByte);
+    AudioReader audioReader = new AudioReader(file, 0, fileBufferSizeByte);
 
     long expectedAudioArrays = (fileSizeFloat / audioArraySize) + 1;
     long audioArraysCount = 0;

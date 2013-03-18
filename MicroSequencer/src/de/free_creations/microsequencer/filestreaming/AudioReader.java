@@ -79,6 +79,7 @@ public class AudioReader {
           });
   private ExecutionException readingException = null;
   private final int fileBufferSizeByte;
+  private final long cycleTimeoutNano;
 
   /**
    * The FileReadTask takes a Byte-Buffer and fills it with audio data from the
@@ -112,11 +113,12 @@ public class AudioReader {
    * @throws if the file does not exist, is a directory rather than a regular
    * file, or for some other reason cannot be opened for reading.
    */
-  public AudioReader(File file) throws FileNotFoundException, IOException {
-    this(file, defaultFileBufferSizeByte);
+  public AudioReader(File file, long cycleTimeoutNano) throws FileNotFoundException, IOException {
+    this(file, cycleTimeoutNano, defaultFileBufferSizeByte);
   }
 
-  public AudioReader(File file, int requestedFileBufferSizeByte) throws FileNotFoundException, IOException {
+  public AudioReader(File file, long cycleTimeoutNano, int requestedFileBufferSizeByte) throws FileNotFoundException, IOException {
+    this.cycleTimeoutNano = cycleTimeoutNano;
     fileBufferSizeByte = requestedFileBufferSizeByte;
 
     ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
@@ -190,7 +192,7 @@ public class AudioReader {
       // In no case we shall block or interrupt the audio thread here.
       ByteBuffer currentByteBuff;
       try {
-        currentByteBuff = currentBuffReadyToBeConsumed.get(0, TimeUnit.MILLISECONDS);
+        currentByteBuff = currentBuffReadyToBeConsumed.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
       } catch (InterruptedException ex) {
         // how can this happen?
         readingException = new ExecutionException(ex);
@@ -239,10 +241,11 @@ public class AudioReader {
         transitionBuffer.limit(0);
       } else {
         // no left-overs, so the float buffer will be mapped on the current byte buffer
-        /** 
-         * @ToDo re-mapping the byte buffer to a float buffer on each cycle 
+        /**
+         * @ToDo re-mapping the byte buffer to a float buffer on each cycle
          * reduces the performance by a factor of 8!!!
-         ***/
+         **
+         */
         thisFloatBuffer = currentByteBuff.asFloatBuffer();
       }
 
@@ -284,7 +287,9 @@ public class AudioReader {
    * Block the calling thread until the next buffer is ready.
    *
    * @throws IOException if there was a problem when reading the file.
+   * @deprecated Use this function only for test
    */
+  @Deprecated
   final void waitForNextBufferReady() throws IOException {
     if (closed) {
       return;

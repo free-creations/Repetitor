@@ -134,6 +134,7 @@ public class AudioRecorderSubSequencerTest {
     }
     long writeStopTime = System.nanoTime();
     instance.stopSession();
+    instance.checkAndClearExecutionException();
     Thread.sleep(100); //<<< that's very sad
 
     // To check the file we use the function "PlayAudio" that has proven to be correct in testProcessIn()
@@ -148,7 +149,6 @@ public class AudioRecorderSubSequencerTest {
       for (float sample : producedSamples) {
         if (floatsRead < floatsWritten) {
           assertEquals(floatsRead, (long) sample);
-
           floatsRead++;
         } else {
           assertEquals(sample, 0F, 0F);
@@ -180,8 +180,6 @@ public class AudioRecorderSubSequencerTest {
   @Test
   public void testUnbalancedChannels() throws Exception {
     System.out.println("testUnbalancedChannels");
-    // limit the file to one buffer. So to aviod buffer underruns when no audio real processing is done.
-    int fileSizeFloat = AudioReader.defaultFileBufferSizeByte / AudioReader.bytesPerFloat;
     int samplingRate = 44100;
     int nFrames = 256;
     int inputChannelCount = 7;
@@ -190,16 +188,15 @@ public class AudioRecorderSubSequencerTest {
     int inAudioArraySize = inputChannelCount * nFrames;
     float[] inAudioArray = new float[inAudioArraySize];
     int outAudioArraySize = outputChannelCount * nFrames;
-    float[] outAudioArray = new float[outAudioArraySize];
-    int bufferCount = 10 ;//fileSizeFloat / outAudioArraySize;
+    int bufferCount = 10;//fileSizeFloat / outAudioArraySize;
 
     AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
     instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
 
 
-    //Here we procees to the test: we write the channel of each sample to the file
+    //Here we proceed to the test: in each sample we'll write its channel
     instance.prepareSession(0, PlayingMode.RecordAudio);
-    Thread.sleep(100); //<<< that's very sad
+    Thread.sleep(100);
     int sample;
     for (int i = 0; i < bufferCount; i++) {
       sample = 0;
@@ -208,22 +205,27 @@ public class AudioRecorderSubSequencerTest {
           inAudioArray[sample] = channel;
           sample++;
         }
-        instance.processIn(-1, inAudioArray);
       }
+      instance.processIn(-1, inAudioArray);
     }
     instance.stopSession();
-    Thread.sleep(100); //<<< that's very sad
+    instance.checkAndClearExecutionException();
 
-    // To 
+
+    // 
     instance.prepareSession(0, PlayingMode.PlayAudio);
-    Thread.sleep(200); //<<< that's very sad
+    Thread.sleep(100);
 
     for (int i = 0; i < bufferCount; i++) {
       float[] producedSamples = instance.process(-1, null);
+      assertEquals(outAudioArraySize, producedSamples.length);
       sample = 0;
       for (int frame = 0; frame < nFrames; frame++) {
         for (int channel = 0; channel < outputChannelCount; channel++) {
-          assertEquals((int) producedSamples[sample], channel);
+          assertEquals("Error buffer(" + i + "), "
+                  + "frame(" + frame
+                  + "), channel(" + channel + ")",
+                  channel, (int) producedSamples[sample]);
           sample++;
         }
       }

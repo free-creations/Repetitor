@@ -74,6 +74,7 @@ public class AudioWriter {
             }
           });
   private ExecutionException writingException = null;
+  private final long cycleTimeoutNano;
 
   /**
    * A BufferPair is a set of a byte- buffer and a float- buffer mapped onto the
@@ -189,12 +190,12 @@ public class AudioWriter {
    * than a regular file, does not exist but cannot be created, or cannot be
    * opened for output for any other reason
    */
-  public AudioWriter(File file) throws FileNotFoundException {
-    this(file, defaultFileBufferSizeByte);
+  public AudioWriter(File file, long cycleTimeoutNano) throws FileNotFoundException {
+    this(file, cycleTimeoutNano, defaultFileBufferSizeByte);
   }
 
-  public AudioWriter(File file, int requestedFileBufferSizeByte) throws FileNotFoundException {
-
+  public AudioWriter(File file, long cycleTimeoutNano, int requestedFileBufferSizeByte) throws FileNotFoundException {
+    this.cycleTimeoutNano = cycleTimeoutNano;
     ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(requestedFileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
     ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(requestedFileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
 
@@ -270,7 +271,7 @@ public class AudioWriter {
       // In no case we shall block or interrupt the audio thread here.
       BufferPair thisBuffers;
       try {
-        thisBuffers = currentBuffReadyToBeFilled.get(0, TimeUnit.MILLISECONDS);
+        thisBuffers = currentBuffReadyToBeFilled.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
       } catch (InterruptedException ex) {
         // how can this happen?
         writingException = new ExecutionException(ex);
