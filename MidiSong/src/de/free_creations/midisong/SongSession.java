@@ -16,6 +16,7 @@
  */
 package de.free_creations.midisong;
 
+import de.free_creations.microsequencer.AudioPort;
 import de.free_creations.microsequencer.MicroSequencer;
 import de.free_creations.microsequencer.PlayingMode;
 import de.free_creations.microsequencer.SequencerEventListener;
@@ -26,6 +27,7 @@ import de.free_creations.midiutil.RPosition;
 import de.free_creations.midiutil.RPositionEx;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -125,6 +127,7 @@ public class SongSession {
       }
     }
   };
+  private SequencerPort audioRecorderPort = null;
 
   /**
    * This constructor is package-private, use the SongManager to construct new
@@ -272,7 +275,7 @@ public class SongSession {
    */
   public void setPlayingMode(PlayingMode playingMode) {
     PlayingMode oldPlayingMode = this.playingMode;
-    if(oldPlayingMode == playingMode){
+    if (oldPlayingMode == playingMode) {
       return;
     }
     this.playingMode = playingMode;
@@ -286,7 +289,7 @@ public class SongSession {
    * @throws IllegalArgumentException if the given parameter does not correspond
    * to a valid playing mode.
    */
-  public void setPlayingMode(String playingMode) {
+  public void setPlayingModeStr(String playingMode) {
     setPlayingMode(PlayingMode.valueOf(playingMode));
   }
 
@@ -692,6 +695,8 @@ public class SongSession {
       return;
     }
     song.detachAudio();
+    audioRecorderPort = null;
+
 
 
     this.sequencer = sequencer;
@@ -740,6 +745,14 @@ public class SongSession {
     GenericTrack[] subtracks = masterTrack.getSubtracks();
     attachTracksToSequencer(subtracks, sequencer, null, null);
     masterTrack.InitializeAudio();
+    //------------------------------------------------------------------
+    //this is provisional code to provide Audio recording facility!!!!!
+    try {
+      audioRecorderPort = sequencer.createAudioRecorderPort("Feedback");
+    } catch (IOException ex) {
+      Exceptions.printStackTrace(ex);
+      audioRecorderPort = null;
+    }
     setActive(true);
 
   }
@@ -840,6 +853,31 @@ public class SongSession {
     }
     active = newValue;
     propertyChangeSupport.firePropertyChange(PROP_ACTIVE, oldValue, newValue);
+  }
+
+  /**
+   * This is provisional code to provide Audio Recoding facilities.
+   *
+   * @return the last peak level of the synthesizers Audio port.
+   */
+  public float getAudioVuLevel() {
+    if (audioRecorderPort != null) {
+      return audioRecorderPort.getAudioPort().getPeakVuAndClear(0);
+    } else {
+      return 0.0F;
+    }
+  }
+
+  /**
+   * This is provisional code to provide Audio Recoding facilities. Sets the
+   * attenuation audio playback.
+   */
+  public void setAudioAttenuation(int value) {
+    if (audioRecorderPort != null) {
+      for (int ch = 0; ch < AudioPort.MAXCHANNELS; ch++) {
+        audioRecorderPort.getAudioPort().setAttenuation(ch, value);
+      }
+    }
   }
 
   private class MidiTrackHandler implements GenericTrack.EventHandler {

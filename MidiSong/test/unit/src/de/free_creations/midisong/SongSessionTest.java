@@ -562,7 +562,7 @@ public class SongSessionTest {
     assertFalse(sequencerMock.running);
 
     //verify that changes to the song-session are handed over to the sequencer
-    instance.setPlayingMode("PlayRecordAudio");
+    instance.setPlayingModeStr("PlayRecordAudio");
     instance.setPlaying(true);
     assertTrue(instance.isPlaying());
     assertTrue(sequencerMock.running);
@@ -806,6 +806,28 @@ public class SongSessionTest {
     @Override
     public void setAttenuation(int trackIndex, float value) {
       tracksAttenuation[trackIndex] = value;
+    }
+  }
+
+  private class AudioPortMock implements AudioPort {
+
+    @Override
+    public float getPeakVuAndClear(int channel) {
+      return 0F;
+    }
+
+    @Override
+    public float getAttenuation(int channel) {
+      return 0F;
+    }
+
+    @Override
+    public float[] getAttenuations() {
+      return new float[]{0F};
+    }
+
+    @Override
+    public void setAttenuation(int channel, float attenuation) {
     }
   }
 
@@ -1179,7 +1201,18 @@ public class SongSessionTest {
 
     @Override
     public SequencerPort createAudioRecorderPort(String name) throws IOException, MidiUnavailableException {
-      throw new UnsupportedOperationException("Not supported yet.");
+      return new SequencerPort() {
+        private final AudioPort audioPort = new AudioPortMock();
+
+        @Override
+        public AudioPort getAudioPort() {
+          return audioPort;
+        }
+
+        @Override
+        public void setMute(boolean value) {
+        }
+      };
     }
 
     @Override

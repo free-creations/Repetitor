@@ -219,11 +219,11 @@ class AudioRecorderSubSequencer implements
     this.name = name;
 
     this.tempFile = new File(tempDir, "RepetitorTmp.raw");
-    if (deleteTempFilesOnExit) {
-      tempFile.deleteOnExit();
-      tempDir.deleteOnExit();
-
-    }
+//    if (deleteTempFilesOnExit) {
+//      tempFile.deleteOnExit();
+//      tempDir.deleteOnExit();
+//
+//    }
   }
 
   String getTempDir() {
@@ -259,6 +259,7 @@ class AudioRecorderSubSequencer implements
     Arrays.fill(balancedInputSamples, 0F);
     long cycleDurationNano = (1000 * 1000 * 1000 * nFrames) / samplingRate;
     cycleTimeoutNano = cycleDurationNano / 10;
+    logger.log(Level.FINER, "AudioRecorderSubSequencer opened");
   }
 
   /**
@@ -430,13 +431,18 @@ class AudioRecorderSubSequencer implements
     }
     switch (playingMode) {
       case MidiOnly:
+        logger.log(Level.FINER, "MidiOnly");
         return;
       case RecordAudio:
+        logger.log(Level.FINER, "RecordAudio");
         writer = executor.submit(new WriterCreationTask(tempFile, writer, reader));
         return;
       case PlayAudio:
         if (tempFile.exists()) {
+          logger.log(Level.FINER, "PlayAudio");
           reader = executor.submit(new ReaderCreationTask(tempFile, writer, reader));
+        } else {
+          logger.log(Level.FINER, "PlayAudio-there is no tempfile");
         }
     }
   }
@@ -452,6 +458,7 @@ class AudioRecorderSubSequencer implements
       Arrays.fill(outputSamples, 0F);
     }
     executor.submit(new ClosingTask(writer, reader));
+    logger.log(Level.FINER, "files closed");
   }
 
   @Override

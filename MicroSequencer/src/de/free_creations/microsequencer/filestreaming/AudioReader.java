@@ -140,6 +140,7 @@ public class AudioReader {
 
     // start to fill the second buffer
     switchBuffers(byteBuffer2);
+    logger.log(Level.FINER, "new AudioReader, file: {0}", file.getAbsolutePath());
   }
 
   /**
@@ -243,8 +244,7 @@ public class AudioReader {
         // no left-overs, so the float buffer will be mapped on the current byte buffer
         /**
          * @ToDo re-mapping the byte buffer to a float buffer on each cycle
-         * reduces the performance by a factor of 8!!!
-         **
+         * reduces the performance by a factor of 8!!! *
          */
         thisFloatBuffer = currentByteBuff.asFloatBuffer();
       }

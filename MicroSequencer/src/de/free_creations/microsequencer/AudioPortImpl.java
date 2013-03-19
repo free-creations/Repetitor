@@ -41,7 +41,6 @@ class AudioPortImpl implements AudioPort {
   private final float MINSIGNAL = 1E-10F; //-200 decibel
   private int framesPerCycle;
   private int outputChannelCount;
-  private final int MAXCHANNELS = 16;
   private float[] currentAttenuationVolt = new float[MAXCHANNELS];
   private float[] targetAttenuationVolt = new float[MAXCHANNELS];
   private float[] targetAttenuationDecibel = new float[MAXCHANNELS];

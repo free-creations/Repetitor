@@ -206,6 +206,7 @@ public class AudioWriter {
     // prepare the current and the previous buffers
     previousBuffReadyToBeFilled = new RealizedFuture(byteBuffer1.asFloatBuffer(), byteBuffer1, false);
     currentBuffReadyToBeFilled = new RealizedFuture(byteBuffer2.asFloatBuffer(), byteBuffer2, false);
+    logger.log(Level.FINER, "new AudioWriter, file: {0}", file.getAbsolutePath());
 
 
   }

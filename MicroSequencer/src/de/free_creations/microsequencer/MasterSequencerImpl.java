@@ -43,7 +43,7 @@ class MasterSequencerImpl implements MasterSequencer {
   private TimeSignatureTrack timeSignatureTrack = null;
   private final ArrayList<MasterSequencer.MidiSubSequencer> midiSubSequencers =
           new ArrayList<>();
-  private final ArrayList<MasterSequencer.SubSequencer> subSequencers =
+  private final ArrayList<MasterSequencer.SubSequencer> midiAndAudioSubSequencers =
           new ArrayList<>();
   private final Object updateLock = new Object();
   private volatile double tempoFactor = 1.0D;
@@ -86,9 +86,9 @@ class MasterSequencerImpl implements MasterSequencer {
       //SubSequencer newSubSequencer = new MidiSubSequencer(name, soundbank);
       MidiSubSequencer newSubSequencer = midiSubSequencerFactory.make(name, soundbank);
       synchronized (midiSubSequencers) {
-        synchronized (subSequencers) {
+        synchronized (midiAndAudioSubSequencers) {
           midiSubSequencers.add(newSubSequencer);
-          subSequencers.add(newSubSequencer);
+          midiAndAudioSubSequencers.add(newSubSequencer);
         }
       }
       return newSubSequencer;
@@ -101,8 +101,8 @@ class MasterSequencerImpl implements MasterSequencer {
     synchronized (updateLock) {
       //SubSequencer newSubSequencer = new MidiSubSequencer(name, soundbank);
       SubSequencer newSubSequencer = audioSubSequencerFactory.makeAudioRecorder(name);
-      synchronized (subSequencers) {
-        subSequencers.add(newSubSequencer);
+      synchronized (midiAndAudioSubSequencers) {
+        midiAndAudioSubSequencers.add(newSubSequencer);
       }
       return newSubSequencer;
     }
@@ -250,15 +250,15 @@ class MasterSequencerImpl implements MasterSequencer {
         midiSubSequencersSnapShot =
                 new ArrayList<>(midiSubSequencers);
       }
-      ArrayList<MasterSequencer.SubSequencer> subSequencersSnapShot;
-      synchronized (subSequencers) {
-        subSequencersSnapShot =
-                new ArrayList<>(subSequencers);
+      ArrayList<MasterSequencer.SubSequencer> subMidiAndAudioSequencersSnapShot;
+      synchronized (midiAndAudioSubSequencers) {
+        subMidiAndAudioSequencersSnapShot =
+                new ArrayList<>(midiAndAudioSubSequencers);
       }
       activeMasterSequencer =
               new ActiveMasterSequencer(
               startPosition,
-              subSequencersSnapShot,
+              subMidiAndAudioSequencersSnapShot,
               midiSubSequencersSnapShot,
               tempoTrack,
               timeSignatureTrack,
@@ -302,6 +302,7 @@ class MasterSequencerImpl implements MasterSequencer {
     synchronized (updateLock) {
       stopMidi();
       midiSubSequencers.clear();
+      midiAndAudioSubSequencers.clear();
     }
   }
 
