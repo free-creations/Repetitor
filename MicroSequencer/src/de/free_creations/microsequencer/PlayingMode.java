@@ -20,9 +20,23 @@ package de.free_creations.microsequencer;
  * @author Harald Postner
  */
  public enum PlayingMode {
-  MidiOnly, // play only Midi, Audio is off
-  RecordAudio, // play Midi and record Audio
+  /**
+   * Play only Midi, Audio is off.
+   */
+  MidiOnly, // 
+  /**
+   * Play Midi and record Audio.
+   */
+  RecordAudio, // 
+  /**
+   * Play Midi and re-play previously recorded Audio.
+   */
   PlayAudio, // play Midi and re-play prevously Audio
+  /**
+   * Play Midi in loop mode and, in parallel,
+   * re-play Audio and record Audio input. 
+   * At the loop end point switch input and output.
+   */
   PlayRecordAudio
   
 }

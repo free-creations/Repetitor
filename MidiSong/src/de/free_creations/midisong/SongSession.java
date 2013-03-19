@@ -17,6 +17,7 @@
 package de.free_creations.midisong;
 
 import de.free_creations.microsequencer.MicroSequencer;
+import de.free_creations.microsequencer.PlayingMode;
 import de.free_creations.microsequencer.SequencerEventListener;
 import de.free_creations.microsequencer.SequencerMidiPort;
 import de.free_creations.microsequencer.SequencerPort;
@@ -35,21 +36,32 @@ import org.openide.util.Exceptions;
 /**
  * The Song-session manages the dynamic aspects of a song when a song is being
  * played. Session relevant informations are all those settings that the user
- * can change without changing the song itself. <br/> Examples of such
- * information are: <ul> <li>the position of the cursor</li> <li>the position
- * and the length of the lead-in</li> <li>the position and the length of the
- * lead-out</li> <li>the muting of individual tracks</li> </ul> A song session
- * can be connected and disconnected to a sequencer. In order to maintain a
- * clean version of the song, the session will not operate on the given song but
- * rather on a clone of the given song. <p> There can be several open {@link Song songs}
- * in one NetBeans instance. To each open song there can be several
- * song-sessions attached. But only one song-session can have the sequencer
- * attached. The only session that can be heard (that is playing) is the one
- * which currently has the sequencer. Starting and stopping the reproduction of
- * a song has to be done through such a Song Session object. </p> <p> In order
- * to be able to manage the set of all open song-sessions there is the factory
- * class {@link SongSessionManager SongSessionManager}. New {@link SongSession SongSessions}
- * shall be created be using the
+ * can change without changing the song itself.
+ *
+ * <br/> Examples of such information are:
+ *
+ * <ul> <li>the position of the cursor</li>
+ *
+ * <li>the position and the length of the lead-in</li>
+ *
+ *  * <li>the position and the length of the lead-out</li>
+ *
+ * <li>the muting of individual tracks</li> </ul>
+ *
+ * A song session can be connected and disconnected to a sequencer. In order to
+ * maintain a clean version of the song, the session will not operate on the
+ * given song but rather on a clone of the given song.
+ *
+ * <p> There can be several open {@link Song songs} in one NetBeans instance. To
+ * each open song there can be several song-sessions attached. But only one
+ * song-session can have the sequencer attached. The only session that can be
+ * heard (that is playing) is the one which currently has the sequencer.
+ * Starting and stopping the reproduction of a song has to be done through such
+ * a Song Session object. </p>
+ *
+ * <p> In order to be able to manage the set of all open song-sessions there is
+ * the factory class {@link SongSessionManager SongSessionManager}. New
+ * {@link SongSession SongSessions} shall be created by using the
  * {@link SongSessionManager SongSessionManagers} methods. </p>
  *
  * @author Harald Postner <Harald at H-Postner.de>
@@ -81,6 +93,8 @@ public class SongSession {
   public static final String PROP_NAME = "name";
   public static final String PROP_PLAYING = "playing";
   public static final String PROP_TEMPOFACTOR = "tempoFactor";
+  private PlayingMode playingMode = PlayingMode.MidiOnly;
+  public static final String PROP_PLAYINGMODE = "playingMode";
   private Sequence nullSequence;
   /**
    * the length in midi tick of this song*
@@ -93,7 +107,6 @@ public class SongSession {
    * of this session.
    */
   private SequencerEventListener sequencerEventListener = new SequencerEventListener() {
-
     private volatile boolean isPlaying = false;
 
     @Override
@@ -209,7 +222,7 @@ public class SongSession {
       return;
     }
     if (playing) {
-      sequencer.start();
+      sequencer.start(playingMode);
     } else {
       sequencer.stop();
     }
@@ -232,6 +245,49 @@ public class SongSession {
    */
   public String getName() {
     return name;
+  }
+
+  /**
+   * Get the value of playingMode
+   *
+   * @return the value of playingMode
+   */
+  public PlayingMode getPlayingMode() {
+    return playingMode;
+  }
+
+  /**
+   * Get the name of the current playing mode.
+   *
+   * @return the playing mode as a string.
+   */
+  public String getPlayingModeName() {
+    return getPlayingMode().name();
+  }
+
+  /**
+   * Set the value of playingMode
+   *
+   * @param playingMode new value of playingMode
+   */
+  public void setPlayingMode(PlayingMode playingMode) {
+    PlayingMode oldPlayingMode = this.playingMode;
+    if(oldPlayingMode == playingMode){
+      return;
+    }
+    this.playingMode = playingMode;
+    propertyChangeSupport.firePropertyChange(PROP_PLAYINGMODE, oldPlayingMode, playingMode);
+  }
+
+  /**
+   * Set the value of playingMode
+   *
+   * @param playingMode the name of a playing mode
+   * @throws IllegalArgumentException if the given parameter does not correspond
+   * to a valid playing mode.
+   */
+  public void setPlayingMode(String playingMode) {
+    setPlayingMode(PlayingMode.valueOf(playingMode));
   }
 
   /**
@@ -527,7 +583,6 @@ public class SongSession {
   public BeatPosition tickToBeatPosition(double tickPosition) {
     if (sequencer == null) {
       return new BeatPosition() {
-
         @Override
         public int getNumerator() {
           return 4;
@@ -713,14 +768,14 @@ public class SongSession {
   }
 
   /**
-   * @deprecated use setPaying...
+   * @deprecated use setPlaying...
    */
   @Deprecated
   private void start() {
     if (sequencer == null) {
       throw new RuntimeException("Session cannot start; has no sequencer.");
     } else {
-      sequencer.start();
+      sequencer.start(playingMode);
     }
   }
 

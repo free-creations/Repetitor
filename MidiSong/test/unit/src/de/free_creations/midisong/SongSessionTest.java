@@ -20,6 +20,7 @@ import javax.sound.midi.MidiEvent;
 import de.free_creations.microsequencer.AudioPort;
 import de.free_creations.microsequencer.SequencerEventListener;
 import de.free_creations.microsequencer.MicroSequencer;
+import de.free_creations.microsequencer.PlayingMode;
 import de.free_creations.microsequencer.SequencerMidiPort;
 import de.free_creations.microsequencer.SequencerPort;
 import de.free_creations.midiutil.BeatPosition;
@@ -113,8 +114,8 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of attachSequencer method. The attached song is empty. We
-   * verify that although the song is empty, the system reacts reasonably.
+   * Test of attachSequencer method. The attached song is empty. We verify that
+   * although the song is empty, the system reacts reasonably.
    */
   @Test
   public void testAttachSequencer_0() throws EInvalidSongFile, MidiUnavailableException {
@@ -144,10 +145,10 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of attachSequencer method, for a very simple case.
-   * The simplest case for a playable song is a song with a master-track and 
-   * and a synthesiser track attached to it. More elaborate cases
-   * with looping lead-in and so on, are tested in the separate procedures.
+   * Test of attachSequencer method, for a very simple case. The simplest case
+   * for a playable song is a song with a master-track and and a synthesiser
+   * track attached to it. More elaborate cases with looping lead-in and so on,
+   * are tested in the separate procedures.
    */
   @Test
   public void testAttachSequencer_1() throws EInvalidSongFile, MidiUnavailableException {
@@ -180,14 +181,10 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of attachSequencer method, for the case of many 
-   * tracks attached to one synthesiser track (flat hierarchy).
-   * 
-   *   synthesiser
-   *    |
-   *    +--------+-------+
-   *    |        |       |
-   *   track_1  track_2  ....  
+   * Test of attachSequencer method, for the case of many tracks attached to one
+   * synthesiser track (flat hierarchy).
+   *
+   * synthesiser | +--------+-------+ | | | track_1 track_2 ....
    */
   @Test
   public void testAttachSequencer_3() throws EInvalidSongFile, MidiUnavailableException {
@@ -222,16 +219,10 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of attachSequencer method, for the case of many 
-   * tracks attached to one another (deep hierarchy).
-   * 
-   *   synthesiser
-   *    |
-   *   track_1
-   *    | 
-   *   track_2  
-   *    |
-   *   .....
+   * Test of attachSequencer method, for the case of many tracks attached to one
+   * another (deep hierarchy).
+   *
+   * synthesiser | track_1 | track_2 | .....
    */
   @Test
   public void testAttachSequencer_4() throws EInvalidSongFile, MidiUnavailableException {
@@ -266,16 +257,10 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of attachSequencer method, for the case of many 
-   * tracks attached to one another the last one being a synthesiser.
-   * 
-   *   synthesiser_1
-   *    |
-   *   track_1
-   *    | 
-   *   track_2  
-   *    |
-   *   synthesiser_2
+   * Test of attachSequencer method, for the case of many tracks attached to one
+   * another the last one being a synthesiser.
+   *
+   * synthesiser_1 | track_1 | track_2 | synthesiser_2
    */
   @Test
   public void testAttachSequencer_5() throws EInvalidSongFile, MidiUnavailableException {
@@ -321,21 +306,18 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of setLoopEndPoint method, of class SongSession.
-   * <ol>
-   * <li>As default the loop-end-point is the end of the sequence.</li>
-   * <li>The loop-end-point can be set to any value between
-   * the loop-start-point and the end of the sequence. An attempt to set the 
-   * loop-end-point before the loop-start-point does not provoke an exception,
-   * but loop-end-point is set to be the same as the loop-start-point. An attempt to set the 
-   * loop-end-point after the end of the sequence does not provoke an exception,
-   * but loop-end-point is set to be the same as the end of the sequence.</li>
-   * <li>When a sequencer is attached to a SongSession its loop-end-point
-   * is set to be the same as the SongSession's.</li>
-   * <li>When the SongSession loop-end-point changes, the sequencers
-   * loop-end-point is set accordingly.</li>
-   * </ol>
-   * 
+   * Test of setLoopEndPoint method, of class SongSession. <ol> <li>As default
+   * the loop-end-point is the end of the sequence.</li> <li>The loop-end-point
+   * can be set to any value between the loop-start-point and the end of the
+   * sequence. An attempt to set the loop-end-point before the loop-start-point
+   * does not provoke an exception, but loop-end-point is set to be the same as
+   * the loop-start-point. An attempt to set the loop-end-point after the end of
+   * the sequence does not provoke an exception, but loop-end-point is set to be
+   * the same as the end of the sequence.</li> <li>When a sequencer is attached
+   * to a SongSession its loop-end-point is set to be the same as the
+   * SongSession's.</li> <li>When the SongSession loop-end-point changes, the
+   * sequencers loop-end-point is set accordingly.</li> </ol>
+   *
    */
   @Test
   public void testSetLoopEndPoint() throws EInvalidSongFile, MidiUnavailableException {
@@ -385,21 +367,19 @@ public class SongSessionTest {
   }
 
   /**
-   * Test of setLoopStartPoint method, of class SongSession.
-   * <ol>
-   * <li>As default, the loop-start-point is the start of the sequence.</li>
-   * <li>The loop-start-point can be set to any value between
-   * the start of the sequence and the loop-end-point. An attempt to set the 
-   * loop-start-point before the start of the sequence does not provoke an exception,
-   * but loop-start-point is set to be the start of the sequence. An attempt to set the 
+   * Test of setLoopStartPoint method, of class SongSession. <ol> <li>As
+   * default, the loop-start-point is the start of the sequence.</li> <li>The
+   * loop-start-point can be set to any value between the start of the sequence
+   * and the loop-end-point. An attempt to set the loop-start-point before the
+   * start of the sequence does not provoke an exception, but loop-start-point
+   * is set to be the start of the sequence. An attempt to set the
    * loop-start-point after the loop-end-point does not provoke an exception,
    * but loop-start-point is set to be the same as the loop-end-point.</li>
-   * <li>When a sequencer is attached to a SongSession, the sequencers loop-end-point
-   * is set to be the same as the SongSession's.</li>
-   * <li>When the SongSession loop-start-point changes, the sequencers
-   * loop-start-point is set accordingly.</li>
-   * </ol>
-   * 
+   * <li>When a sequencer is attached to a SongSession, the sequencers
+   * loop-end-point is set to be the same as the SongSession's.</li> <li>When
+   * the SongSession loop-start-point changes, the sequencers loop-start-point
+   * is set accordingly.</li> </ol>
+   *
    */
   @Test
   public void testSetLoopStartPoint() throws EInvalidSongFile, MidiUnavailableException {
@@ -582,9 +562,11 @@ public class SongSessionTest {
     assertFalse(sequencerMock.running);
 
     //verify that changes to the song-session are handed over to the sequencer
+    instance.setPlayingMode("PlayRecordAudio");
     instance.setPlaying(true);
     assertTrue(instance.isPlaying());
     assertTrue(sequencerMock.running);
+    assertEquals(PlayingMode.PlayRecordAudio, sequencerMock.playingMode);
 
 
     // detachAudio and attach again...
@@ -761,7 +743,6 @@ public class SongSessionTest {
     public float[] tracksAttenuation = null;
     public boolean portMute = false;
     public AudioPort audioPort = new AudioPort() {
-
       public float[] attenuations = new float[16];
 
       @Override
@@ -841,6 +822,7 @@ public class SongSessionTest {
     private long tickPosition = 123L;
     private SequencerEventListener sequencerEventListener = null;
     private double tempoFactor;
+    public PlayingMode playingMode = PlayingMode.MidiOnly;
 
     @Override
     public void setSequence(Sequence sequence) {
@@ -856,7 +838,6 @@ public class SongSessionTest {
     public double getTickPosition(double offset) {
       return tickPosition;
     }
-
 
     @Override
     public void setTickPosition(long tick) {
@@ -896,6 +877,7 @@ public class SongSessionTest {
     @Override
     public void start() {
       running = true;
+      playingMode = PlayingMode.MidiOnly;
     }
 
     @Override
@@ -960,7 +942,7 @@ public class SongSessionTest {
 
     @Override
     public float getTempoFactor() {
-      return (float)tempoFactor;
+      return (float) tempoFactor;
     }
 
     @Override
@@ -1165,7 +1147,6 @@ public class SongSessionTest {
       throw new UnsupportedOperationException("Not supported yet.");
     }
 
-
     @Override
     public double getMaxLoadAndClear() {
       throw new UnsupportedOperationException("Not supported yet.");
@@ -1183,7 +1164,7 @@ public class SongSessionTest {
 
     @Override
     public void addSequencerEventListener(SequencerEventListener listener) {
-      sequencerEventListener =listener;
+      sequencerEventListener = listener;
     }
 
     @Override
@@ -1200,10 +1181,17 @@ public class SongSessionTest {
     public SequencerPort createAudioRecorderPort(String name) throws IOException, MidiUnavailableException {
       throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    @Override
+    public void start(PlayingMode playingMode) {
+      running = true;
+      this.playingMode = playingMode;
+    }
   }
 
   /**
-   * utility function to  create a "tempo" event.
+   * utility function to create a "tempo" event.
+   *
    * @param pos midi tick where the event should be placed
    * @return a new midi event
    */

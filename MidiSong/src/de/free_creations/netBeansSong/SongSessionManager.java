@@ -98,7 +98,10 @@ public class SongSessionManager {
       microSequencer = initializeAudioSystem();
       if (microSequencer == null) {
         logger.warning("The Audio System is not correctly initialized.");
+        success = false;
         return null;
+      }else{
+        success = true;
       }
 
       // if the new session is already active there is nothing to be done.
@@ -113,7 +116,6 @@ public class SongSessionManager {
       if (newSongSession != null) {
         newSongSession.attachSequencer(microSequencer);
       }
-      success = true;
       return newSongSession;
     }
 
