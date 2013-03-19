@@ -772,11 +772,7 @@ public class SongSession {
    */
   @Deprecated
   private void start() {
-    if (sequencer == null) {
-      throw new RuntimeException("Session cannot start; has no sequencer.");
-    } else {
-      sequencer.start(playingMode);
-    }
+    setPlaying(true);
   }
 
   /**
