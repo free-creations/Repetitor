@@ -95,6 +95,10 @@ class AudioRecorderSubSequencer implements
     return newFactory;
   }
   private int nFrames;
+  private int processInCount = 0; // (debugging variable) the number of times processIn was called within one session
+  private int processOutCount = 0; // (debugging variable) the number of times processOut was called within one session
+  private int processExeCount = 0; // (debugging variable) the number of times read or write operation was executed within one session.
+  private int audioWriterNotReadyCount; // (debugging variable) the number of times processOut tried to access the writer, but it was not ready.
 
   void setMute(boolean value) {
     mute = value;
@@ -259,7 +263,15 @@ class AudioRecorderSubSequencer implements
     Arrays.fill(balancedInputSamples, 0F);
     long cycleDurationNano = (1000 * 1000 * 1000 * nFrames) / samplingRate;
     cycleTimeoutNano = cycleDurationNano / 10;
-    logger.log(Level.FINER, "AudioRecorderSubSequencer opened");
+    processInCount = 0;
+    processOutCount = 0;
+    processExeCount = 0;
+    audioWriterNotReadyCount = 0;
+
+    logger.log(Level.FINER, "## AudioRecorderSubSequencer opened");
+    logger.log(Level.FINER, "... inputChannelCount: {0}", inputChannelCount);
+    logger.log(Level.FINER, "... outputChannelCount: {0}", outputChannelCount);
+
   }
 
   /**
@@ -324,6 +336,7 @@ class AudioRecorderSubSequencer implements
    * @throws Exception
    */
   public float[] processOut(double streamTime) {
+    processOutCount++;
     if (playingMode != PlayingMode.PlayAudio) {
       return nullSamples;
     }
@@ -336,6 +349,7 @@ class AudioRecorderSubSequencer implements
     try {
 
       reader.get(cycleTimeoutNano, TimeUnit.NANOSECONDS).getNext(outputSamples);
+      processExeCount++;
       return outputSamples;
 
     } catch (TimeoutException ex) {
@@ -360,6 +374,7 @@ class AudioRecorderSubSequencer implements
    * @throws Exception
    */
   public void processIn(double streamTime, float[] samples) {
+    processInCount++;
     if (playingMode != PlayingMode.RecordAudio) {
       return;
     }
@@ -374,11 +389,14 @@ class AudioRecorderSubSequencer implements
       if (writer == null) {
         throw new NullPointerException("writer is null");
       }
-      AudioWriter audioWriter = writer.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
+      //AudioWriter audioWriter = writer.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
+      AudioWriter audioWriter = writer.get(0, TimeUnit.MICROSECONDS);
       float[] balancedSamples = balanceChannels(samples);
       audioWriter.putNext(balancedSamples);
+      processExeCount++;
     } catch (NullPointerException | InterruptedException | ExecutionException | TimeoutException ex) {
       executionException = ex;
+      audioWriterNotReadyCount++;
     }
   }
 
@@ -458,7 +476,11 @@ class AudioRecorderSubSequencer implements
       Arrays.fill(outputSamples, 0F);
     }
     executor.submit(new ClosingTask(writer, reader));
-    logger.log(Level.FINER, "files closed");
+    logger.log(Level.FINER, "### files closed");
+    logger.log(Level.FINER, "### processIn count: {0}", processInCount);
+    logger.log(Level.FINER, "### processOut count: {0}", processOutCount);
+    logger.log(Level.FINER, "### process execution count: {0}", processExeCount);
+    logger.log(Level.FINER, "### audio writer not ready count: {0}", audioWriterNotReadyCount);
   }
 
   @Override

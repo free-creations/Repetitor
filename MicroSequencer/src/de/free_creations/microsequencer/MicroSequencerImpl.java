@@ -78,7 +78,7 @@ class MicroSequencerImpl implements MicroSequencer {
    * Starts playback of the MIDI data in the currently loaded sequence. Playback
    * will begin from the current position. Loop handling is not implemented, so
    * playback will continue to play to the end of the sequence and then stop.
-   * 
+   *
    * @deprecated use start(PlayingMode playingMode)
    */
   @Override
@@ -740,17 +740,25 @@ class MicroSequencerImpl implements MicroSequencer {
       // print messages to stderr.
       audioSystem.showWarnings(true);
 
-      // Set our stream parameters for output only.
+      // Set our stream parameters for the output
       AudioSystem.StreamParameters oParams = requestedConfig.getOutputParameters();
       if (oParams == null) {
         logger.log(Level.SEVERE, "Not a valid output device.");
         throw new MidiUnavailableException("The requested output device is not available.");
+      } else {
+        logger.log(Level.INFO, "output device = {0}", oParams.deviceId);
       }
-      logger.log(Level.INFO, "output device = {0}", oParams.deviceId);
+      // Set our stream parameters for the input
+      AudioSystem.StreamParameters iParams = requestedConfig.getInputParameters();
+      if (iParams == null) {
+        logger.log(Level.INFO, "No Input device.");
+      } else {
+        logger.log(Level.INFO, "input device = {0}", oParams.deviceId);
+      }
       AudioSystem.StreamOptions options = requestedConfig.getOptions();
       try {
         audioSystem.openStream(oParams,
-                null,
+                iParams,
                 requestedConfig.getSampleRate(),
                 requestedConfig.getBufferSize(),
                 audioMixer,

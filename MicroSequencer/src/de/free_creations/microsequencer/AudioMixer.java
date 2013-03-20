@@ -22,6 +22,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sound.midi.MidiUnavailableException;
 import rtaudio4java.AudioProcessor_Float32;
 
@@ -33,7 +35,8 @@ import rtaudio4java.AudioProcessor_Float32;
  */
 class AudioMixer extends AudioProcessor_Float32 {
 
-  private double cycleLength;
+  private static final Logger logger = Logger.getLogger(AudioMixer.class.getName());
+  private double cycleDuration;
   private volatile boolean streamOpen = false;
   private volatile int samplingRate;
   private volatile int framesPerCycle;
@@ -42,6 +45,19 @@ class AudioMixer extends AudioProcessor_Float32 {
   private volatile boolean noninterleaved;
   private volatile boolean streamStarted = false;
   private volatile double maxLoad;
+  private int processCount = 0; // (debugging variable) the number of times process was called
+  private int badStatusCount = 0; // (debugging variable) the number of times RtAudio reported a timeout
+
+  // for debugging
+  private void reportStatus() {
+    if (processCount % 50 == 0) {
+      logger.log(Level.FINER, " ---");
+      logger.log(Level.FINER, " process count: {0}", processCount);
+      logger.log(Level.FINER, " bad status count: {0}", badStatusCount);
+      logger.log(Level.FINER, " maximum load: {0}", getMaxLoadAndClear());
+    }
+
+  }
 
   class ProcessThreadFactory implements ThreadFactory {
 
@@ -57,7 +73,8 @@ class AudioMixer extends AudioProcessor_Float32 {
     }
   }
   private float[] resultBuffer;
-  private final CopyOnWriteArrayList<AudioPortImpl> audioPorts = new CopyOnWriteArrayList<AudioPortImpl>();
+  private final CopyOnWriteArrayList<AudioPortImpl> audioPorts = new CopyOnWriteArrayList<>();
+  private final Object audioPortsLock = new Object();
   private final MasterSequencer masterSequencer;
 
   AudioMixer(MasterSequencer masterSequencer) {
@@ -81,73 +98,96 @@ class AudioMixer extends AudioProcessor_Float32 {
     this.inputChannelCount = inputChannelCount;
     this.noninterleaved = noninterleaved;
 
-    cycleLength = (double) framesPerCycle / (double) samplingRate;
+    cycleDuration = (double) framesPerCycle / (double) samplingRate;
     resultBuffer = new float[framesPerCycle * outputChannelCount];
     Arrays.fill(resultBuffer, 0F);
 
-    ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
-    while (portIter.hasNext()) {
-      portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
+    synchronized (audioPortsLock) {
+      ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
+      while (portIter.hasNext()) {
+        portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
+      }
     }
+    logger.log(Level.FINER, "### onOpenStream executed.");
+    logger.log(Level.FINER, "... inputChannelCount: {0}", inputChannelCount);
+    logger.log(Level.FINER, "... outputChannelCount: {0}", outputChannelCount);
+
     streamOpen = true;
   }
 
   @Override
   public void onStartStream() {
 
-    ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
-    while (portIter.hasNext()) {
-      portIter.next().start();
+    synchronized (audioPortsLock) {
+      ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
+      while (portIter.hasNext()) {
+        portIter.next().start();
+      }
     }
+    processCount = 0;
+    badStatusCount = 0;
+    logger.log(Level.FINER, "onStartStream executed.");
     streamStarted = true;
   }
 
   @Override
   public void onStopStream() {
     streamStarted = false;
-    ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
-    while (portIter.hasNext()) {
-      portIter.next().stop();
+    synchronized (audioPortsLock) {
+      ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
+      while (portIter.hasNext()) {
+        portIter.next().stop();
+      }
     }
-
+    logger.log(Level.FINER, "### > onStopStream executed.");
+    logger.log(Level.FINER, "### > process count: {0}", processCount);
+    logger.log(Level.FINER, "### > bad status count: {0}", badStatusCount);
   }
 
   @Override
   public void onCloseStream() {
     streamOpen = false;
 
-    ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
-    while (portIter.hasNext()) {
-      portIter.next().close();
+    synchronized (audioPortsLock) {
+      ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
+      while (portIter.hasNext()) {
+        portIter.next().close();
+      }
     }
-
-
+    logger.log(Level.FINER, "onCloseStream executed.");
   }
 
   @Override
   public float[] process(float[] input, double streamTime, int status) throws InterruptedException, ExecutionException {
     long startNano = System.nanoTime();
-    masterSequencer.prepareCycle(streamTime, cycleLength);
-
-
-    for (AudioPortImpl audioPort : audioPorts) {
-      audioPort.processLater(streamTime, input);
+    if (status != 0) {
+      badStatusCount++;
     }
+    reportStatus();
 
-    Arrays.fill(resultBuffer, 0F);
+    masterSequencer.prepareCycle(streamTime, cycleDuration);
 
-    for (AudioPortImpl audioPort : audioPorts) {
+    synchronized (audioPortsLock) {
+      for (AudioPortImpl audioPort : audioPorts) {
+        audioPort.processLater(streamTime, input);
+      }
 
-      float[] producerBuffer = audioPort.getProcessResult();
-      if (producerBuffer != null) {
-        for (int i = 0; i < resultBuffer.length; i++) {
-          resultBuffer[i] += producerBuffer[i];
+      Arrays.fill(resultBuffer, 0F);
+
+      for (AudioPortImpl audioPort : audioPorts) {
+
+        float[] producerBuffer = audioPort.getProcessResult();
+        if (producerBuffer != null) {
+          for (int i = 0; i < resultBuffer.length; i++) {
+            resultBuffer[i] += producerBuffer[i];
+          }
         }
       }
     }
     long elapseNano = System.nanoTime() - startNano;
-    double load = (1E-9 * elapseNano) / cycleLength;
+    double load = (1E-9 * elapseNano) / cycleDuration;
     maxLoad = Math.max(load, maxLoad);
+    processCount++;
     return resultBuffer;
   }
 
@@ -159,18 +199,22 @@ class AudioMixer extends AudioProcessor_Float32 {
     if (streamStarted) {
       port.start();
     }
-    audioPorts.add(port);
+    synchronized (audioPortsLock) {
+      audioPorts.add(port);
+    }
     return port;
   }
 
   public void removeAllPorts() {
-    ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
-    while (portIter.hasNext()) {
-      AudioPortImpl port = portIter.next();
-      port.stop();
-      port.close();
+    synchronized (audioPortsLock) {
+      ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
+      while (portIter.hasNext()) {
+        AudioPortImpl port = portIter.next();
+        port.stop();
+        port.close();
+      }
+      audioPorts.clear();
     }
-    audioPorts.clear();
   }
 
   public double getMaxLoadAndClear() {
