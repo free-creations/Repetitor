@@ -51,10 +51,15 @@ class AudioMixer extends AudioProcessor_Float32 {
   // for debugging
   private void reportStatus() {
     if (processCount % 50 == 0) {
-      logger.log(Level.FINER, " ---");
-      logger.log(Level.FINER, " process count: {0}", processCount);
-      logger.log(Level.FINER, " bad status count: {0}", badStatusCount);
-      logger.log(Level.FINER, " maximum load: {0}", getMaxLoadAndClear());
+      double lastMaxLoad = getMaxLoadAndClear();
+      if (lastMaxLoad > 0.8) {
+        logger.log(Level.FINER, "### overload");
+        logger.log(Level.FINER, " process count: {0}", processCount);
+        logger.log(Level.FINER, " maximum load: {0}", lastMaxLoad);
+      }
+    }
+    if (processCount % 500 == 0) {
+      logger.log(Level.FINER, " Still alive - process count: {0}", processCount);
     }
 
   }

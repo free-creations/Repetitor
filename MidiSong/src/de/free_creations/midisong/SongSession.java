@@ -880,6 +880,21 @@ public class SongSession {
     }
   }
 
+  /**
+   * Forces the sequencer to close. 
+   * 
+   * Can be used to force to throw exceptions
+   * that where collected during process cycles.
+   *
+   * @deprecated only for test.
+   */
+  public void forceClosing() {
+    if (sequencer != null) {
+      sequencer.stop();
+      sequencer.close();
+    }
+  }
+
   private class MidiTrackHandler implements GenericTrack.EventHandler {
 
     final int trackIndex;

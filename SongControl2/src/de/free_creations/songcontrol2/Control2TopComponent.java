@@ -112,6 +112,7 @@ public final class Control2TopComponent extends SongTopComponent {
     sliderFeedback = new de.free_creations.guicomponents.SliderVuMeter();
     jLabel3 = new javax.swing.JLabel();
     cbxPlayingMode = new javax.swing.JComboBox();
+    btnForceClose = new javax.swing.JButton();
 
     setLayout(new java.awt.GridBagLayout());
 
@@ -244,7 +245,7 @@ public final class Control2TopComponent extends SongTopComponent {
           .addGroup(pnlSingstimmenLayout.createSequentialGroup()
             .addComponent(jLabel2)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(sliderVoices, javax.swing.GroupLayout.DEFAULT_SIZE, 572, Short.MAX_VALUE)))
+            .addComponent(sliderVoices, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)))
         .addContainerGap())
     );
 
@@ -279,14 +280,14 @@ public final class Control2TopComponent extends SongTopComponent {
         .addGroup(pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(sliderOrchestra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(jLabel1))
-        .addContainerGap(17, Short.MAX_VALUE))
+        .addContainerGap(15, Short.MAX_VALUE))
     );
     pnlOrchestraLayout.setVerticalGroup(
       pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlOrchestraLayout.createSequentialGroup()
         .addComponent(jLabel1)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(sliderOrchestra, javax.swing.GroupLayout.DEFAULT_SIZE, 572, Short.MAX_VALUE)
+        .addComponent(sliderOrchestra, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
         .addContainerGap())
     );
 
@@ -320,6 +321,14 @@ public final class Control2TopComponent extends SongTopComponent {
       }
     });
 
+    btnForceClose.setBackground(new java.awt.Color(255, 51, 51));
+    org.openide.awt.Mnemonics.setLocalizedText(btnForceClose, org.openide.util.NbBundle.getMessage(Control2TopComponent.class, "Control2TopComponent.btnForceClose.text")); // NOI18N
+    btnForceClose.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnForceCloseActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
     jPanel1Layout.setHorizontalGroup(
@@ -330,9 +339,13 @@ public final class Control2TopComponent extends SongTopComponent {
           .addGroup(jPanel1Layout.createSequentialGroup()
             .addComponent(sliderFeedback, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(cbxPlayingMode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+              .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(0, 0, 0)
+                .addComponent(btnForceClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+              .addComponent(cbxPlayingMode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
           .addComponent(jLabel3))
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        .addContainerGap(25, Short.MAX_VALUE))
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -340,9 +353,11 @@ public final class Control2TopComponent extends SongTopComponent {
         .addComponent(jLabel3)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(sliderFeedback, javax.swing.GroupLayout.DEFAULT_SIZE, 572, Short.MAX_VALUE)
+          .addComponent(sliderFeedback, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
           .addGroup(jPanel1Layout.createSequentialGroup()
             .addComponent(cbxPlayingMode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGap(18, 18, 18)
+            .addComponent(btnForceClose)
             .addGap(0, 0, Short.MAX_VALUE)))
         .addContainerGap())
     );
@@ -353,14 +368,14 @@ public final class Control2TopComponent extends SongTopComponent {
       pnlFeedbackLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(pnlFeedbackLayout.createSequentialGroup()
         .addGap(0, 0, 0)
-        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 211, Short.MAX_VALUE)
+        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
         .addContainerGap())
     );
     pnlFeedbackLayout.setVerticalGroup(
       pnlFeedbackLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlFeedbackLayout.createSequentialGroup()
         .addGap(0, 0, 0)
-        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 640, Short.MAX_VALUE)
+        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 670, Short.MAX_VALUE)
         .addGap(0, 0, 0))
     );
 
@@ -425,7 +440,7 @@ public final class Control2TopComponent extends SongTopComponent {
   }//GEN-LAST:event_voice6ActionPerformed
 
   private void sliderFeedbackStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderFeedbackStateChanged
-        if (activeSongSession != null) {
+    if (activeSongSession != null) {
       activeSongSession.setAudioAttenuation(sliderFeedback.getValue());
     }
   }//GEN-LAST:event_sliderFeedbackStateChanged
@@ -440,7 +455,15 @@ public final class Control2TopComponent extends SongTopComponent {
     }
     // TODO add your handling code here:
   }//GEN-LAST:event_cbxPlayingModeActionPerformed
+
+  private void btnForceCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnForceCloseActionPerformed
+    // TODO add your handling code here:
+    if (activeSongSession != null) {
+      activeSongSession.forceClosing();
+    }
+  }//GEN-LAST:event_btnForceCloseActionPerformed
   // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JButton btnForceClose;
   private javax.swing.JComboBox cbxPlayingMode;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
@@ -549,8 +572,8 @@ public final class Control2TopComponent extends SongTopComponent {
     if (vSynth != null) {
       sliderVoices.setVuValue((int) vSynth.getVuLevel(0));
     }
-    if(activeSongSession != null){
-      sliderFeedback.setVuValue((int)activeSongSession.getAudioVuLevel());
+    if (activeSongSession != null) {
+      sliderFeedback.setVuValue((int) activeSongSession.getAudioVuLevel());
     }
   }
 

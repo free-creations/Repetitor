@@ -52,7 +52,7 @@ class AudioRecorderSubSequencer implements
             @Override
             public Thread newThread(Runnable r) {
               Thread thread = new Thread(r);
-              thread.setPriority(Thread.NORM_PRIORITY);
+              thread.setPriority(Thread.MIN_PRIORITY);
               thread.setName("FreeCreationsAudioRecorder");
               return thread;
             }
@@ -99,6 +99,7 @@ class AudioRecorderSubSequencer implements
   private int processOutCount = 0; // (debugging variable) the number of times processOut was called within one session
   private int processExeCount = 0; // (debugging variable) the number of times read or write operation was executed within one session.
   private int audioWriterNotReadyCount; // (debugging variable) the number of times processOut tried to access the writer, but it was not ready.
+  private int audioReaderNotReadyCount;
 
   void setMute(boolean value) {
     mute = value;
@@ -348,12 +349,14 @@ class AudioRecorderSubSequencer implements
     }
     try {
 
-      reader.get(cycleTimeoutNano, TimeUnit.NANOSECONDS).getNext(outputSamples);
+   //   reader.get(cycleTimeoutNano, TimeUnit.NANOSECONDS).getNext(outputSamples);
+      reader.get(0, TimeUnit.MILLISECONDS).getNext(outputSamples);
       processExeCount++;
       return outputSamples;
 
     } catch (TimeoutException ex) {
-      logger.log(Level.WARNING, "Read-Buffer underrun.");
+      audioReaderNotReadyCount++;
+      logger.log(Level.WARNING, "Audio Reader not ready.");
       return nullSamples;
     } catch (Exception ex) {
       executionException = ex;
@@ -385,18 +388,19 @@ class AudioRecorderSubSequencer implements
       return;
     }
     assert (samples.length == inputChannelCount * nFrames);
+    if (writer == null) {
+      return;//???
+    }
     try {
-      if (writer == null) {
-        throw new NullPointerException("writer is null");
-      }
-      //AudioWriter audioWriter = writer.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
-      AudioWriter audioWriter = writer.get(0, TimeUnit.MICROSECONDS);
+      AudioWriter audioWriter = writer.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
       float[] balancedSamples = balanceChannels(samples);
       audioWriter.putNext(balancedSamples);
       processExeCount++;
-    } catch (NullPointerException | InterruptedException | ExecutionException | TimeoutException ex) {
-      executionException = ex;
+    } catch (TimeoutException ex) {
+      logger.log(Level.WARNING, "Audio Writer not ready.");
       audioWriterNotReadyCount++;
+    } catch (InterruptedException | ExecutionException ex) {
+      executionException = ex;
     }
   }
 
@@ -444,23 +448,26 @@ class AudioRecorderSubSequencer implements
   @Override
   public void prepareSession(double startTick, PlayingMode mode) {
     playingMode = mode;
+    audioReaderNotReadyCount = 0;
+    audioWriterNotReadyCount = 0;
     if (outputSamples != null) {
       Arrays.fill(outputSamples, 0F);
+      Arrays.fill(nullSamples, 0F);
     }
     switch (playingMode) {
       case MidiOnly:
-        logger.log(Level.FINER, "MidiOnly");
+        logger.log(Level.FINER, "### prepareSession: MidiOnly");
         return;
       case RecordAudio:
-        logger.log(Level.FINER, "RecordAudio");
+        logger.log(Level.FINER, "### prepareSession: RecordAudio");
         writer = executor.submit(new WriterCreationTask(tempFile, writer, reader));
         return;
       case PlayAudio:
         if (tempFile.exists()) {
-          logger.log(Level.FINER, "PlayAudio");
+          logger.log(Level.FINER, "### prepareSession: PlayAudio");
           reader = executor.submit(new ReaderCreationTask(tempFile, writer, reader));
         } else {
-          logger.log(Level.FINER, "PlayAudio-there is no tempfile");
+          logger.log(Level.FINER, "### prepareSession: PlayAudio -- there is no tempfile");
         }
     }
   }
@@ -474,13 +481,18 @@ class AudioRecorderSubSequencer implements
   public void stopSession() {
     if (outputSamples != null) {
       Arrays.fill(outputSamples, 0F);
+      Arrays.fill(nullSamples, 0F);
     }
     executor.submit(new ClosingTask(writer, reader));
-    logger.log(Level.FINER, "### files closed");
-    logger.log(Level.FINER, "### processIn count: {0}", processInCount);
-    logger.log(Level.FINER, "### processOut count: {0}", processOutCount);
-    logger.log(Level.FINER, "### process execution count: {0}", processExeCount);
-    logger.log(Level.FINER, "### audio writer not ready count: {0}", audioWriterNotReadyCount);
+    logger.log(Level.FINER, "### stopSession");
+    logger.log(Level.FINER, "    processIn count: {0}", processInCount);
+    logger.log(Level.FINER, "    processOut count: {0}", processOutCount);
+    logger.log(Level.FINER, "    process execution count: {0}", processExeCount);
+    logger.log(Level.FINER, "    audio reader not ready count: {0}", audioReaderNotReadyCount);
+    logger.log(Level.FINER, "    audio writer not ready count: {0}", audioWriterNotReadyCount);
+    if (executionException != null) {
+      logger.log(Level.SEVERE, "Exception during process.", executionException);
+    }
   }
 
   @Override
