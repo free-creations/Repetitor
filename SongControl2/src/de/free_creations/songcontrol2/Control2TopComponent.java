@@ -55,7 +55,7 @@ public final class Control2TopComponent extends SongTopComponent {
   static final private String disabledDisplayName = "...";
   static final private String noVoice = "...";
   private volatile SongSession activeSongSession = null;
-  private static final int delay = 200;
+  private static final int timerDelay = 200;
   private BuiltinSynthesizer oSynth = null;
   private BuiltinSynthesizer vSynth = null;
   private MidiSynthesizerTrack orchestraTrack;
@@ -66,7 +66,7 @@ public final class Control2TopComponent extends SongTopComponent {
       Control2TopComponent.this.updateVuMeters();
     }
   };
-  private final Timer timer = new Timer(delay, timedTask);
+  private final Timer timer = new Timer(timerDelay, timedTask);
   private MidiSynthesizerTrack voicesTrack;
   private GenericTrack[] voicesSubTracks;
 
@@ -82,6 +82,7 @@ public final class Control2TopComponent extends SongTopComponent {
     setEnabledOnComponentAndChildren(this, false);
     sliderOrchestra.setVuValue(sliderOrchestra.getMinVuValue());
     sliderVoices.setVuValue(sliderOrchestra.getMinVuValue());
+    sliderFeedback.setVuValue(sliderFeedback.getMinVuValue());
 
   }
 
@@ -120,7 +121,10 @@ public final class Control2TopComponent extends SongTopComponent {
     pnlSingstimmen.setPreferredSize(new java.awt.Dimension(362, 400));
 
     sliderVoices.setInverted(true);
+    sliderVoices.setMaximum(60);
+    sliderVoices.setMinimum(-10);
     sliderVoices.setOrientation(1);
+    sliderVoices.setValue(0);
     sliderVoices.addChangeListener(new javax.swing.event.ChangeListener() {
       public void stateChanged(javax.swing.event.ChangeEvent evt) {
         sliderVoicesStateChanged(evt);
@@ -262,7 +266,10 @@ public final class Control2TopComponent extends SongTopComponent {
     pnlOrchestra.setPreferredSize(new java.awt.Dimension(97, 400));
 
     sliderOrchestra.setInverted(true);
+    sliderOrchestra.setMaximum(60);
+    sliderOrchestra.setMinimum(-10);
     sliderOrchestra.setOrientation(1);
+    sliderOrchestra.setValue(0);
     sliderOrchestra.addChangeListener(new javax.swing.event.ChangeListener() {
       public void stateChanged(javax.swing.event.ChangeEvent evt) {
         sliderOrchestraStateChanged(evt);
@@ -280,7 +287,7 @@ public final class Control2TopComponent extends SongTopComponent {
         .addGroup(pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(sliderOrchestra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(jLabel1))
-        .addContainerGap(15, Short.MAX_VALUE))
+        .addContainerGap(17, Short.MAX_VALUE))
     );
     pnlOrchestraLayout.setVerticalGroup(
       pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -305,7 +312,10 @@ public final class Control2TopComponent extends SongTopComponent {
     jPanel1.setPreferredSize(new java.awt.Dimension(179, 400));
 
     sliderFeedback.setInverted(true);
+    sliderFeedback.setMaximum(60);
+    sliderFeedback.setMinimum(-30);
     sliderFeedback.setOrientation(1);
+    sliderFeedback.setValue(0);
     sliderFeedback.addChangeListener(new javax.swing.event.ChangeListener() {
       public void stateChanged(javax.swing.event.ChangeEvent evt) {
         sliderFeedbackStateChanged(evt);
@@ -340,12 +350,10 @@ public final class Control2TopComponent extends SongTopComponent {
             .addComponent(sliderFeedback, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
             .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-              .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(btnForceClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+              .addComponent(btnForceClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
               .addComponent(cbxPlayingMode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
           .addComponent(jLabel3))
-        .addContainerGap(25, Short.MAX_VALUE))
+        .addContainerGap(28, Short.MAX_VALUE))
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -368,7 +376,7 @@ public final class Control2TopComponent extends SongTopComponent {
       pnlFeedbackLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(pnlFeedbackLayout.createSequentialGroup()
         .addGap(0, 0, 0)
-        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
+        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
         .addContainerGap())
     );
     pnlFeedbackLayout.setVerticalGroup(
@@ -588,7 +596,8 @@ public final class Control2TopComponent extends SongTopComponent {
       } else {
         timer.stop();
         sliderOrchestra.setVuValue(sliderOrchestra.getMinVuValue());
-        sliderVoices.setVuValue(sliderOrchestra.getMinVuValue());
+        sliderVoices.setVuValue(sliderVoices.getMinVuValue());
+        sliderFeedback.setVuValue(sliderFeedback.getMinVuValue());
         enableVoiceSelection();
       }
     }

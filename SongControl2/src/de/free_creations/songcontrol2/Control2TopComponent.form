@@ -75,7 +75,10 @@
         <Component class="de.free_creations.guicomponents.SliderVuMeter" name="sliderVoices">
           <Properties>
             <Property name="inverted" type="boolean" value="true"/>
+            <Property name="maximum" type="int" value="60"/>
+            <Property name="minimum" type="int" value="-10"/>
             <Property name="orientation" type="int" value="1"/>
+            <Property name="value" type="int" value="0"/>
           </Properties>
           <Events>
             <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="sliderVoicesStateChanged"/>
@@ -214,7 +217,7 @@
                       <Component id="sliderOrchestra" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="15" max="32767" attributes="0"/>
+                  <EmptySpace pref="17" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -233,7 +236,10 @@
         <Component class="de.free_creations.guicomponents.SliderVuMeter" name="sliderOrchestra">
           <Properties>
             <Property name="inverted" type="boolean" value="true"/>
+            <Property name="maximum" type="int" value="60"/>
+            <Property name="minimum" type="int" value="-10"/>
             <Property name="orientation" type="int" value="1"/>
+            <Property name="value" type="int" value="0"/>
           </Properties>
           <Events>
             <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="sliderOrchestraStateChanged"/>
@@ -265,7 +271,7 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace min="0" pref="0" max="-2" attributes="0"/>
-                  <Component id="jPanel1" pref="227" max="32767" attributes="0"/>
+                  <Component id="jPanel1" pref="226" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
@@ -305,16 +311,13 @@
                               <Component id="sliderFeedback" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                  <Group type="102" attributes="0">
-                                      <EmptySpace min="0" pref="0" max="-2" attributes="0"/>
-                                      <Component id="btnForceClose" max="32767" attributes="0"/>
-                                  </Group>
+                                  <Component id="btnForceClose" max="32767" attributes="0"/>
                                   <Component id="cbxPlayingMode" min="-2" max="-2" attributes="0"/>
                               </Group>
                           </Group>
                           <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace pref="25" max="32767" attributes="0"/>
+                      <EmptySpace pref="28" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -341,7 +344,10 @@
             <Component class="de.free_creations.guicomponents.SliderVuMeter" name="sliderFeedback">
               <Properties>
                 <Property name="inverted" type="boolean" value="true"/>
+                <Property name="maximum" type="int" value="60"/>
+                <Property name="minimum" type="int" value="-30"/>
                 <Property name="orientation" type="int" value="1"/>
+                <Property name="value" type="int" value="0"/>
               </Properties>
               <Events>
                 <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="sliderFeedbackStateChanged"/>
