@@ -87,7 +87,7 @@ public class AudioMixerTest {
     assertEquals(cycleCount, audioProducer2.process_Called);
     //verify that the output buffer has been filled correctly (see AudioProducerMockup.process)
     assertEquals(framesPerCycle * outputChannelCount, resultBuffer.length);
-    assertEquals(2.0F, resultBuffer[resultBuffer.length - 1], 1E-1);
+    assertEquals(1.0F, resultBuffer[resultBuffer.length - 1], 1E-1);
 
     //Part 3, remove the audio producers
     instance.removeAllPorts();

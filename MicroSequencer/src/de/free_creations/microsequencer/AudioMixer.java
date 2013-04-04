@@ -179,12 +179,13 @@ class AudioMixer extends AudioProcessor_Float32 {
 
       Arrays.fill(resultBuffer, 0F);
 
+      float attenuation = 1.0F / audioPorts.size();
       for (AudioPortImpl audioPort : audioPorts) {
 
         float[] producerBuffer = audioPort.getProcessResult();
         if (producerBuffer != null) {
           for (int i = 0; i < resultBuffer.length; i++) {
-            resultBuffer[i] += producerBuffer[i];
+            resultBuffer[i] += attenuation * producerBuffer[i];
           }
         }
       }

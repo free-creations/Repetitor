@@ -45,8 +45,9 @@ class AudioRecorderSubSequencer implements
 
   private static final Logger logger = Logger.getLogger(AudioRecorderSubSequencer.class.getName());
   private final File tempDir;
-  private final File tempFile;
-  private final long minimumFreeSpace = 44100 * 2 * 4 * 60 * 4;
+  private File tempFile;
+  private File previousTempFile;
+  private final long minimumFreeFileSpace = 44100 * 2 * 4 * 60 * 4;//four minutes
   private final ExecutorService executor = Executors.newSingleThreadExecutor(
           new ThreadFactory() {
             @Override
@@ -57,19 +58,14 @@ class AudioRecorderSubSequencer implements
               return thread;
             }
           });
-  private Future<AudioWriter> writer = null;
-  private Future<AudioReader> reader = null;
   private PlayingMode playingMode = PlayingMode.MidiOnly;
   private Exception executionException;
   private float[] outputSamples;
   private float[] nullSamples;
   private float[] balancedInputSamples;
   private boolean mute = false;
-  /**
-   * The maximum timeout admissible when processing one cycle, expressed in
-   * nanoseconds (1E-09 second).
-   */
-  private long cycleTimeoutNano = 0;
+  private final AudioReader audioReader;
+  private final AudioWriter audioWriter;
   private int inputChannelCount;
   private final String name;
   private int outputChannelCount;
@@ -100,91 +96,10 @@ class AudioRecorderSubSequencer implements
   private int processExeCount = 0; // (debugging variable) the number of times read or write operation was executed within one session.
   private int audioWriterNotReadyCount; // (debugging variable) the number of times processOut tried to access the writer, but it was not ready.
   private int audioReaderNotReadyCount;
+  private AudioWriter.WriterResult writerResult = null;
 
   void setMute(boolean value) {
     mute = value;
-  }
-
-  private class WriterCreationTask implements Callable<AudioWriter> {
-
-    private final File outputFile;
-    private final Future<AudioWriter> previousWriter;
-    private final Future<AudioReader> previousReader;
-
-    public WriterCreationTask(File outputFile,
-            Future<AudioWriter> previousWriter,
-            Future<AudioReader> previousReader) {
-      this.outputFile = outputFile;
-      this.previousReader = previousReader;
-      this.previousWriter = previousWriter;
-    }
-
-    @Override
-    public AudioWriter call() throws FileNotFoundException,
-            IOException, ExecutionException, InterruptedException {
-      // make sure that previously used readers and writers are correctly closed
-      if (previousReader != null) {
-        previousReader.get().close();
-      }
-      if (previousWriter != null) {
-        previousWriter.get().close();
-      }
-      return new AudioWriter(outputFile, cycleTimeoutNano);
-    }
-  }
-
-  private class ReaderCreationTask implements Callable<AudioReader> {
-
-    private final File outputFile;
-    private final Future<AudioWriter> previousWriter;
-    private final Future<AudioReader> previousReader;
-
-    public ReaderCreationTask(File outputFile,
-            Future<AudioWriter> previousWriter,
-            Future<AudioReader> previousReader) {
-      this.outputFile = outputFile;
-      this.previousReader = previousReader;
-      this.previousWriter = previousWriter;
-    }
-
-    @Override
-    public AudioReader call() throws FileNotFoundException,
-            IOException, ExecutionException, InterruptedException {
-      // make sure that previously used readers and writers are correctly closed
-      if (previousReader != null) {
-        previousReader.get().close();
-      }
-      if (previousWriter != null) {
-        previousWriter.get().close();
-      }
-      return new AudioReader(outputFile, cycleTimeoutNano);
-    }
-  }
-
-  private class ClosingTask implements Callable<Void> {
-
-    private final Future<AudioWriter> closingWriter;
-    private final Future<AudioReader> closingReader;
-
-    public ClosingTask(
-            Future<AudioWriter> closingWriter,
-            Future<AudioReader> closingReader) {
-
-      this.closingWriter = closingWriter;
-      this.closingReader = closingReader;
-    }
-
-    @Override
-    public Void call() throws InterruptedException, InterruptedException, ExecutionException, IOException {
-      // close reader and writer and wait
-      if (closingReader != null) {
-        closingReader.get().close();
-      }
-      if (closingWriter != null) {
-        closingWriter.get().close();
-      }
-      return null;
-    }
   }
 
   /**
@@ -213,17 +128,20 @@ class AudioRecorderSubSequencer implements
     if (!tempDir.canWrite()) {
       throw new IOException("Cannot write on " + tempDir.getAbsolutePath());
     }
-    if (tempDir.getFreeSpace() < minimumFreeSpace) {
+    if (tempDir.getFreeSpace() < minimumFreeFileSpace) {
       throw new IOException("There is not enough free space on "
-              + tempDir.getAbsolutePath() + ". Requested:" + minimumFreeSpace / 1000
+              + tempDir.getAbsolutePath() + ". Requested:" + minimumFreeFileSpace / 1000
               + "kB. Available: "
               + tempDir.getFreeSpace() + "kB.");
     }
+    this.audioReader = new AudioReader(executor);
+    this.audioWriter = new AudioWriter(executor);
 
     this.tempDir = tempDir;
     this.name = name;
 
-    this.tempFile = new File(tempDir, "RepetitorTmp.raw");
+    this.tempFile = new File(tempDir, "RepetitorTmp1.raw");
+    this.previousTempFile = new File(tempDir, "RepetitorTmp2.raw");
 //    if (deleteTempFilesOnExit) {
 //      tempFile.deleteOnExit();
 //      tempDir.deleteOnExit();
@@ -262,8 +180,6 @@ class AudioRecorderSubSequencer implements
     Arrays.fill(outputSamples, 0F);
     Arrays.fill(nullSamples, 0F);
     Arrays.fill(balancedInputSamples, 0F);
-    long cycleDurationNano = (1000 * 1000 * 1000 * nFrames) / samplingRate;
-    cycleTimeoutNano = cycleDurationNano / 10;
     processInCount = 0;
     processOutCount = 0;
     processExeCount = 0;
@@ -344,24 +260,9 @@ class AudioRecorderSubSequencer implements
     if (mute) {
       return nullSamples;
     }
-    if (reader == null) {
-      return nullSamples;
-    }
-    try {
+    audioReader.getNext(outputSamples);
+    return outputSamples;
 
-   //   reader.get(cycleTimeoutNano, TimeUnit.NANOSECONDS).getNext(outputSamples);
-      reader.get(0, TimeUnit.MILLISECONDS).getNext(outputSamples);
-      processExeCount++;
-      return outputSamples;
-
-    } catch (TimeoutException ex) {
-      audioReaderNotReadyCount++;
-      logger.log(Level.WARNING, "Audio Reader not ready.");
-      return nullSamples;
-    } catch (Exception ex) {
-      executionException = ex;
-      return nullSamples;
-    }
 
   }
 
@@ -388,20 +289,7 @@ class AudioRecorderSubSequencer implements
       return;
     }
     assert (samples.length == inputChannelCount * nFrames);
-    if (writer == null) {
-      return;//???
-    }
-    try {
-      AudioWriter audioWriter = writer.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
-      float[] balancedSamples = balanceChannels(samples);
-      audioWriter.putNext(balancedSamples);
-      processExeCount++;
-    } catch (TimeoutException ex) {
-      logger.log(Level.WARNING, "Audio Writer not ready.");
-      audioWriterNotReadyCount++;
-    } catch (InterruptedException | ExecutionException ex) {
-      executionException = ex;
-    }
+    audioWriter.putNext(balanceChannels(samples));
   }
 
   private float[] balanceChannels(float[] samples) {
@@ -460,14 +348,15 @@ class AudioRecorderSubSequencer implements
         return;
       case RecordAudio:
         logger.log(Level.FINER, "### prepareSession: RecordAudio");
-        writer = executor.submit(new WriterCreationTask(tempFile, writer, reader));
+        audioWriter.start(tempFile);
+        File usedFile = tempFile;
+        tempFile = previousTempFile;
+        previousTempFile = usedFile;
         return;
       case PlayAudio:
-        if (tempFile.exists()) {
+        if (writerResult != null) {
           logger.log(Level.FINER, "### prepareSession: PlayAudio");
-          reader = executor.submit(new ReaderCreationTask(tempFile, writer, reader));
-        } else {
-          logger.log(Level.FINER, "### prepareSession: PlayAudio -- there is no tempfile");
+          audioReader.start(writerResult);
         }
     }
   }
@@ -483,16 +372,21 @@ class AudioRecorderSubSequencer implements
       Arrays.fill(outputSamples, 0F);
       Arrays.fill(nullSamples, 0F);
     }
-    executor.submit(new ClosingTask(writer, reader));
-    logger.log(Level.FINER, "### stopSession");
-    logger.log(Level.FINER, "    processIn count: {0}", processInCount);
-    logger.log(Level.FINER, "    processOut count: {0}", processOutCount);
-    logger.log(Level.FINER, "    process execution count: {0}", processExeCount);
-    logger.log(Level.FINER, "    audio reader not ready count: {0}", audioReaderNotReadyCount);
-    logger.log(Level.FINER, "    audio writer not ready count: {0}", audioWriterNotReadyCount);
-    if (executionException != null) {
-      logger.log(Level.SEVERE, "Exception during process.", executionException);
+        switch (playingMode) {
+      case MidiOnly:
+        logger.log(Level.FINER, "### stopSession: MidiOnly");
+        return;
+      case RecordAudio:
+        logger.log(Level.FINER, "### stopSession: RecordAudio");
+        writerResult = audioWriter.stop();
+        return;
+      case PlayAudio:
+        if (audioReader.isStarted()) {
+
+          audioReader.stop();
+        }
     }
+
   }
 
   @Override

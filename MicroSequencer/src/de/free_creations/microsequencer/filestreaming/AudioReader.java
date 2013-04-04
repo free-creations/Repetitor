@@ -15,9 +15,6 @@
  */
 package de.free_creations.microsequencer.filestreaming;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -27,11 +24,8 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,281 +36,436 @@ import java.util.logging.Logger;
 public class AudioReader {
 
   private static final Logger logger = Logger.getLogger(AudioReader.class.getName());
-  public static final int bytesPerFloat = Float.SIZE / Byte.SIZE;
-  public static final int defaultFileBufferSizeByte = 8 * 1024 * 1024;
-  public static final int transitionBufferSizeByte = 32 * 2048;
   /**
-   * The Current-buffers provides the data for the procedure "getNext()". The
-   * Buffer can be accessed when it is ready to be retrieved. The access will be
-   * blocked during the time the data is being read from file.
+   * The Current-FloatBuffer provides the data for the procedure "getNext()".
+   * The Buffer can be accessed when it is ready to be retrieved. The access
+   * will be blocked during the time the data is being read from file.
    */
-  private Future<ByteBuffer> currentBuffReadyToBeConsumed;
+  private Future<FloatBuffer> currentBuffer;
   /**
-   * The Next-buffer is being prepared while the above current-buffer is being
-   * used.
+   * The Next-FloatBuffer is the FloatBuffer that is currently in preparation.
    */
-  private Future<ByteBuffer> nextBuffReadyToBeConsumed;
+  private Future<FloatBuffer> nextBuffer;
   /**
-   * The transitionBuffer buffer will take those bytes from the tail of file
-   * buffer that did not fit into the audioArray.
+   * The processing lock protects the procedures start() stop() and getNext()
+   * against parallel access.
    */
-  private final ByteBuffer transitionBuffer;
-  private final FileChannel inChannel;
-  private boolean closed = false;
   private final Object processingLock = new Object();
+  private final ByteBuffer byteBuffer1;
+  private final ByteBuffer byteBuffer2;
   /**
-   *
+   * The current-byte-byteBuffer points to the ByteBuffer underlying the
+   * currentBuffer.
    */
-  private final ExecutorService executor = Executors.newSingleThreadExecutor(
-          new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-              Thread thread = new Thread(r);
-              thread.setPriority(Thread.NORM_PRIORITY);
-              thread.setName("FreeCreationsAudioReader");
-              return thread;
-            }
-          });
-  private ExecutionException readingException = null;
-  private final int fileBufferSizeByte;
-  private final long cycleTimeoutNano;
+  private ByteBuffer currentByteBuffer;
+  /**
+   * The next-byte-byteBuffer points to the ByteBuffer underlying the
+   * nextBuffer.
+   */
+  private ByteBuffer nextByteBuffer;
+  /**
+   * The number of samples to read, as requested in start().
+   */
+  private int samplesToProcess = 0;
+  /**
+   * The number of samples processed so far. This is like a pointer into the
+   * input file. The pointer always points one sample after the last sample
+   * taken from the file. Note this is not always equal to number of samples
+   * delivered, because we might deliver null samples when Buffer-underflows
+   * happen.
+   */
+  private int samplesProcessed = 0;
+  /**
+   * The number of samples delivered by the getNext() methods. This pointer
+   * counts also the samples that could not be processed and were replaced by
+   * null samples.
+   */
+  private int samplesDelivered = 0;
+  private boolean started = false;
+  private boolean closed = false;
+  private Future<FileChannel> fileInput;
+  private final ExecutorService executor;
+  private int overflowCount = 0;
+
+  private class RealizedAudioBuffer implements Future<FloatBuffer> {
+
+    private final FloatBuffer audioBuffer;
+
+    public RealizedAudioBuffer(FloatBuffer audioBuffer) {
+      this.audioBuffer = audioBuffer;
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return true;
+    }
+
+    @Override
+    public FloatBuffer get() throws InterruptedException, ExecutionException {
+      return audioBuffer;
+    }
+
+    @Override
+    public FloatBuffer get(long timeout, TimeUnit unit) {
+      return audioBuffer;
+    }
+  }
 
   /**
    * The FileReadTask takes a Byte-Buffer and fills it with audio data from the
-   * file. Once the buffer has been filled it is returned ready to be consumed.
+   * file.
    */
-  private class FileReadTask implements Callable<ByteBuffer> {
+  private class FileReadTask implements Callable<FloatBuffer> {
 
     private final ByteBuffer byteBuffer;
-    private final FileChannel channel;
+    private final Future<FileChannel> channel;
 
-    public FileReadTask(FileChannel channel, ByteBuffer buffer) {
+    public FileReadTask(Future<FileChannel> channel, ByteBuffer buffer) {
       this.byteBuffer = buffer;
       this.channel = channel;
     }
 
     @Override
-    public ByteBuffer call() throws IOException {
+    public FloatBuffer call() throws IOException, InterruptedException, ExecutionException {
       //read from the channel
       byteBuffer.clear();
-      channel.read(byteBuffer);
-      // prepare the byte buffer for consuption
+      FileChannel filechannel = channel.get();
+      if (!filechannel.isOpen()) {
+        throw new IOException("filechannel is not open");
+      }
+      filechannel.read(byteBuffer);
       byteBuffer.flip();
-      return byteBuffer;
+      FloatBuffer result = byteBuffer.asFloatBuffer();
+      return result;
     }
   }
 
   /**
-   * Opens the given file for reading and prepares the file buffers.
-   *
-   * @param file the file to be opened for reading.
-   * @throws if the file does not exist, is a directory rather than a regular
-   * file, or for some other reason cannot be opened for reading.
+   * The FileClosingTask closes the given channel.
    */
-  public AudioReader(File file, long cycleTimeoutNano) throws FileNotFoundException, IOException {
-    this(file, cycleTimeoutNano, defaultFileBufferSizeByte);
-  }
+  private class FileClosingTask implements Callable<Void> {
 
-  public AudioReader(File file, long cycleTimeoutNano, int requestedFileBufferSizeByte) throws FileNotFoundException, IOException {
-    this.cycleTimeoutNano = cycleTimeoutNano;
-    fileBufferSizeByte = requestedFileBufferSizeByte;
+    private final Future<FileChannel> channel;
 
-    ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
-    ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
-    transitionBuffer = ByteBuffer.allocateDirect(transitionBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
-    //mark the buffers as being exhausted
-    byteBuffer1.limit(0);
-    byteBuffer2.limit(0);
-    transitionBuffer.limit(0);
+    public FileClosingTask(Future<FileChannel> channel) {
+      this.channel = channel;
+    }
 
-    // open the input file
-    FileInputStream inFile = new FileInputStream(file);
-    inChannel = inFile.getChannel();
-
-    // start to fill the first buffer
-    switchBuffers(byteBuffer1);
-    // wait until it has completely been read.
-    waitForNextBufferReady();
-
-    // start to fill the second buffer
-    switchBuffers(byteBuffer2);
-    logger.log(Level.FINER, "new AudioReader, file: {0}", file.getAbsolutePath());
+    @Override
+    public Void call() throws IOException, InterruptedException, ExecutionException {
+      channel.get().close();
+      return null;
+    }
   }
 
   /**
-   * Closes the file and disposes the buffers.
+   * Creates a new Audio reader.
    *
-   * @throws IOException when the file could not be correctly written.
+   * Note: this call is potentially blocking and should therefore not be called
+   * from within the processing thread.
+   *
+   * @param executor the Executor which shall perform the background tasks.
    */
-  public synchronized void close() throws IOException {
+  public AudioReader(ExecutorService executor) {
+    this(executor, Const.fileBufferSizeFloat);
+  }
 
+  /**
+   * Creates a new Audio reader.
+   *
+   * Note: this call is potentially blocking and should therefore not be called
+   * from within the processing thread.
+   *
+   * @param executor the Executor which shall perform the background tasks.
+   * @param requestedFileBufferSizeFloat for testing purposes the byteBuffer
+   * size can be set to something different than the value given in
+   * {@link Const}
+   */
+  public AudioReader(ExecutorService executor, int requestedFileBufferSizeFloat) {
+    int fileBufferSizeByte = requestedFileBufferSizeFloat * Const.bytesPerFloat;
+    this.executor = executor;
+    currentBuffer = null;
+    nextBuffer = null;
+
+    fileInput = null;
+
+
+    byteBuffer1 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
+    byteBuffer2 = ByteBuffer.allocateDirect(fileBufferSizeByte).order(ByteOrder.LITTLE_ENDIAN);
+
+    currentByteBuffer = byteBuffer1;
+    nextByteBuffer = byteBuffer2;
+    currentByteBuffer.clear();
+    currentByteBuffer.rewind();
+    nextByteBuffer.clear();
+    nextByteBuffer.rewind();
+
+  }
+
+  public void start(AudioWriter.WriterResult fileToRead) {
+    start(fileToRead.getStartBuffer().asFloatBuffer(),
+            fileToRead.getChannel(),
+            fileToRead.getSamplesWritten());
+  }
+
+  /**
+   * Starts reading samples.
+   *
+   * Note: this function is non-blocking and can be called from within the
+   * process tread.
+   *
+   * @param firstByteBuffer the first byteBuffer to read from. Position and
+   * limit are assumed to be set so that the byteBuffer is ready to read.
+   * @param input a file to be read from when the first byteBuffer has been
+   * exhausted. This value can be null if all samples fit into the first
+   * byteBuffer.
+   * @param samplesToProcess the number of samples to be read.
+   */
+  public void start(FloatBuffer firstFloatBuffer, Future<FileChannel> input, int samplesToRead) {
     synchronized (processingLock) {
-      if (readingException != null) {
-        closed = true;
-        executor.shutdown();
-        inChannel.close();
-        ExecutionException ex = readingException;
-        readingException = null;
-        if (ex.getCause() instanceof IOException) {
-          throw new IOException(ex.getMessage());
-        }
-        throw new RuntimeException(ex);
+      if (started) {
+        throw new RuntimeException("Attempt to start twice.");
       }
       if (closed) {
+        throw new RuntimeException("A closed reader cannot be started.");
+      }
+      this.samplesToProcess = samplesToRead;
+      this.samplesProcessed = 0;
+      this.samplesDelivered = 0;
+      this.fileInput = input;
+      if (firstFloatBuffer.position() != 0) {
+        throw new RuntimeException("First buffer is not ready for consumption, has it been flipped?");
+      }
+      RealizedAudioBuffer realizedAudioBuffer = new RealizedAudioBuffer(firstFloatBuffer);
+      currentBuffer = realizedAudioBuffer;
+      nextBuffer = null;
+
+      if (samplesToRead > firstFloatBuffer.limit()) {
+        if (input != null) {
+          nextBuffer = executor.submit(new FileReadTask(fileInput, nextByteBuffer));
+        } else {
+          logger.severe("\"input\" is null.");
+          this.samplesToProcess = firstFloatBuffer.limit();
+        }
+      }
+      started = true;
+    }
+  }
+
+  /**
+   * Returns samples from the file byteBuffer, the result is written into the
+   * audio array.
+   *
+   * Note: this function is non-blocking and can be called from within the
+   * process tread.
+   *
+   * @param audioArray the array to be filled.
+   */
+  public void getNext(float[] audioArray) {
+    getNext(samplesDelivered, audioArray);
+  }
+
+  /**
+   * Returns samples from the file byteBuffer, the result is written into the
+   * audio array.
+   *
+   * Note: this function is non-blocking and can be called from within the
+   * process tread.
+   *
+   * @param startSample the file-position of the first sample. If the position
+   * cannot be reached, an empty array will be returned.
+   * @param audioArray the array to be filled.
+   */
+  public void getNext(int startSample, float[] audioArray) {
+    synchronized (processingLock) {
+
+      if (startSample >= samplesToProcess) {
+        Arrays.fill(audioArray, 0.0F);
         return;
       }
-      // setting "closed" to true makes sure that "getNext" will not access the buffers any more.
-      closed = true;
-    }
+      if (startSample < samplesDelivered) {
+        Arrays.fill(audioArray, 0.0F);
+        logger.severe("\"startSample\" already delivered.");
+        return;
+      }
+      samplesDelivered = startSample + audioArray.length;
+      if (currentBuffer == null) {
+        Arrays.fill(audioArray, 0.0F);
+        logger.severe("Current buffer is null.");
+        return;
+      }
+      if (!currentBuffer.isDone()) {
+        Arrays.fill(audioArray, 0.0F);
+        overflowCount++;
+        logger.warning("File buffer not ready.");
+        return;
+      }
 
-    currentBuffReadyToBeConsumed = null;
-    nextBuffReadyToBeConsumed = null;
-    inChannel.close();
-    executor.shutdown();
+      FloatBuffer currentFloatBuffer;
+      try {
+
+        currentFloatBuffer = currentBuffer.get();
+      } catch (InterruptedException | ExecutionException ex) {
+        logger.log(Level.SEVERE, null, ex);
+        Arrays.fill(audioArray, 0.0F);
+        return;
+      }
+
+      int offset = startSample - samplesProcessed;
+      int required = offset + audioArray.length;
+
+      // Do we need samples from the next byteBuffer?
+      if (currentFloatBuffer.remaining() < required) {
+        switchBuffers(offset, audioArray, currentFloatBuffer);
+        return;
+      }
+
+      // Now we have checked all special conditions... we can proceed to the normal work.
+      currentFloatBuffer.position(currentFloatBuffer.position() + offset);
+      currentFloatBuffer.get(audioArray);
+      samplesProcessed = startSample + audioArray.length;
+
+    }
   }
 
-  public boolean getNext(float[] audioArray) {
-    assert (transitionBufferSizeByte >= audioArray.length * bytesPerFloat);
-    assert (fileBufferSizeByte >= audioArray.length * bytesPerFloat);
-    synchronized (processingLock) {
-      if (closed) {
-        Arrays.fill(audioArray, 0F);
-        return false;
-      }
+  private void switchBuffers(int offset, float[] audioArray, FloatBuffer currentFloatBuffer) {
+    Arrays.fill(audioArray, 0.0F);
 
-      // consume the current Buffer immediately.
-      // ..If the buffer cannot be retrieved because it is still being streamed from
-      // disk, we return an empty array.
-      // ..If the file reading thread has abandonned on an exception,
-      // we'll do a "dirty close" and store the exception for being thrown
-      // when the user attemps to close the stream.
-      // In no case we shall block or interrupt the audio thread here.
-      ByteBuffer currentByteBuff;
-      try {
-        currentByteBuff = currentBuffReadyToBeConsumed.get(cycleTimeoutNano, TimeUnit.NANOSECONDS);
-      } catch (InterruptedException ex) {
-        // how can this happen?
-        readingException = new ExecutionException(ex);
-        closed = true;
-        Arrays.fill(audioArray, 0F);
-        return false;
-      } catch (ExecutionException ex) {
-        // error in file reading??
-        readingException = ex;
-        closed = true;
-        Arrays.fill(audioArray, 0F);
-        return false;
-      } catch (TimeoutException ex) {
-        logger.log(Level.WARNING, "Read-Buffer underrun.");
-        Arrays.fill(audioArray, 0F);
-        return true;
-      }
+    // we may have reached the end of the file
+    int remainingInFile = samplesToProcess - samplesProcessed;
+    int remainingInCurrentBuffer = currentFloatBuffer.remaining();
+    if (remainingInCurrentBuffer >= remainingInFile) {
+      currentFloatBuffer.position(currentFloatBuffer.position() + offset);
+      currentFloatBuffer.get(audioArray, 0, remainingInFile - offset);
+      samplesProcessed = samplesToProcess;
+      return;
+    }
 
-      FloatBuffer thisFloatBuffer;
-      int remainingBytes = currentByteBuff.remaining();
+    //
+    if (nextBuffer == null) {
+      logger.severe("Next buffer is null.");
+      return;
+    }
+    if (!nextBuffer.isDone()) {
+      logger.warning("Next buffer not ready.");
+      overflowCount++;
+      return;
+    }
+    FloatBuffer nextFloatBuffer;
+    try {
+      nextFloatBuffer = nextBuffer.get();
+    } catch (InterruptedException | ExecutionException ex) {
+      logger.log(Level.SEVERE, null, ex);
+      return;
+    }
 
-      // are there left-overs form the previous cycle?
-      if (transitionBuffer.position() > 0) {
-        // there are left-overs
-        // so we will copy some bytes from the current byte buffer
-        // into the transition buffer so that we can fill an entire audioArray.
-        // thus we'll have more bytes remaining:
-        remainingBytes += transitionBuffer.position();
-        assert (currentByteBuff.position() == 0);
-        int byteBuffLimit = currentByteBuff.limit();
-        int bytesToCopy = (audioArray.length * bytesPerFloat) - transitionBuffer.position();
-        assert (bytesToCopy > 0);
-        // temporarly shorten the current byte-buffer so as to copy only the bytes we need
-        if (byteBuffLimit > bytesToCopy) {
-          currentByteBuff.limit(bytesToCopy);
-          assert (currentByteBuff.remaining() == bytesToCopy);
-        }
-        transitionBuffer.put(currentByteBuff);
-        transitionBuffer.flip();
-        //reset the current byte-buffer to its original length
-        currentByteBuff.limit(byteBuffLimit);
-        //the float buffer will be mapped on the transition buffer
-        thisFloatBuffer = transitionBuffer.asFloatBuffer();
-        assert (thisFloatBuffer.remaining() <= audioArray.length);
-        //mark the transition-buffer as empty (the float buffers limit will not be affected)
-        transitionBuffer.limit(0);
-      } else {
-        // no left-overs, so the float buffer will be mapped on the current byte buffer
-        /**
-         * @ToDo re-mapping the byte buffer to a float buffer on each cycle
-         * reduces the performance by a factor of 8!!! *
-         */
-        thisFloatBuffer = currentByteBuff.asFloatBuffer();
-      }
+    int takenFromCurrent = 0;
+    // use the tail from the current byteBuffer
+    if (offset < remainingInCurrentBuffer) {
+      currentFloatBuffer.position(currentFloatBuffer.position() + offset);
+      takenFromCurrent = currentFloatBuffer.remaining();
+      assert (takenFromCurrent < audioArray.length);
+      currentFloatBuffer.get(audioArray, 0, takenFromCurrent);
+      samplesProcessed = samplesProcessed + offset + takenFromCurrent;
+      offset = 0;
+    }
+    // get the rest from the next byteBuffer
+    if (offset < nextFloatBuffer.remaining()) {
+      nextFloatBuffer.position(nextFloatBuffer.position() + offset);
+      int takenFromNext = Math.min(audioArray.length - takenFromCurrent, nextFloatBuffer.remaining());
+      nextFloatBuffer.get(audioArray, takenFromCurrent, takenFromNext);
+      samplesProcessed = samplesProcessed + offset + takenFromNext;
+    } else {
+      logger.severe("File buffer too small for this offset.");
+    }
 
-      // fill the audio array 
-      int remainingFloats = remainingBytes / bytesPerFloat;
-      if (audioArray.length > remainingFloats) {
-        // threre are not enough bytes remaining to fill an entire audio array
-        // this indicates that we have reached the end of the file
-        Arrays.fill(audioArray, 0F);
-        thisFloatBuffer.get(audioArray, 0, remainingFloats);
-        // mark the byte buffer as being exhausted
-        currentByteBuff.limit(0);
-        // we can stop processing here. (Having reached the end of the file, we do not want to flip buffers any more)
-        return false;
-      } else {
-        thisFloatBuffer.get(audioArray);
-        remainingBytes = remainingBytes - (audioArray.length * bytesPerFloat);
-        remainingFloats = remainingBytes / bytesPerFloat;
-      }
-      //adjust the position-pointer of the byte-buffer
-      int newPosition = currentByteBuff.limit() - remainingBytes;
-      currentByteBuff.position(newPosition);
 
-      // are there enough floats for the next cycle? 
-      // if not -> switch buffers.
-      if (audioArray.length > remainingFloats) {
+    // switch the buffers
+    ByteBuffer toBeReused = currentByteBuffer;
+    currentByteBuffer = nextByteBuffer;
+    nextByteBuffer = toBeReused;
 
-        // save the tail of the current byte-buffer into the transition-buffer
-        transitionBuffer.clear();
-        transitionBuffer.put(currentByteBuff);
-        assert ((audioArray.length * bytesPerFloat) > transitionBuffer.position());
-        switchBuffers(currentByteBuff);
-      }
-      return true;
+    currentBuffer = nextBuffer;
+    nextBuffer = null;
+
+    if ((nextFloatBuffer.remaining() + samplesProcessed) < samplesToProcess) {
+      nextBuffer = executor.submit(new FileReadTask(fileInput, nextByteBuffer));
     }
   }
 
   /**
-   * Block the calling thread until the next buffer is ready.
+   * Stop reading samples and closes the input file.
    *
-   * @throws IOException if there was a problem when reading the file.
-   * @deprecated Use this function only for test
+   * Note: this function is non-blocking and can be called from within the
+   * process tread.
+   *
    */
-  @Deprecated
-  final void waitForNextBufferReady() throws IOException {
-    if (closed) {
-      return;
-    }
-    try {
-      nextBuffReadyToBeConsumed.get();
-    } catch (InterruptedException ex) {
-      // how can this happen?
-      throw new RuntimeException(ex);
-    } catch (ExecutionException ex) {
-      // IOException in FileReadTask?
-      if (ex.getCause() instanceof IOException) {
-        throw new IOException(ex.getCause());
-      } else {
-        throw new RuntimeException(ex);
+  public void stop() {
+    synchronized (processingLock) {
+      if (fileInput != null) {
+        executor.submit(new FileClosingTask(fileInput));
       }
+      started = false;
+      samplesToProcess = 0;
+      samplesProcessed = 0;
+      currentBuffer = null;
+      nextBuffer = null;
+      currentByteBuffer = byteBuffer1;
+      nextByteBuffer = byteBuffer2;
+      // mark the byte buffers as being empty
+      currentByteBuffer.clear();
+      currentByteBuffer.rewind();
+      nextByteBuffer.clear();
+      nextByteBuffer.rewind();
+      fileInput = null;
     }
   }
 
-  private void switchBuffers(ByteBuffer reusuableBuff) {
+  /**
+   * stops the reader and disposes all resources. A closed reader can not be
+   * started again.
+   */
+  public void close() {
+    stop();
+    closed = true;
+  }
 
-    // From now on "getNext" should consume the bytes that were read into nextBuff
-    currentBuffReadyToBeConsumed = nextBuffReadyToBeConsumed;
+  /**
+   * Can be used for test.
+   *
+   * @return the number of times an empty audioArray was written because the
+   * buffer was not ready.
+   */
+  public int getOverflowCount() {
+    return overflowCount;
+  }
 
-    // start the reader thread
-    nextBuffReadyToBeConsumed =
-            executor.submit(new FileReadTask(inChannel, reusuableBuff));
+  public boolean isStarted() {
+    synchronized (processingLock) {
+      return started;
+    }
+  }
 
+  /**
+   * Can be used in test.
+   *
+   * @throws InterruptedException
+   * @throws ExecutionException
+   */
+  protected void waitForBufferReady() throws InterruptedException, ExecutionException {
+    currentBuffer.get();
+    if (nextBuffer != null) {
+      nextBuffer.get();
+    }
   }
 }

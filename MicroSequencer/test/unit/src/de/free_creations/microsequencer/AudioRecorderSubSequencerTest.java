@@ -17,6 +17,7 @@ package de.free_creations.microsequencer;
 
 import de.free_creations.microsequencer.filestreaming.AudioReader;
 import de.free_creations.microsequencer.filestreaming.AudioWriter;
+import de.free_creations.microsequencer.filestreaming.Const;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -106,7 +107,7 @@ public class AudioRecorderSubSequencerTest {
   public void testProcessOut() throws Exception {
     System.out.println("processOut");
     // limit the file to one buffer. So to aviod buffer underruns when no audio real processing is done.
-    int fileSizeFloat = AudioReader.defaultFileBufferSizeByte / AudioReader.bytesPerFloat;
+    int fileSizeFloat = Const.fileBufferSizeFloat;
     int samplingRate = 44100;
     int nFrames = 256;
     int inputChannelCount = 2;
@@ -519,11 +520,11 @@ public class AudioRecorderSubSequencerTest {
   private long makeTestFile(File file) throws FileNotFoundException, IOException {
 
     // limit the file to one buffer. So to aviod buffer underruns when no audio real processing is done.
-    long fileSizeFloat = AudioReader.defaultFileBufferSizeByte / (AudioReader.bytesPerFloat * 10);
+    long fileSizeFloat = Const.fileBufferSizeFloat/10;
 
     FileOutputStream outFile = new FileOutputStream(file);
     try (FileChannel outChannel = outFile.getChannel()) {
-      java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.allocateDirect(AudioWriter.bytesPerFloat).order(ByteOrder.LITTLE_ENDIAN);
+      java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.allocateDirect(Const.bytesPerFloat).order(ByteOrder.LITTLE_ENDIAN);
 
       for (long i = 0; i < fileSizeFloat; i++) {
         float nextFloat = (float) i;
