@@ -351,56 +351,60 @@ public class AudioRecorderSubSequencerTest {
    * samples to the temp file.
    */
   @Test
-  @Ignore
   public void testProcessIn() throws Exception {
     System.out.println("testProcessIn");
     int samplingRate = 44100;
     int nFrames = 256;
     int outputChannelCount = 2;
-    int inputChannelCount = 2;
+    int inputChannelCount = outputChannelCount;
     boolean noninterleaved = false;
-    // prepare an input file.
-    // The input file will be in such that the value of each sample will be it's index.
-    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
-    File inputFile = new File(instance.getTempFile());
-    long mtfStart = System.nanoTime();
-    long fileSizeFloat = makeTestFile(inputFile);
-    long mtfEnd = System.nanoTime();
-    assertTrue(inputFile.exists());
+    int audioArraySize = inputChannelCount * nFrames;
+    int audioArraysToWrite = (Const.fileBufferSizeFloat * 4) / audioArraySize;
+    int sampleCount = audioArraysToWrite * audioArraySize;
     // how long would the file take if it was encoded in stereo with 44100 samples per second
-    double fileDurationNano = (fileSizeFloat * 1E09) / (samplingRate * outputChannelCount);
+    double fileDurationNano = (sampleCount * 1E09) / (samplingRate * outputChannelCount);
 
-    // read the file and check the audio buffer
+
+    AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
     instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    float[] audioArray = new float[audioArraySize];
+
+    // prepare an input file.
+    instance.prepareSession(0, PlayingMode.RecordAudio);
+    int samplesWritten = 0;
+    for (int i = 0; i < audioArraysToWrite; i++) {
+      for (int sample = 0; sample < audioArraySize; sample++) {
+        audioArray[sample] = samplesWritten;
+        samplesWritten++;
+      }
+      instance.waitForWriterReady();
+      instance.process(-1, audioArray);
+    }
+    instance.stopSession();
+    instance.throwAndClearExecutionException();
+
+    // here we proceed to the test - read the file and check the audio buffer
     instance.prepareSession(0, PlayingMode.PlayAudio);
-
-    Thread.sleep(100);
-
-
-    // here we proceed to the test.
-    boolean more = true;
-    float floatCout = 0;
+    float[] result;
+    int sampleIdx = 0;
     long startTime = System.nanoTime();
-    while (more) {
-      float[] audioArray = instance.process(-1, null);
-      for (float sample : audioArray) {
-        if (floatCout < fileSizeFloat) {
-          // verify that the value of each sample is its index (as prepared above).
-          if (floatCout != sample) {
-            fail("Sample(" + floatCout + ") was " + sample);
-          }
-          floatCout++;
-        } else {
-          assertEquals(sample, 0F, 0F);
-          more = false;
+    for (int i = 0; i < audioArraysToWrite; i++) {
+      instance.waitForReaderReady();
+      result = instance.process(-1, null);
+      assertEquals(audioArraySize, result.length);
+      for (float sample : result) {
+        if (sampleIdx != (int) sample) {
+          assertEquals(sampleIdx, (int) sample);
         }
+        sampleIdx++;
       }
     }
     long endTime = System.nanoTime();
     instance.stopSession();
+    instance.throwAndClearExecutionException();
+
     instance.close();
-    System.out.printf("...Creating the test file: %f seconds.%n", 1E-9 * (mtfEnd - mtfStart));
-    System.out.printf("...File size             : %d bytes.%n", fileSizeFloat * 4);
+
     System.out.printf("...File duration         : %f seconds.%n", fileDurationNano * 1E-09);
     System.out.printf("...Read Performance      : %f units.%n", fileDurationNano / (endTime - startTime));
   }
