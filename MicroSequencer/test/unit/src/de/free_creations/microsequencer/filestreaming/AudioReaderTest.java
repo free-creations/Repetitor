@@ -15,6 +15,7 @@
  */
 package de.free_creations.microsequencer.filestreaming;
 
+import de.free_creations.microsequencer.filestreaming.AudioWriter.WriterResult;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -734,5 +735,99 @@ public class AudioReaderTest {
     return realizedInputFile;
 
 
+  }
+
+  /**
+   * Test of start method, of class AudioReader.
+   */
+  @Test
+  public void testStart_AudioWriterWriterResult() {
+    System.out.println("testStart_AudioWriterWriterResult");
+    int sampleCount = Const.fileBufferSizeFloat - 13;
+    int audioArraySize = 2053;
+    SyncBuffer syncBuffer = new SyncBuffer(Const.fileBufferSizeFloat);
+
+    FloatBuffer floatBuffer = syncBuffer.asFloatBuffer();
+
+    for (int i = 0; i < sampleCount; i++) {
+      floatBuffer.put(i);
+    }
+    syncBuffer.flipFloats();
+    WriterResult result = new WriterResult(syncBuffer, null, sampleCount);
+
+    float[] audioArray = new float[audioArraySize];
+    AudioReader instance = new AudioReader(executor);
+    instance.start(result);
+
+    int sampleIdx = 0;
+    while (sampleIdx < sampleCount) {
+      instance.getNext(audioArray);
+      for (float sample : audioArray) {
+        if (sampleIdx < sampleCount) {
+          assertEquals(sampleIdx, (int) sample);
+        } else {
+          assertEquals(0, (int) sample);
+        }
+        sampleIdx++;
+      }
+    }
+
+
+  }
+
+  /**
+   * Test of start method, of class AudioReader.
+   */
+  @Test
+  @Ignore("Tested with other tests")
+  public void testStart_3args() {
+  }
+
+  /**
+   * Test of getNext method, of class AudioReader.
+   */
+  @Test
+  @Ignore("Tested with other tests")
+  public void testGetNext_floatArr() {
+  }
+
+  /**
+   * Test of getNext method, of class AudioReader.
+   */
+  @Test
+  @Ignore("Tested with other tests")
+  public void testGetNext_int_floatArr() {
+  }
+
+  /**
+   * Test of close method, of class AudioReader.
+   */
+  @Test
+  @Ignore("Tested with other tests?")
+  public void testClose() {
+  }
+
+  /**
+   * Test of getOverflowCount method, of class AudioReader.
+   */
+  @Test
+  @Ignore("Test is trivial")
+  public void testGetOverflowCount() {
+  }
+
+  /**
+   * Test of isStarted method, of class AudioReader.
+   */
+  @Test
+  @Ignore("Test is trivial")
+  public void testIsStarted() {
+  }
+
+  /**
+   * Test of waitForBufferReady method, of class AudioReader.
+   */
+  @Test
+  @Ignore("method is only for test")
+  public void testWaitForBufferReady() throws Exception {
   }
 }

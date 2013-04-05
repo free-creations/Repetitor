@@ -127,7 +127,7 @@ public class AudioWriter {
     private final int samplesWritten;
     private final SyncBuffer startBuffer;
 
-    private WriterResult(SyncBuffer firstBuffer, Future<FileChannel> channel, int samplesWritten) {
+    protected WriterResult(SyncBuffer firstBuffer, Future<FileChannel> channel, int samplesWritten) {
       this.startBuffer = firstBuffer;
       this.channel = channel;
       this.samplesWritten = samplesWritten;
@@ -584,7 +584,7 @@ public class AudioWriter {
    * @throws InterruptedException
    * @throws ExecutionException
    */
-  protected void waitForBufferReady() throws InterruptedException, ExecutionException {
+  public void waitForBufferReady() throws InterruptedException, ExecutionException {
     if (currentBufferProvider != null) {
       currentBufferProvider.get();
     }

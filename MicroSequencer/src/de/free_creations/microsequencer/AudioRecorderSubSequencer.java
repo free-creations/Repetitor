@@ -17,19 +17,15 @@ package de.free_creations.microsequencer;
 
 import de.free_creations.microsequencer.filestreaming.AudioReader;
 import de.free_creations.microsequencer.filestreaming.AudioWriter;
+import de.free_creations.microsequencer.filestreaming.AudioWriter.WriterResult;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.midi.MidiUnavailableException;
@@ -45,7 +41,7 @@ class AudioRecorderSubSequencer implements
 
   private static final Logger logger = Logger.getLogger(AudioRecorderSubSequencer.class.getName());
   private final File tempDir;
-  private File tempFile;
+  private File currentTempFile;
   private File previousTempFile;
   private final long minimumFreeFileSpace = 44100 * 2 * 4 * 60 * 4;//four minutes
   private final ExecutorService executor = Executors.newSingleThreadExecutor(
@@ -69,6 +65,8 @@ class AudioRecorderSubSequencer implements
   private int inputChannelCount;
   private final String name;
   private int outputChannelCount;
+  private int nFrames;
+  private final Object processingLock = new Object();
 
   /**
    * Builds a factory object that provides this implementation as sub-sequencer.
@@ -90,12 +88,8 @@ class AudioRecorderSubSequencer implements
             };
     return newFactory;
   }
-  private int nFrames;
   private int processInCount = 0; // (debugging variable) the number of times processIn was called within one session
   private int processOutCount = 0; // (debugging variable) the number of times processOut was called within one session
-  private int processExeCount = 0; // (debugging variable) the number of times read or write operation was executed within one session.
-  private int audioWriterNotReadyCount; // (debugging variable) the number of times processOut tried to access the writer, but it was not ready.
-  private int audioReaderNotReadyCount;
   private AudioWriter.WriterResult writerResult = null;
 
   void setMute(boolean value) {
@@ -140,13 +134,14 @@ class AudioRecorderSubSequencer implements
     this.tempDir = tempDir;
     this.name = name;
 
-    this.tempFile = new File(tempDir, "RepetitorTmp1.raw");
+    this.currentTempFile = new File(tempDir, "RepetitorTmp1.raw");
     this.previousTempFile = new File(tempDir, "RepetitorTmp2.raw");
-//    if (deleteTempFilesOnExit) {
-//      tempFile.deleteOnExit();
-//      tempDir.deleteOnExit();
-//
-//    }
+    if (deleteTempFilesOnExit) {
+      currentTempFile.deleteOnExit();
+      previousTempFile.deleteOnExit();
+      tempDir.deleteOnExit();
+
+    }
   }
 
   String getTempDir() {
@@ -154,7 +149,7 @@ class AudioRecorderSubSequencer implements
   }
 
   String getTempFile() {
-    return tempFile.getAbsolutePath();
+    return currentTempFile.getAbsolutePath();
   }
 
   /**
@@ -171,24 +166,24 @@ class AudioRecorderSubSequencer implements
    */
   @Override
   public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) {
-    this.inputChannelCount = inputChannelCount;
-    this.outputChannelCount = outputChannelCount;
-    this.nFrames = nFrames;
-    outputSamples = new float[nFrames * outputChannelCount];
-    balancedInputSamples = new float[nFrames * outputChannelCount];
-    nullSamples = new float[nFrames * outputChannelCount];
-    Arrays.fill(outputSamples, 0F);
-    Arrays.fill(nullSamples, 0F);
-    Arrays.fill(balancedInputSamples, 0F);
-    processInCount = 0;
-    processOutCount = 0;
-    processExeCount = 0;
-    audioWriterNotReadyCount = 0;
+    synchronized (processingLock) {
+      this.inputChannelCount = inputChannelCount;
+      this.outputChannelCount = outputChannelCount;
+      this.nFrames = nFrames;
+      outputSamples = new float[nFrames * outputChannelCount];
+      balancedInputSamples = new float[nFrames * outputChannelCount];
+      nullSamples = new float[nFrames * outputChannelCount];
+      Arrays.fill(outputSamples, 0F);
+      Arrays.fill(nullSamples, 0F);
+      Arrays.fill(balancedInputSamples, 0F);
+      processInCount = 0;
+      processOutCount = 0;
 
-    logger.log(Level.FINER, "## AudioRecorderSubSequencer opened");
-    logger.log(Level.FINER, "... inputChannelCount: {0}", inputChannelCount);
-    logger.log(Level.FINER, "... outputChannelCount: {0}", outputChannelCount);
 
+      logger.log(Level.FINER, "## AudioRecorderSubSequencer opened");
+      logger.log(Level.FINER, "... inputChannelCount: {0}", inputChannelCount);
+      logger.log(Level.FINER, "... outputChannelCount: {0}", outputChannelCount);
+    }
   }
 
   /**
@@ -199,7 +194,9 @@ class AudioRecorderSubSequencer implements
    */
   @Override
   public void close() {
-    checkAndClearExecutionException();
+    synchronized (processingLock) {
+      throwAndClearExecutionException();
+    }
   }
 
   /**
@@ -207,7 +204,7 @@ class AudioRecorderSubSequencer implements
    *
    * @throws RuntimeException if there was a problem in processing.
    */
-  public void checkAndClearExecutionException() {
+  public void throwAndClearExecutionException() {
     if (executionException != null) {
       Exception ex = executionException;
       executionException = null;
@@ -253,17 +250,18 @@ class AudioRecorderSubSequencer implements
    * @throws Exception
    */
   public float[] processOut(double streamTime) {
-    processOutCount++;
-    if (playingMode != PlayingMode.PlayAudio) {
-      return nullSamples;
-    }
-    if (mute) {
-      return nullSamples;
-    }
-    audioReader.getNext(outputSamples);
-    return outputSamples;
+    synchronized (processingLock) {
+      processOutCount++;
+      if (playingMode != PlayingMode.PlayAudio) {
+        return nullSamples;
+      }
+      if (mute) {
+        return nullSamples;
+      }
+      audioReader.getNext(outputSamples);
+      return outputSamples;
 
-
+    }
   }
 
   /**
@@ -278,18 +276,20 @@ class AudioRecorderSubSequencer implements
    * @throws Exception
    */
   public void processIn(double streamTime, float[] samples) {
-    processInCount++;
-    if (playingMode != PlayingMode.RecordAudio) {
-      return;
+    synchronized (processingLock) {
+      processInCount++;
+      if (playingMode != PlayingMode.RecordAudio) {
+        return;
+      }
+      if (samples == null) {
+        return;
+      }
+      if (inputChannelCount <= 0) {
+        return;
+      }
+      assert (samples.length == inputChannelCount * nFrames);
+      audioWriter.putNext(balanceChannels(samples));
     }
-    if (samples == null) {
-      return;
-    }
-    if (inputChannelCount <= 0) {
-      return;
-    }
-    assert (samples.length == inputChannelCount * nFrames);
-    audioWriter.putNext(balanceChannels(samples));
   }
 
   private float[] balanceChannels(float[] samples) {
@@ -335,29 +335,29 @@ class AudioRecorderSubSequencer implements
    */
   @Override
   public void prepareSession(double startTick, PlayingMode mode) {
-    playingMode = mode;
-    audioReaderNotReadyCount = 0;
-    audioWriterNotReadyCount = 0;
-    if (outputSamples != null) {
-      Arrays.fill(outputSamples, 0F);
-      Arrays.fill(nullSamples, 0F);
-    }
-    switch (playingMode) {
-      case MidiOnly:
-        logger.log(Level.FINER, "### prepareSession: MidiOnly");
-        return;
-      case RecordAudio:
-        logger.log(Level.FINER, "### prepareSession: RecordAudio");
-        audioWriter.start(tempFile);
-        File usedFile = tempFile;
-        tempFile = previousTempFile;
-        previousTempFile = usedFile;
-        return;
-      case PlayAudio:
-        if (writerResult != null) {
-          logger.log(Level.FINER, "### prepareSession: PlayAudio");
-          audioReader.start(writerResult);
-        }
+    synchronized (processingLock) {
+      playingMode = mode;
+      if (outputSamples != null) {
+        Arrays.fill(outputSamples, 0F);
+        Arrays.fill(nullSamples, 0F);
+      }
+      switch (playingMode) {
+        case MidiOnly:
+          logger.log(Level.FINER, "### prepareSession: MidiOnly");
+          return;
+        case RecordAudio:
+          logger.log(Level.FINER, "### prepareSession: RecordAudio");
+          audioWriter.start(currentTempFile);
+          File usedFile = currentTempFile;
+          currentTempFile = previousTempFile;
+          previousTempFile = usedFile;
+          return;
+        case PlayAudio:
+          if (writerResult != null) {
+            logger.log(Level.FINER, "### prepareSession: PlayAudio");
+            audioReader.start(writerResult);
+          }
+      }
     }
   }
 
@@ -368,25 +368,41 @@ class AudioRecorderSubSequencer implements
    */
   @Override
   public void stopSession() {
-    if (outputSamples != null) {
-      Arrays.fill(outputSamples, 0F);
-      Arrays.fill(nullSamples, 0F);
-    }
-        switch (playingMode) {
-      case MidiOnly:
-        logger.log(Level.FINER, "### stopSession: MidiOnly");
-        return;
-      case RecordAudio:
-        logger.log(Level.FINER, "### stopSession: RecordAudio");
-        writerResult = audioWriter.stop();
-        return;
-      case PlayAudio:
-        if (audioReader.isStarted()) {
+    synchronized (processingLock) {
+      if (outputSamples != null) {
+        Arrays.fill(outputSamples, 0F);
+        Arrays.fill(nullSamples, 0F);
+      }
+      switch (playingMode) {
+        case MidiOnly:
+          logger.log(Level.FINER, "### stopSession: MidiOnly");
+          return;
+        case RecordAudio:
+          logger.log(Level.FINER, "### stopSession: RecordAudio");
+          writerResult = audioWriter.stop();
+          return;
+        case PlayAudio:
+          if (audioReader.isStarted()) {
 
-          audioReader.stop();
-        }
-    }
+            audioReader.stop();
+          }
+      }
 
+    }
+  }
+
+  public WriterResult getWriterResult() {
+    synchronized (processingLock) {
+      return writerResult;
+    }
+  }
+
+  public void waitForWriterReady() throws InterruptedException, ExecutionException {
+    audioWriter.waitForBufferReady();
+  }
+
+  public void waitForReaderReady() throws InterruptedException, ExecutionException {
+    audioReader.waitForBufferReady();
   }
 
   @Override

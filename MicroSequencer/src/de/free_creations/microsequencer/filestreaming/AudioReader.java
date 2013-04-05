@@ -462,7 +462,7 @@ public class AudioReader {
    * @throws InterruptedException
    * @throws ExecutionException
    */
-  protected void waitForBufferReady() throws InterruptedException, ExecutionException {
+  public void waitForBufferReady() throws InterruptedException, ExecutionException {
     currentBuffer.get();
     if (nextBuffer != null) {
       nextBuffer.get();
