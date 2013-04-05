@@ -234,8 +234,10 @@ class AudioRecorderSubSequencer implements
 
   @Override
   public float[] process(double streamTime, float[] input) {
-    processIn(streamTime, input);
-    return processOut(streamTime);
+    synchronized (processingLock) {
+      processIn(streamTime, input);
+      return processOut(streamTime);
+    }
   }
 
   /**
@@ -249,19 +251,16 @@ class AudioRecorderSubSequencer implements
    * @return
    * @throws Exception
    */
-  public float[] processOut(double streamTime) {
-    synchronized (processingLock) {
-      processOutCount++;
-      if (playingMode != PlayingMode.PlayAudio) {
-        return nullSamples;
-      }
-      if (mute) {
-        return nullSamples;
-      }
-      audioReader.getNext(outputSamples);
-      return outputSamples;
-
+  private float[] processOut(double streamTime) {
+    processOutCount++;
+    if (playingMode != PlayingMode.PlayAudio) {
+      return nullSamples;
     }
+    if (mute) {
+      return nullSamples;
+    }
+    audioReader.getNext(outputSamples);
+    return outputSamples;
   }
 
   /**
@@ -275,21 +274,19 @@ class AudioRecorderSubSequencer implements
    * @param samples
    * @throws Exception
    */
-  public void processIn(double streamTime, float[] samples) {
-    synchronized (processingLock) {
-      processInCount++;
-      if (playingMode != PlayingMode.RecordAudio) {
-        return;
-      }
-      if (samples == null) {
-        return;
-      }
-      if (inputChannelCount <= 0) {
-        return;
-      }
-      assert (samples.length == inputChannelCount * nFrames);
-      audioWriter.putNext(balanceChannels(samples));
+  private void processIn(double streamTime, float[] samples) {
+    processInCount++;
+    if (playingMode != PlayingMode.RecordAudio) {
+      return;
     }
+    if (samples == null) {
+      return;
+    }
+    if (inputChannelCount <= 0) {
+      return;
+    }
+    assert (samples.length == inputChannelCount * nFrames);
+    audioWriter.putNext(balanceChannels(samples));
   }
 
   private float[] balanceChannels(float[] samples) {

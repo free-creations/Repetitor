@@ -129,7 +129,7 @@ public class AudioRecorderSubSequencerTest {
         samplesWritten++;
       }
       instance.waitForWriterReady();
-      instance.processIn(-1, audioArray);
+      instance.process(-1, audioArray);
     }
     long writeStopTime = System.nanoTime();
     instance.stopSession();
@@ -182,9 +182,8 @@ public class AudioRecorderSubSequencerTest {
    * is larger than m, only the m first input channels are recorded.
    */
   @Test
-  @Ignore
   public void testUnbalancedChannels1() throws Exception {
-    System.out.println("testUnbalancedChannels");
+    System.out.println("testUnbalancedChannels1");
     int samplingRate = 44100;
     int nFrames = 256;
     int inputChannelCount = 7;
@@ -201,7 +200,6 @@ public class AudioRecorderSubSequencerTest {
 
     //Here we proceed to the test: in each sample we'll write its channel
     instance.prepareSession(0, PlayingMode.RecordAudio);
-    Thread.sleep(100);
     int sample;
     for (int i = 0; i < bufferCount; i++) {
       sample = 0;
@@ -211,7 +209,8 @@ public class AudioRecorderSubSequencerTest {
           sample++;
         }
       }
-      instance.processIn(-1, inAudioArray);
+      instance.waitForWriterReady();
+      instance.process(-1, inAudioArray);
     }
     instance.stopSession();
     instance.throwAndClearExecutionException();
@@ -219,9 +218,9 @@ public class AudioRecorderSubSequencerTest {
 
     // Here we verify only the first two channels have been recorded
     instance.prepareSession(0, PlayingMode.PlayAudio);
-    Thread.sleep(100);
 
     for (int i = 0; i < bufferCount; i++) {
+      instance.waitForReaderReady();
       float[] producedSamples = instance.process(-1, null);
       assertEquals(outAudioArraySize, producedSamples.length);
       sample = 0;
@@ -244,11 +243,10 @@ public class AudioRecorderSubSequencerTest {
    * Test that always a number corresponding to the output channels is recorded.
    *
    * Specification: If there are n input channels and m output channels and if m
-   * is larger than n, only the highest input channel is repeated so to record m
+   * is larger than n, the highest input channel is repeated so to record m
    * channels.
    */
   @Test
-  @Ignore
   public void testUnbalancedChannels2() throws Exception {
     System.out.println("testUnbalancedChannels2");
     int samplingRate = 44100;
@@ -267,17 +265,18 @@ public class AudioRecorderSubSequencerTest {
 
     //Here we proceed to the test: in each sample we'll write its channel
     instance.prepareSession(0, PlayingMode.RecordAudio);
-    Thread.sleep(100);
     int sample;
     for (int i = 0; i < bufferCount; i++) {
       sample = 0;
       for (int frame = 0; frame < nFrames; frame++) {
         for (int channel = 0; channel < inputChannelCount; channel++) {
+
           inAudioArray[sample] = channel;
           sample++;
         }
       }
-      instance.processIn(-1, inAudioArray);
+      instance.waitForWriterReady();
+      instance.process(-1, inAudioArray);
     }
     instance.stopSession();
     instance.throwAndClearExecutionException();
@@ -285,9 +284,9 @@ public class AudioRecorderSubSequencerTest {
 
     // Here we verify the second channel has been repeated
     instance.prepareSession(0, PlayingMode.PlayAudio);
-    Thread.sleep(100);
 
     for (int i = 0; i < bufferCount; i++) {
+      instance.waitForReaderReady();
       float[] producedSamples = instance.process(-1, null);
       assertEquals(outAudioArraySize, producedSamples.length);
       sample = 0;
@@ -417,7 +416,6 @@ public class AudioRecorderSubSequencerTest {
    * nevertheless be able to run, the returned samples must be all be 0.0F
    */
   @Test
-  @Ignore
   public void testProcessIn_NoInputFile() throws Exception {
     System.out.println("testProcessInEmpty");
     int samplingRate = 44100;
@@ -438,7 +436,6 @@ public class AudioRecorderSubSequencerTest {
     instance.start();
     instance.prepareSession(0, PlayingMode.PlayAudio);
 
-    Thread.sleep(100);
     // here we proceed to the test.
     float floatCout = 0;
     for (int i = 0; i < 1000; i++) {
@@ -454,6 +451,7 @@ public class AudioRecorderSubSequencerTest {
 
     instance.stopSession();
     instance.close();
+    tempDir.delete();
   }
 
   /**
