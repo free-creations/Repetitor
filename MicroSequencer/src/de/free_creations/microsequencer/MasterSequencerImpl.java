@@ -43,7 +43,7 @@ class MasterSequencerImpl implements MasterSequencer {
   private TimeSignatureTrack timeSignatureTrack = null;
   private final ArrayList<MasterSequencer.MidiSubSequencer> midiSubSequencers =
           new ArrayList<>();
-  private final ArrayList<MasterSequencer.SubSequencer> midiAndAudioSubSequencers =
+  private final ArrayList<MasterSequencer.AudioRecorderSubSequencerInt> audioSubSequencers =
           new ArrayList<>();
   private final Object updateLock = new Object();
   private volatile double tempoFactor = 1.0D;
@@ -86,23 +86,19 @@ class MasterSequencerImpl implements MasterSequencer {
       //SubSequencer newSubSequencer = new MidiSubSequencer(name, soundbank);
       MidiSubSequencer newSubSequencer = midiSubSequencerFactory.make(name, soundbank);
       synchronized (midiSubSequencers) {
-        synchronized (midiAndAudioSubSequencers) {
-          midiSubSequencers.add(newSubSequencer);
-          midiAndAudioSubSequencers.add(newSubSequencer);
-        }
+        midiSubSequencers.add(newSubSequencer);
       }
       return newSubSequencer;
     }
   }
 
-
   @Override
   public SubSequencer createAudioRecorderSubSequencer(String name) throws IOException {
     synchronized (updateLock) {
       //SubSequencer newSubSequencer = new MidiSubSequencer(name, soundbank);
-      SubSequencer newSubSequencer = audioSubSequencerFactory.makeAudioRecorder(name);
-      synchronized (midiAndAudioSubSequencers) {
-        midiAndAudioSubSequencers.add(newSubSequencer);
+      AudioRecorderSubSequencerInt newSubSequencer = audioSubSequencerFactory.makeAudioRecorder(name);
+      synchronized (audioSubSequencers) {
+        audioSubSequencers.add(newSubSequencer);
       }
       return newSubSequencer;
     }
@@ -250,10 +246,10 @@ class MasterSequencerImpl implements MasterSequencer {
         midiSubSequencersSnapShot =
                 new ArrayList<>(midiSubSequencers);
       }
-      ArrayList<MasterSequencer.SubSequencer> subMidiAndAudioSequencersSnapShot;
-      synchronized (midiAndAudioSubSequencers) {
+      ArrayList<MasterSequencer.AudioRecorderSubSequencerInt> subMidiAndAudioSequencersSnapShot;
+      synchronized (audioSubSequencers) {
         subMidiAndAudioSequencersSnapShot =
-                new ArrayList<>(midiAndAudioSubSequencers);
+                new ArrayList<>(audioSubSequencers);
       }
       activeMasterSequencer =
               new ActiveMasterSequencer(
@@ -302,7 +298,7 @@ class MasterSequencerImpl implements MasterSequencer {
     synchronized (updateLock) {
       stopMidi();
       midiSubSequencers.clear();
-      midiAndAudioSubSequencers.clear();
+      audioSubSequencers.clear();
     }
   }
 
@@ -451,7 +447,7 @@ class ActiveMasterSequencer {
   // immutable objects
   private final TempoTrack tempoTrack;
   private final TimeSignatureTrack timeSignatureTrack;
-  private final ArrayList<MasterSequencer.SubSequencer> audioAndMidiSequencers;
+  private final ArrayList<MasterSequencer.AudioRecorderSubSequencerInt> audioSubSequencers;
   private final ArrayList<MasterSequencer.MidiSubSequencer> midiSubSequencers;
   private final long sequenceLenght;
   private final double loopEndPoint;
@@ -470,7 +466,7 @@ class ActiveMasterSequencer {
 
   public ActiveMasterSequencer(
           double startPosition,
-          final ArrayList<MasterSequencer.SubSequencer> audioAndMidiSubSequencers,
+          final ArrayList<MasterSequencer.AudioRecorderSubSequencerInt> audioSubSequencers,
           final ArrayList<MasterSequencer.MidiSubSequencer> midiSubSequencers,
           TempoTrack tempoTrack,
           TimeSignatureTrack timeSignatureTrack,
@@ -482,7 +478,7 @@ class ActiveMasterSequencer {
 
     this.tempoTrack = tempoTrack;
     this.timeSignatureTrack = timeSignatureTrack;
-    this.audioAndMidiSequencers = audioAndMidiSubSequencers;
+    this.audioSubSequencers = audioSubSequencers;
     this.midiSubSequencers = midiSubSequencers;
     thisCycleStartTick = startPosition;
     nextCycleStartTick = startPosition;
@@ -534,6 +530,7 @@ class ActiveMasterSequencer {
       // first calculate all the values we will need for a normal cycle
       boolean isLoopingCycle = false;
       TimeMap timeMap_2 = null;
+      double endpointOffset = 0D;
       previousStreamTime = thisStreamTime;
       thisStreamTime = streamTime;
       thisCycleStartTick = nextCycleStartTick;
@@ -549,7 +546,7 @@ class ActiveMasterSequencer {
             loopCount--;
           }
           fireLoopCountChanged();
-          double endpointOffset = thisTimeMap.getTimeOffset(loopEndPoint);
+          endpointOffset = thisTimeMap.getTimeOffset(loopEndPoint);
           timeMap_2 = tempoTrack.CreateTimeMap(loopStartPoint, 1.1 * cycleLength, tempoFactor);
           nextCycleStartTick = timeMap_2.getTickForOffset(cycleLength - endpointOffset);
         }
@@ -565,6 +562,21 @@ class ActiveMasterSequencer {
           s.prepareNormalCycle(thisTimeMap, thisCycleStartTick, nextCycleStartTick);
         }
       }
+
+      // inform the audio-sequencers about loop-end
+      if (isLoopingCycle) {
+        for (MasterSequencer.AudioRecorderSubSequencerInt a : audioSubSequencers) {
+          a.prepareSwitch(endpointOffset);
+        }
+      }
+      // inform the audio-sequencers about loop-start
+      if ((thisCycleStartTick <= loopStartPoint)
+              && (loopStartPoint < nextCycleStartTick)) {
+        double startpointOffset = thisTimeMap.getTimeOffset(loopStartPoint);
+        for (MasterSequencer.AudioRecorderSubSequencerInt a : audioSubSequencers) {
+          a.prepareSwitch(startpointOffset);
+        }
+      }
     }
 
     if (nextCycleStartTick > sequenceLenght) {
@@ -575,7 +587,10 @@ class ActiveMasterSequencer {
   public void startMidi(PlayingMode playingMode) {
     synchronized (cycleLock) {
       logger.log(Level.FINER, "startMidi()");
-      for (MasterSequencer.SubSequencer s : audioAndMidiSequencers) {
+      for (MasterSequencer.SubSequencer s : audioSubSequencers) {
+        s.prepareSession(thisCycleStartTick, playingMode);
+      }
+      for (MasterSequencer.SubSequencer s : midiSubSequencers) {
         s.prepareSession(thisCycleStartTick, playingMode);
       }
     }
@@ -584,7 +599,10 @@ class ActiveMasterSequencer {
 
   public void stopMidi() {
     synchronized (cycleLock) {
-      for (MasterSequencer.SubSequencer s : audioAndMidiSequencers) {
+      for (MasterSequencer.SubSequencer s : audioSubSequencers) {
+        s.stopSession();
+      }
+      for (MasterSequencer.SubSequencer s : midiSubSequencers) {
         s.stopSession();
       }
     }

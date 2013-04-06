@@ -36,7 +36,7 @@ import javax.sound.midi.Soundbank;
  * @author Harald Postner
  */
 class AudioRecorderSubSequencer implements
-        MasterSequencer.SubSequencer,
+        MasterSequencer.AudioRecorderSubSequencerInt,
         AudioProcessor {
 
   private static final Logger logger = Logger.getLogger(AudioRecorderSubSequencer.class.getName());
@@ -82,7 +82,7 @@ class AudioRecorderSubSequencer implements
               }
 
               @Override
-              public MasterSequencer.SubSequencer makeAudioRecorder(String name) throws IOException {
+              public MasterSequencer.AudioRecorderSubSequencerInt makeAudioRecorder(String name) throws IOException {
                 return new AudioRecorderSubSequencer(name);
               }
             };
@@ -405,5 +405,10 @@ class AudioRecorderSubSequencer implements
   @Override
   public String toString() {
     return "AudioRecorderSubSequencer{" + "name=" + name + '}';
+  }
+
+  @Override
+  public void prepareSwitch(double switchPoint) {
+    logger.log(Level.FINER, ">>>>### prepareSwitch: {0}",switchPoint);
   }
 }

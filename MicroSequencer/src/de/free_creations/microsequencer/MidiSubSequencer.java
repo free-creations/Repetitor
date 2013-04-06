@@ -251,7 +251,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
               }
 
               @Override
-              public SubSequencer makeAudioRecorder(String name) {
+              public MasterSequencer.AudioRecorderSubSequencerInt makeAudioRecorder(String name) {
                 throw new UnsupportedOperationException("Cannot make an audio recorder.");
               }
             };

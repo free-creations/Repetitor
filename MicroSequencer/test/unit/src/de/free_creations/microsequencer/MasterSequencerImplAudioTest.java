@@ -16,6 +16,7 @@
  */
 package de.free_creations.microsequencer;
 
+import de.free_creations.microsequencer.MasterSequencer.AudioRecorderSubSequencerInt;
 import de.free_creations.microsequencer.MasterSequencer.MidiSubSequencer;
 import de.free_creations.microsequencer.MasterSequencer.SubSequencer;
 import de.free_creations.midiutil.BeatPosition;
@@ -87,8 +88,8 @@ public class MasterSequencerImplAudioTest {
     assertTrue(subsequencer.started);
     assertEquals(PlayingMode.MidiOnly, subsequencer.payingMode);
     instance.stopMidi();
-    assertFalse(subsequencer.started);   
-    
+    assertFalse(subsequencer.started);
+
     instance.startMidi(PlayingMode.PlayAudio);
     assertTrue(subsequencer.started);
     assertEquals(PlayingMode.PlayAudio, subsequencer.payingMode);
@@ -183,7 +184,7 @@ public class MasterSequencerImplAudioTest {
 
   }
 
-  private class SubsequencerMock implements MasterSequencer.SubSequencer {
+  private class SubsequencerMock implements MasterSequencer.AudioRecorderSubSequencerInt {
 
     public boolean started = false;
     PlayingMode payingMode;
@@ -198,6 +199,11 @@ public class MasterSequencerImplAudioTest {
     public void stopSession() {
       started = false;
     }
+
+    @Override
+    public void prepareSwitch(double switchPoint) {
+      throw new UnsupportedOperationException("Not supported yet.");
+    }
   }
   private MasterSequencer.SubSequencerFactory AudioSubsequencerMockFactory =
           new MasterSequencer.SubSequencerFactory() {
@@ -207,7 +213,7 @@ public class MasterSequencerImplAudioTest {
             }
 
             @Override
-            public SubSequencer makeAudioRecorder(String name) throws IOException {
+            public AudioRecorderSubSequencerInt makeAudioRecorder(String name) throws IOException {
               return new SubsequencerMock();
             }
           };

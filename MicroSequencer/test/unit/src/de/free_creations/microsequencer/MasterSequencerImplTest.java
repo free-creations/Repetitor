@@ -16,6 +16,7 @@
  */
 package de.free_creations.microsequencer;
 
+import de.free_creations.microsequencer.MasterSequencer.AudioRecorderSubSequencerInt;
 import de.free_creations.microsequencer.MasterSequencer.MidiSubSequencer;
 import de.free_creations.microsequencer.MasterSequencer.SubSequencer;
 import de.free_creations.midiutil.BeatPosition;
@@ -775,7 +776,7 @@ public class MasterSequencerImplTest {
             }
 
             @Override
-            public SubSequencer makeAudioRecorder(String name) throws IOException {
+            public AudioRecorderSubSequencerInt makeAudioRecorder(String name) throws IOException {
               throw new RuntimeException("Not allowed.");
             }
           };

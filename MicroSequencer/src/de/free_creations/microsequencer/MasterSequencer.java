@@ -50,7 +50,24 @@ interface MasterSequencer {
   }
 
   /**
-   * This interface defines the sub-sequencer as it is seen by the
+   * This interface defines the audio sub-sequencer as it is seen by the
+   * master-sequencer.
+   */
+  public interface AudioRecorderSubSequencerInt extends SubSequencer {
+
+    /**
+     * When the is in mode "PlayRecordAudio", this messages indicates that the
+     * sub-sequencer now play the recording and shall in parallel start a new
+     * recording.
+     *
+     * @param offsetTime the time in seconds where the switch occurs within
+     * the current cycle.
+     */
+    public void prepareSwitch(double offsetTime);
+  }
+
+  /**
+   * This interface defines the midi sub-sequencer as it is seen by the
    * master-sequencer. The sub-sequencer is defined as an interface to make it
    * easy to unit-test the master-sequencer independently of the sub-sequencer.
    */
@@ -98,7 +115,7 @@ interface MasterSequencer {
 
     public MidiSubSequencer make(final String name, Soundbank soundbank) throws MidiUnavailableException;
 
-    public SubSequencer makeAudioRecorder(String name)throws IOException;
+    public AudioRecorderSubSequencerInt makeAudioRecorder(String name) throws IOException;
   }
 
   /**
