@@ -213,9 +213,14 @@ public class AudioReader {
   }
 
   public void start(AudioWriter.WriterResult fileToRead) {
-    start(fileToRead.getStartBuffer().asFloatBuffer(),
-            fileToRead.getChannel(),
-            fileToRead.getSamplesWritten());
+    if (fileToRead != null) {
+      start(fileToRead.getStartBuffer().asFloatBuffer(),
+              fileToRead.getChannel(),
+              fileToRead.getSamplesWritten());
+    } else {
+      this.samplesToProcess = 0;
+      started = true;
+    }
   }
 
   /**
@@ -260,6 +265,18 @@ public class AudioReader {
       }
       started = true;
     }
+  }
+
+  /**
+   * Skip the given number of samples.
+   *
+   * @param number the number of samples to skip
+   */
+  public void skip(int number) {
+    synchronized (processingLock) {
+      samplesDelivered += number;
+    }
+
   }
 
   /**

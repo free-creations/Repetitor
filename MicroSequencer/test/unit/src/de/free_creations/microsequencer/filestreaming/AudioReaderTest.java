@@ -141,7 +141,52 @@ public class AudioReaderTest {
 
     audioReader.close();
   }
+  /**
+   * Verify that the AudioReader correctly processes an empty input.
+   *
+   * Specification:
+   *
+   * <p>1) If the AudioReader is not started it shall return null-samples.</p>
+   *
+   * <p>2) If the AudioReader has processed all input samples it shall return
+   * null-samples.</p>
+   *
+   * <p>3) If the AudioReader has been stopped it shall return null-samples.</p>
+   *
+   */
+  @Test
+  public void testEmpty2() {
+    System.out.println("testEmpty2");
 
+    int audioArraySize = 1024;
+    float[] audioArray = new float[audioArraySize];
+
+
+    AudioReader audioReader = new AudioReader(executor);
+
+    // 1) check the not started case
+    Arrays.fill(audioArray, 123F);
+    audioReader.getNext(12345, audioArray);
+    for (float sample : audioArray) {
+      assertEquals(0F, sample, 0F);
+    }
+    // 2) check the file ended case
+    Arrays.fill(audioArray, 123F);
+    audioReader.start(null);
+    audioReader.getNext(0, audioArray);
+    for (float sample : audioArray) {
+      assertEquals(0F, sample, 0F);
+    }
+    // 3) check the stopped case
+    Arrays.fill(audioArray, 123F);
+    audioReader.stop();
+    audioReader.getNext(0, audioArray);
+    for (float sample : audioArray) {
+      assertEquals(0F, sample, 0F);
+    }
+
+    audioReader.close();
+  }
   /**
    * Verify that the AudioReader correctly processes when audio array boundaries
    * exactly match the available input.
@@ -283,7 +328,8 @@ public class AudioReaderTest {
     for (int i = 0; i < regularAudioArrayCount; i++) {
       sampleIndex += skipSamples;
       Arrays.fill(audioArray, 123F);
-      audioReader.getNext(sampleIndex, audioArray);
+      audioReader.skip(skipSamples);
+      audioReader.getNext(audioArray);
       for (float sample : audioArray) {
         assertEquals(sampleIndex, (int) sample);
         sampleIndex++;

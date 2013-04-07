@@ -91,7 +91,9 @@ class AudioRecorderSubSequencer implements
   private int processInCount = 0; // (debugging variable) the number of times processIn was called within one session
   private int processOutCount = 0; // (debugging variable) the number of times processOut was called within one session
   private AudioWriter.WriterResult writerResult = null;
-  private long latency;
+  private int latency;
+  private int samplingRate;
+  private int previousSwitchSample;
 
   void setMute(boolean value) {
     mute = value;
@@ -168,6 +170,7 @@ class AudioRecorderSubSequencer implements
   @Override
   public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved, long latency) {
     synchronized (processingLock) {
+      this.samplingRate = samplingRate;
       this.inputChannelCount = inputChannelCount;
       this.outputChannelCount = outputChannelCount;
       this.nFrames = nFrames;
@@ -179,7 +182,7 @@ class AudioRecorderSubSequencer implements
       Arrays.fill(balancedInputSamples, 0F);
       processInCount = 0;
       processOutCount = 0;
-      this.latency = latency;
+      this.latency = (int) latency;
 
 
       logger.log(Level.FINER, "## AudioRecorderSubSequencer opened");
@@ -256,13 +259,22 @@ class AudioRecorderSubSequencer implements
    */
   private float[] processOut(double streamTime) {
     processOutCount++;
-    if (playingMode != PlayingMode.PlayAudio) {
-      return nullSamples;
-    }
     if (mute) {
       return nullSamples;
     }
-    audioReader.getNext(outputSamples);
+    switch (playingMode) {
+      case MidiOnly:
+        return nullSamples;
+      case RecordAudio:
+        return nullSamples;
+      case PlayAudio:
+        audioReader.getNext(outputSamples);
+        break;
+      case PlayRecordAudio:
+        audioReader.getNext(outputSamples);
+        break;
+    }
+
     return outputSamples;
   }
 
@@ -279,17 +291,25 @@ class AudioRecorderSubSequencer implements
    */
   private void processIn(double streamTime, float[] samples) {
     processInCount++;
-    if (playingMode != PlayingMode.RecordAudio) {
-      return;
-    }
     if (samples == null) {
       return;
     }
     if (inputChannelCount <= 0) {
       return;
     }
-    assert (samples.length == inputChannelCount * nFrames);
-    audioWriter.putNext(balanceChannels(samples));
+    switch (playingMode) {
+      case MidiOnly:
+        return;
+      case RecordAudio:
+        audioWriter.putNext(balanceChannels(samples));
+        break;
+      case PlayAudio:
+        return;
+      case PlayRecordAudio:
+        audioWriter.putNext(balanceChannels(samples));
+        break;
+    }
+
   }
 
   private float[] balanceChannels(float[] samples) {
@@ -357,13 +377,20 @@ class AudioRecorderSubSequencer implements
             logger.log(Level.FINER, "### prepareSession: PlayAudio");
             audioReader.start(writerResult);
           }
+          return;
+        case PlayRecordAudio:
+          writerResult = null;
+          previousSwitchSample = 0;
+          logger.log(Level.FINER, "### prepareSession: PlayRecordAudio");
       }
+
     }
   }
 
   /**
-   * Gets called when the session has stopped. The calling thread is
-   * time-critical, no blocking operations allowed here.
+   * Gets called when the session has stopped.
+   *
+   * The calling thread is time-critical, no blocking operations allowed here.
    *
    */
   @Override
@@ -382,12 +409,21 @@ class AudioRecorderSubSequencer implements
           writerResult = audioWriter.stop();
           return;
         case PlayAudio:
+          logger.log(Level.FINER, "### stopSession: PlayAudio");
           if (audioReader.isStarted()) {
-
             audioReader.stop();
           }
+          return;
+        case PlayRecordAudio:
+          logger.log(Level.FINER, "### stopSession: PlayRecordAudio");
+          if (audioReader.isStarted()) {
+            audioReader.stop();
+          }
+          if (audioWriter.isStarted()) {
+            audioWriter.stop();
+          }
+          writerResult = null;
       }
-
     }
   }
 
@@ -412,6 +448,36 @@ class AudioRecorderSubSequencer implements
 
   @Override
   public void prepareSwitch(double switchPoint) {
-    logger.log(Level.FINER, ">>>>### prepareSwitch: {0}", switchPoint);
+    synchronized (processingLock) {
+      if (playingMode != PlayingMode.PlayRecordAudio) {
+        return;
+      }
+      int switchSample = ((int) (samplingRate * switchPoint) * outputChannelCount);;
+
+      logger.log(Level.FINER, ">>>>### prepareSwitch: {0}", switchSample);
+
+      if (audioReader.isStarted()) {
+        audioReader.stop();
+      }
+      if (audioWriter.isStarted()) {
+        writerResult = audioWriter.stop();
+      }
+
+      audioWriter.start(currentTempFile);
+      audioReader.start(writerResult);
+      int delayLatency = latency * outputChannelCount;
+      int exactDelay = delayLatency +previousSwitchSample -switchSample;
+      if(exactDelay>0) {
+        audioReader.skip(exactDelay);
+      }else{
+        audioReader.skip(delayLatency);
+      }
+
+      File usedFile = currentTempFile;
+      currentTempFile = previousTempFile;
+      previousTempFile = usedFile;
+      previousSwitchSample  = switchSample;
+
+    }
   }
 }
