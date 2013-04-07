@@ -115,7 +115,7 @@ public class AudioRecorderSubSequencerTest {
     int audioArraysToWrite = samplesToProcess / audioArraySize;
 
     AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
-    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved,0);
 
 
     //Here we procees to the test: we write the index position of each sample to the file
@@ -195,7 +195,7 @@ public class AudioRecorderSubSequencerTest {
     int bufferCount = 10;//fileSizeFloat / outAudioArraySize;
 
     AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
-    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved, 0);
 
 
     //Here we proceed to the test: in each sample we'll write its channel
@@ -260,7 +260,7 @@ public class AudioRecorderSubSequencerTest {
     int bufferCount = 10;//fileSizeFloat / outAudioArraySize;
 
     AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
-    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved, 0);
 
 
     //Here we proceed to the test: in each sample we'll write its channel
@@ -365,7 +365,7 @@ public class AudioRecorderSubSequencerTest {
 
 
     AudioRecorderSubSequencer instance = new AudioRecorderSubSequencer("Test");
-    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved, 0);
     float[] audioArray = new float[audioArraySize];
 
     // prepare an input file.
@@ -432,7 +432,7 @@ public class AudioRecorderSubSequencerTest {
 
 
     // read the file and check the audio buffer
-    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved, 0);
     instance.start();
     instance.prepareSession(0, PlayingMode.PlayAudio);
 
@@ -477,7 +477,7 @@ public class AudioRecorderSubSequencerTest {
     assertTrue(inputFile.exists());
 
     // read the file and check the audio buffer
-    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, nFrames, inputChannelCount, outputChannelCount, noninterleaved, 0);
     instance.start();
     instance.prepareSession(0, PlayingMode.PlayAudio);
 

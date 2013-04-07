@@ -475,7 +475,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
   }
 
   @Override
-  public void open(int samplingRate, int framesPerCycle, int inputChannelCount, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
+  public void open(int samplingRate, int framesPerCycle, int inputChannelCount, int outputChannelCount, boolean noninterleaved, long latency) throws MidiUnavailableException {
 
     if (noninterleaved) {
       throw new RuntimeException("Oops..., this version is not able to handle noninterleaved channels.");

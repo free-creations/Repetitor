@@ -109,7 +109,7 @@ class AudioPortImpl implements AudioPort {
     }
   }
 
-  public void open(int samplingRate, int framesPerCycle, int inputChannelCount, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException {
+  public void open(int samplingRate, int framesPerCycle, int inputChannelCount, int outputChannelCount, boolean noninterleaved, long latency) throws MidiUnavailableException {
     if (noninterleaved) {
       throw new IllegalArgumentException("This version is not able to handle noninterleaved channels.");
     }
@@ -122,7 +122,7 @@ class AudioPortImpl implements AudioPort {
 
     attn_f0 = (float) Math.exp(Math.log(0.5) / (samplingRate * RELAXATIONTIME));
     attn_f1 = 1F - attn_f0;
-    audioProcessor.open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
+    audioProcessor.open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved, latency);
   }
 
   public void start() {

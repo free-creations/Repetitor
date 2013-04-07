@@ -26,6 +26,9 @@ import java.util.logging.Logger;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 
+
+
+
 /**
  * The master-sequencer steers a number of sub-sequencers. The main task of the
  * master-sequencer is to maintain the common information about timing. This
@@ -55,6 +58,7 @@ class MasterSequencerImpl implements MasterSequencer {
   private volatile ActiveMasterSequencer activeMasterSequencer = null;
   private volatile boolean stopping = false;
   private final List<SequencerEventListener> sequencerEventListeners = new ArrayList<>();
+  private long latency;
 
   public MasterSequencerImpl(SubSequencerFactory midiSubSequencerFactory, SubSequencerFactory audioSubSequencerFactory) {
     this.midiSubSequencerFactory = midiSubSequencerFactory;
@@ -431,6 +435,16 @@ class MasterSequencerImpl implements MasterSequencer {
 
     return (60000000D * getTempoFactor()) / tempoPerQarter;
 
+  }
+
+  @Override
+  public long getLatency() {
+    return this.latency;
+  }
+
+  @Override
+  public void setLatency(long latency) {
+    this.latency = latency;
   }
 }
 

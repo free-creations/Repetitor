@@ -91,6 +91,7 @@ class AudioRecorderSubSequencer implements
   private int processInCount = 0; // (debugging variable) the number of times processIn was called within one session
   private int processOutCount = 0; // (debugging variable) the number of times processOut was called within one session
   private AudioWriter.WriterResult writerResult = null;
+  private long latency;
 
   void setMute(boolean value) {
     mute = value;
@@ -165,7 +166,7 @@ class AudioRecorderSubSequencer implements
    * @throws MidiUnavailableException
    */
   @Override
-  public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) {
+  public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved, long latency) {
     synchronized (processingLock) {
       this.inputChannelCount = inputChannelCount;
       this.outputChannelCount = outputChannelCount;
@@ -178,11 +179,13 @@ class AudioRecorderSubSequencer implements
       Arrays.fill(balancedInputSamples, 0F);
       processInCount = 0;
       processOutCount = 0;
+      this.latency = latency;
 
 
       logger.log(Level.FINER, "## AudioRecorderSubSequencer opened");
-      logger.log(Level.FINER, "... inputChannelCount: {0}", inputChannelCount);
+      logger.log(Level.FINER, "... inputChannelCount : {0}", inputChannelCount);
       logger.log(Level.FINER, "... outputChannelCount: {0}", outputChannelCount);
+      logger.log(Level.FINER, "... latency           : {0}", latency);
     }
   }
 
@@ -409,6 +412,6 @@ class AudioRecorderSubSequencer implements
 
   @Override
   public void prepareSwitch(double switchPoint) {
-    logger.log(Level.FINER, ">>>>### prepareSwitch: {0}",switchPoint);
+    logger.log(Level.FINER, ">>>>### prepareSwitch: {0}", switchPoint);
   }
 }

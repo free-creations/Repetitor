@@ -107,10 +107,12 @@ class AudioMixer extends AudioProcessor_Float32 {
     resultBuffer = new float[framesPerCycle * outputChannelCount];
     Arrays.fill(resultBuffer, 0F);
 
+    long latency = masterSequencer.getLatency();
+
     synchronized (audioPortsLock) {
       ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
       while (portIter.hasNext()) {
-        portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
+        portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved, latency);
       }
     }
     logger.log(Level.FINER, "### onOpenStream executed.");
@@ -200,7 +202,8 @@ class AudioMixer extends AudioProcessor_Float32 {
   public AudioPort createPort(AudioProcessor producer, ExecutorService executorService) throws MidiUnavailableException {
     AudioPortImpl port = new AudioPortImpl(producer, executorService);
     if (streamOpen) {
-      port.open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved);
+      long latency = masterSequencer.getLatency();
+      port.open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved, latency);
     }
     if (streamStarted) {
       port.start();

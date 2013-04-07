@@ -37,6 +37,10 @@ interface MasterSequencer {
 
   public void remove(SequencerEventListener listener);
 
+  public long getLatency();
+
+  public void setLatency(long latency);
+
   /**
    * This interface defines the sub-sequencer as it is seen by the
    * master-sequencer. The sub-sequencer is defined as an interface to make it

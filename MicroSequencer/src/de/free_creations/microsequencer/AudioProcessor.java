@@ -25,7 +25,7 @@ import javax.sound.midi.MidiUnavailableException;
  */
 interface AudioProcessor {
 
-  public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) throws MidiUnavailableException;
+  public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved,long latency) throws MidiUnavailableException;
 
   public void close();
 

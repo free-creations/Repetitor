@@ -136,7 +136,7 @@ public class MidiSubSequencerTest {
 
 
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved, 0);
     instance.prepareSession(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a number cycles
@@ -190,7 +190,7 @@ public class MidiSubSequencerTest {
     SynthMockup synth = new SynthMockup();
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved, 0);
     instance.prepareSession(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a cycling for about 10 minutes
@@ -256,7 +256,7 @@ public class MidiSubSequencerTest {
     SynthMockup synth = new SynthMockup();
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved, 0);
     instance.prepareSession(thisCycleStartTick, null);
     double streamTimeSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating a number of cycles
@@ -321,7 +321,7 @@ public class MidiSubSequencerTest {
     SynthMockup synth = new SynthMockup();
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
     instance.setTracks(tracks);
-    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved, 0);
     instance.prepareSession(thisCycleStartTick, null);
     double streamTimeInSeconds = 24 * 60 * 60; //assume that the stream has allready run a whole day
     // now we are simulating 7 seconds of cycling (until after event C)
@@ -428,7 +428,7 @@ public class MidiSubSequencerTest {
 
     SynthMockup synth = new SynthMockup();
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
-    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved, 0);
     double msecStreamTime = 24 * 60 * 60; //assume that the stream has allready run a whole day
 
     // add two messages for this test
@@ -487,7 +487,7 @@ public class MidiSubSequencerTest {
 
     SynthMockup synth = new SynthMockup();
     MidiSubSequencer instance = new MidiSubSequencer("test", synth, null);
-    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved);
+    instance.open(samplingRate, framesPerCycle, 0, outputChannelCount, noninterleaved, 0);
     double msecStreamTime = 0;
 
     instance.prepareSession(0, null);

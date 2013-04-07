@@ -756,6 +756,9 @@ class MicroSequencerImpl implements MicroSequencer {
         logger.log(Level.INFO, "input device = {0}", oParams.deviceId);
       }
       AudioSystem.StreamOptions options = requestedConfig.getOptions();
+      int b = options.numberOfBuffers;
+      int s = requestedConfig.getBufferSize();
+      long latency = (b+1)*s;
       try {
         audioSystem.openStream(oParams,
                 iParams,
@@ -763,7 +766,11 @@ class MicroSequencerImpl implements MicroSequencer {
                 requestedConfig.getBufferSize(),
                 audioMixer,
                 options);
-      } catch (RtErrorProcessError | RtErrorInavalidParameter ex) {
+        long reportedLatency = audioSystem.getStreamLatency();
+        if(reportedLatency>0){
+          latency = reportedLatency;
+        }
+      } catch (RtError ex) {
         logger.log(Level.SEVERE, null, ex);
         throw new MidiUnavailableException(ex.getMessage());
       }
@@ -782,6 +789,7 @@ class MicroSequencerImpl implements MicroSequencer {
         logger.log(Level.SEVERE, "Clould not start the stream.");
         throw new MidiUnavailableException("Clould not start the stream.");
       }
+      masterSequencer.setLatency(latency);
       opened = true;
     }
   }

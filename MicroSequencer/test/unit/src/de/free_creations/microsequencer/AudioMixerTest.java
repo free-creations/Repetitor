@@ -32,11 +32,10 @@ import static org.junit.Assert.*;
 public class AudioMixerTest {
 
   /**
-   * Test of process method, of class AudioMixer.
-   * We simulate a AudioMixer with three attached
-   * synthesisers. We let it process thousand cycles
-   * and then we verify that the functions of the synthesisers
-   * have been called in the right order and in the right number.
+   * Test of process method, of class AudioMixer. We simulate a AudioMixer with
+   * three attached synthesisers. We let it process thousand cycles and then we
+   * verify that the functions of the synthesisers have been called in the right
+   * order and in the right number.
    */
   @Test
   public void testProcess() throws Exception, Throwable {
@@ -140,7 +139,7 @@ public class AudioMixerTest {
     public State state;
 
     @Override
-    public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved) {
+    public void open(int samplingRate, int nFrames, int inputChannelCount, int outputChannelCount, boolean noninterleaved, long latency) throws MidiUnavailableException {
       open_Called++;
       state = State.OPENED;
       resultBuffer = new float[outputChannelCount * nFrames];
@@ -180,6 +179,7 @@ public class AudioMixerTest {
   private class MasterSequencerMockup implements MasterSequencer {
 
     public int prepareCycle_Called = 0;
+   public long latency = 0;
 
     @Override
     public double getTempoFactor() {
@@ -204,7 +204,7 @@ public class AudioMixerTest {
     @Override
     public void prepareCycle(double streamTime, double cycleLength) {
       prepareCycle_Called++;
-    } 
+    }
 
     @Override
     public void stopMidi() {
@@ -271,7 +271,6 @@ public class AudioMixerTest {
       throw new UnsupportedOperationException("Not supported yet.");
     }
 
- 
     @Override
     public MidiSubSequencer createMidiSubSequencer(String name, Soundbank soundbank) throws MidiUnavailableException {
       throw new UnsupportedOperationException("Not supported yet.");
@@ -310,6 +309,16 @@ public class AudioMixerTest {
     @Override
     public void startMidi(PlayingMode playingMode) {
       throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public long getLatency() {
+      return this.latency;
+    }
+
+    @Override
+    public void setLatency(long latency) {
+      this.latency = latency;
     }
   }
 }
