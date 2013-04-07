@@ -18,7 +18,6 @@ package de.free_creations.microsequencer;
 
 import com.sun.media.sound.AudioSynthesizer;
 import com.sun.media.sound.SoftSynthesizer;
-import de.free_creations.microsequencer.MasterSequencer.SubSequencer;
 import de.free_creations.midiutil.InitializationList;
 import de.free_creations.midiutil.MidiUtil;
 import de.free_creations.midiutil.TempoTrack.TimeMap;
@@ -48,9 +47,9 @@ import javax.sound.sampled.AudioInputStream;
 /**
  * A sub-sequencer steers one synthesiser. The events of all the tracks attached
  * to one sub-sequencer are fed to the synthesiser. <h2>Implementation
- * assumptions</h2> open() is executed before series of process() are
- * invoked. When playing: every process() is preceded by prepareNormalCycle()
- * or prepareLoopEndCycle(). Once prepareSession() or prepareLoopEndCycle() has
+ * assumptions</h2> open() is executed before series of process() are invoked.
+ * When playing: every process() is preceded by prepareNormalCycle() or
+ * prepareLoopEndCycle(). Once prepareSession() or prepareLoopEndCycle() has
  * executed the values of "thisCycleStartTick" and "nextCycleStartTick" passed
  * in "prepareNormalCycle()" are monotonically increasing. <h2>Threading</h2>
  * The functions open(), close(), prepareLoopEndCycle(), process() are
@@ -290,8 +289,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
    * the next start.
    *
    * @TODO this should be activable at any time...
-   * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[])
-   * }
+   * @param trackIndex an index into the array given in
+   * {@link #setTracks(javax.sound.midi.Track[])}
    * @param value true - the track should remain quiet, false the track produces
    * sound.
    */
@@ -312,8 +311,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
   /**
    * Set the attenuation of an individual track.
    *
-   * @param trackIndex an index into the array given in {@link #setTracks(javax.sound.midi.Track[])
-   * }
+   * @param trackIndex an index into the array given in
+   * {@link #setTracks(javax.sound.midi.Track[])}
    * @param value the value in decibels
    */
   void setAttenuation(int trackIndex, float value) {
@@ -420,8 +419,8 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
   /**
    * This function is called by the Processor for every cycle.
    *
-   * @param streamTime the time in seconds of the audio stream at the start
-   * of this cycle.
+   * @param streamTime the time in seconds of the audio stream at the start of
+   * this cycle.
    * @param targetAttenuation the volume of the output signal (0.0 is silence,
    * 1.0 is full volume)
    * @return the audio output for the next cycle.
@@ -506,9 +505,10 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
       boolean useBigEndian = (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
       AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_FLOAT, samplingRate, 32, outputChannelCount, 4 * outputChannelCount, samplingRate, useBigEndian); // ...............bigEndian        - indicates whether the data for a single sample is stored in big-endian byte order
 
-      Map<String, Object> info = new HashMap<String, Object>();
+      Map<String, Object> info = new HashMap<>();
       info.put("interpolation", "linear");
-      info.put("max polyphony", "1024");
+      //info.put("max polyphony", "1024");
+      info.put("max polyphony", "32");
 
       synthesizerStream = synthesizer.openStream(format, info);
       if (!synthesizer.isOpen()) {
