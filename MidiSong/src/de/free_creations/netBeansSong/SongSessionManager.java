@@ -91,7 +91,7 @@ public class SongSessionManager {
     }
 
     @Override
-    protected SongSession doInBackground() throws EInvalidSongFile, MidiUnavailableException {
+    protected SongSession doInBackground() throws EInvalidSongFile, MidiUnavailableException, InterruptedException {
       progressHandle.start();
       success = false;
 
@@ -116,6 +116,8 @@ public class SongSessionManager {
       if (newSongSession != null) {
         newSongSession.attachSequencer(microSequencer);
       }
+      System.gc();
+      Thread.sleep(300);
       return newSongSession;
     }
 
