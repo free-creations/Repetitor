@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -31,9 +32,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
+import org.junit.AfterClass;
 import static org.junit.Assert.*;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -43,9 +44,8 @@ import org.junit.Test;
  */
 public class AudioReaderTest {
 
-  //File testDir = new File("tmp");
-  File testDir = new File("/home/harald/rubbish");
-  private final ExecutorService executor = Executors.newSingleThreadExecutor(
+  private static File testDir;
+  private static final ExecutorService executor = Executors.newSingleThreadExecutor(
           new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -60,14 +60,16 @@ public class AudioReaderTest {
   public AudioReaderTest() {
   }
 
-  @Before
-  public void setUp() {
+  @BeforeClass
+  public static void setUp() throws IOException {
+    testDir = Files.createTempDirectory("Test").toFile();
     assertTrue("Please create a directory named " + testDir.getAbsolutePath(), testDir.exists());
     assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
+    System.out.println("Test files will be written to:" + testDir.getAbsolutePath());
   }
-
-  @After
-  public void tearDown() {
+  
+  @AfterClass
+  public static void tearDown() {
     executor.shutdown();
   }
 
@@ -656,8 +658,8 @@ public class AudioReaderTest {
     // how long would the file take if it was encoded in stereo with 44100 samples per second
     double realWorldDurationNano = (floatsRead * 1E09) / (samplingRate * inputChannelCount);
     System.out.printf("...File size              : %d bytes.%n", floatsRead * 4);
-    System.out.printf("...Real world duration    : %f seconds.%n", realWorldDurationNano * 1E-09);
-    System.out.printf("...Read Performance       : %f units.%n", realWorldDurationNano / (readStopTime - readStartTime));
+    System.out.printf("...Real world duration    : %.2f seconds.%n", realWorldDurationNano * 1E-09);
+    System.out.printf("...Read Performance       : %.2f units.%n", realWorldDurationNano / (readStopTime - readStartTime));
 
     audioReader.close();
   }
@@ -705,8 +707,8 @@ public class AudioReaderTest {
     // how long would the file take if it was encoded in stereo with 44100 samples per second
     double realWorldDurationNano = (floatsRead * 1E09) / (samplingRate * inputChannelCount);
     System.out.printf("...File size              : %d bytes.%n", floatsRead * 4);
-    System.out.printf("...Real world duration    : %f seconds.%n", realWorldDurationNano * 1E-09);
-    System.out.printf("...Read Performance       : %f units.%n", realWorldDurationNano / (readStopTime - readStartTime));
+    System.out.printf("...Real world duration    : %.2f seconds.%n", realWorldDurationNano * 1E-09);
+    System.out.printf("...Read Performance       : %.2f units.%n", realWorldDurationNano / (readStopTime - readStartTime));
   }
 
   /**

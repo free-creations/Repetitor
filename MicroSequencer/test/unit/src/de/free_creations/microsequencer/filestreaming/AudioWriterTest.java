@@ -23,14 +23,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
-import org.junit.After;
+import org.junit.AfterClass;
 import static org.junit.Assert.*;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -39,9 +40,9 @@ import org.junit.Test;
  * @author Harald Postner
  */
 public class AudioWriterTest {
-
-  File testDir = new File("/home/harald/rubbish");
-  private final ExecutorService executor = Executors.newSingleThreadExecutor(
+  
+  private static File testDir;
+  private static final ExecutorService executor = Executors.newSingleThreadExecutor(
           new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -52,18 +53,20 @@ public class AudioWriterTest {
               return thread;
             }
           });
-
+  
   public AudioWriterTest() {
   }
-
-  @Before
-  public void setUp() {
+  
+  @BeforeClass
+  public static void setUp() throws IOException {
+    testDir = Files.createTempDirectory("Test").toFile();
     assertTrue("Please create a directory named " + testDir.getAbsolutePath(), testDir.exists());
     assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
+    System.out.println("Test files will be written to:" + testDir.getAbsolutePath());
   }
-
-  @After
-  public void tearDown() {
+  
+  @AfterClass
+  public static void tearDown() {
     executor.shutdown();
   }
 
@@ -117,22 +120,22 @@ public class AudioWriterTest {
     System.out.println("testWriteEmpty");
     File outFile = new File(testDir, "testWriteEmpty.test");
     float[] audioArray = new float[503];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor);
-
+    
     audioWriter.putNext(123, audioArray); // this call should be ignored
 
     audioWriter.start(outFile);
     //... put nothing
     WriterResult result = audioWriter.stop();
-
+    
     assertNotNull(result);
     assertNull(result.getChannel());
     assertEquals(0, result.getSamplesWritten());
     FloatBuffer firstBuffer = result.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer);
     assertEquals(0, firstBuffer.remaining());
-
+    
     audioWriter.close();
     outFile.delete();
   }
@@ -156,9 +159,9 @@ public class AudioWriterTest {
     int audioArraysToPut = 13;
     int firstBufferSize = (audioArraysToPut * audioArraySize) + 19;
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, firstBufferSize);
-
+    
     audioWriter.start(outFile);
     //... put asceding integers.
     int samplesWritten = 0;
@@ -171,19 +174,19 @@ public class AudioWriterTest {
       audioWriter.putNext(audioArray);
     }
     WriterResult result = audioWriter.stop();
-
+    
     assertNotNull(result);
     assertNull(result.getChannel());
     assertEquals(samplesWritten, result.getSamplesWritten());
     FloatBuffer firstBuffer = result.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer);
     assertEquals(samplesWritten, firstBuffer.remaining());
-
+    
     for (int i = 0; i < samplesWritten; i++) {
       float test = firstBuffer.get();
       assertEquals(i, (int) test);
     }
-
+    
     audioWriter.close();
     assertFalse(outFile.delete()); // no should have been written
   }
@@ -209,9 +212,9 @@ public class AudioWriterTest {
     int skip = 101;
     int firstBufferSize = (audioArraysToPut * audioArraySize + skip) + 19;
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, firstBufferSize);
-
+    
     audioWriter.start(outFile);
     //... put asceding integers.
     int samplesWritten = skip;
@@ -223,14 +226,14 @@ public class AudioWriterTest {
       audioWriter.putNext((i * audioArraySize) + skip, audioArray);
     }
     WriterResult result = audioWriter.stop();
-
+    
     assertNotNull(result);
     assertNull(result.getChannel());
     assertEquals(samplesWritten, result.getSamplesWritten());
     FloatBuffer firstBuffer = result.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer);
     assertEquals(samplesWritten, firstBuffer.remaining());
-
+    
     for (int i = 0; i < samplesWritten; i++) {
       float test = firstBuffer.get();
       if (i < skip) {
@@ -239,7 +242,7 @@ public class AudioWriterTest {
         assertEquals(i, (int) test);
       }
     }
-
+    
     audioWriter.close();
     assertFalse(outFile.delete());
   }
@@ -266,7 +269,7 @@ public class AudioWriterTest {
     int audioArraysToPut = 13;
     int firstBufferSize = (audioArraysToPut * audioArraySize) + 19;
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, firstBufferSize);
 
     // put a first series of audioArrays
@@ -304,7 +307,7 @@ public class AudioWriterTest {
     FloatBuffer firstBuffer_1 = result_1.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer_1);
     assertEquals(samplesWritten_1, firstBuffer_1.remaining());
-
+    
     for (int i = 0; i < samplesWritten_1; i++) {
       float test = firstBuffer_1.get();
       assertEquals(i, (int) test);
@@ -317,12 +320,12 @@ public class AudioWriterTest {
     FloatBuffer firstBuffer_2 = result_2.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer_2);
     assertEquals(samplesWritten_2, firstBuffer_2.remaining());
-
+    
     for (int i = 0; i < samplesWritten_2; i++) {
       float test = firstBuffer_2.get();
       assertEquals(i + discriminator, (int) test);
     }
-
+    
     audioWriter.close();
     assertFalse(outFile_1.delete());
     assertFalse(outFile_2.delete());
@@ -346,11 +349,11 @@ public class AudioWriterTest {
     int audioArraySize = 503;
     int bufferSize = 1499;
     int audioArraysToPut = (2 * bufferSize) / audioArraySize;
-
+    
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, bufferSize);
-
+    
     audioWriter.start(outFile);
     //... put asceding integers.
     int samplesWritten = 0;
@@ -365,7 +368,7 @@ public class AudioWriterTest {
     }
     audioWriter.waitForBufferReady();
     WriterResult result = audioWriter.stop();
-
+    
     System.out.printf("...Samples written total          : %d.%n", samplesWritten);
 
     // now check the result
@@ -374,7 +377,7 @@ public class AudioWriterTest {
     FloatBuffer firstBuffer = result.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer);
     assertEquals(bufferSize, firstBuffer.remaining());
-
+    
     Future<FileChannel> futureChannel = result.getChannel();
     assertNotNull(futureChannel);
     FileChannel channel = futureChannel.get();
@@ -386,12 +389,12 @@ public class AudioWriterTest {
     // check the file written
     assertTrue(outFile.exists());
     assertEquals((samplesWritten - bufferSize) * Const.bytesPerFloat, outFile.length());
-
+    
     FileInputStream inFile = new FileInputStream(outFile);
     FileChannel inchannel = inFile.getChannel();
     ByteBuffer readBuffer = ByteBuffer.allocateDirect(Const.bytesPerFloat).order(ByteOrder.LITTLE_ENDIAN);
-
-
+    
+    
     for (int i = bufferSize; i < samplesWritten; i++) {
       readBuffer.clear();
       inchannel.read(readBuffer);
@@ -399,8 +402,8 @@ public class AudioWriterTest {
       float sample = readBuffer.getFloat();
       assertEquals(i, (int) sample);
     }
-
-
+    
+    
     outFile.delete();
   }
 
@@ -421,13 +424,13 @@ public class AudioWriterTest {
     File outFile = new File(testDir, "testWriteManyFileBuffer.test");
     int audioArraySize = 503;
     int bufferSize = 1499;
-
+    
     int audioArraysToPut = (13 * bufferSize) / audioArraySize;
-
+    
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, bufferSize);
-
+    
     audioWriter.start(outFile);
     //... put asceding integers.
     int samplesWritten = 0;
@@ -442,7 +445,7 @@ public class AudioWriterTest {
     }
     audioWriter.waitForBufferReady();
     WriterResult result = audioWriter.stop();
-
+    
     System.out.printf("...Samples written total          : %d.%n", samplesWritten);
 
     // now check the result
@@ -451,7 +454,7 @@ public class AudioWriterTest {
     FloatBuffer firstBuffer = result.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer);
     assertEquals(bufferSize, firstBuffer.remaining());
-
+    
     Future<FileChannel> futureChannel = result.getChannel();
     assertNotNull(futureChannel);
     FileChannel channel = futureChannel.get();
@@ -463,11 +466,11 @@ public class AudioWriterTest {
     // check the file written
     assertTrue(outFile.exists());
     assertEquals((samplesWritten - bufferSize), outFile.length() / Const.bytesPerFloat);
-
+    
     FileInputStream inFile = new FileInputStream(outFile);
     FileChannel inchannel = inFile.getChannel();
     ByteBuffer readBuffer = ByteBuffer.allocateDirect(Const.bytesPerFloat).order(ByteOrder.LITTLE_ENDIAN);
-
+    
     for (int i = bufferSize; i < samplesWritten; i++) {
       readBuffer.clear();
       inchannel.read(readBuffer);
@@ -496,17 +499,17 @@ public class AudioWriterTest {
     int audioArraySize = 491;
     int skip = 12;
     int bufferSize = 1499;
-
-
+    
+    
     int cycleLengt = audioArraySize + skip;
-
-
+    
+    
     int audioArraysToPut = (13 * bufferSize) / cycleLengt;
-
+    
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, bufferSize);
-
+    
     audioWriter.start(outFile);
     //... put asceding integers.
     int samplesWritten = 0;
@@ -521,7 +524,7 @@ public class AudioWriterTest {
     }
     audioWriter.waitForBufferReady();
     WriterResult result = audioWriter.stop();
-
+    
     System.out.printf("...Samples written total          : %d.%n", samplesWritten);
 
     // now check the result
@@ -530,7 +533,7 @@ public class AudioWriterTest {
     FloatBuffer firstBuffer = result.getStartBuffer().asFloatBuffer();
     assertNotNull(firstBuffer);
     assertEquals(bufferSize, firstBuffer.remaining());
-
+    
     Future<FileChannel> futureChannel = result.getChannel();
     assertNotNull(futureChannel);
     FileChannel channel = futureChannel.get();
@@ -560,11 +563,11 @@ public class AudioWriterTest {
     // check the file written
     assertTrue(outFile.exists());
     assertEquals((samplesWritten - bufferSize), outFile.length() / Const.bytesPerFloat);
-
+    
     FileInputStream inFile = new FileInputStream(outFile);
     FileChannel inchannel = inFile.getChannel();
     ByteBuffer readBuffer = ByteBuffer.allocateDirect(Const.bytesPerFloat).order(ByteOrder.LITTLE_ENDIAN);
-
+    
     int samplesIndex = 0;
     for (int i = 0; i < audioArraysToPut; i++) {
       for (int s = 0; s < cycleLengt; s++) {
@@ -604,12 +607,12 @@ public class AudioWriterTest {
     // for simplicty we'll make the buffer an exact mutiple of the audio array
     int audioArraysToPut = Const.fileBufferSizeFloat / audioArraySize;
     int bufferSize = audioArraySize * audioArraysToPut;
-
+    
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, bufferSize);
     int samplesWritten = 0;
-
+    
     long startTime = System.nanoTime();
     for (int r = 0; r < repetitions; r++) {
       audioWriter.start(null);
@@ -625,8 +628,8 @@ public class AudioWriterTest {
     // how long would the file take if it was encoded in stereo with 44100 samples per second
     double realWorldDurationNano = (samplesWritten * 1E09) / (samplingRate * inputChannelCount);
     System.out.printf("...File size              : %d bytes.%n", samplesWritten * 4);
-    System.out.printf("...Real world duration    : %f seconds.%n", realWorldDurationNano * 1E-09);
-    System.out.printf("...Write Performance      : %f units.%n", realWorldDurationNano / (stopTime - startTime));
+    System.out.printf("...Real world duration    : %f.2 seconds.%n", realWorldDurationNano * 1E-09);
+    System.out.printf("...Write Performance      : %.2f units.%n", realWorldDurationNano / (stopTime - startTime));
   }
 
   /**
@@ -649,12 +652,12 @@ public class AudioWriterTest {
     int audioArraysPerBuffer = (Const.fileBufferSizeFloat / audioArraySize);
     int bufferSize = audioArraySize * audioArraysPerBuffer;
     int audioArraysToPut = audioArraysPerBuffer * 3;
-
+    
     float[] audioArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, bufferSize);
     int samplesWritten = 0;
-
+    
     long startTime = System.nanoTime();
     for (int r = 0; r < repetitions; r++) {
       File outFile = new File(testDir, "testWrite_" + r + ".test");
@@ -673,7 +676,7 @@ public class AudioWriterTest {
     }
     long stopTime = System.nanoTime();
     audioWriter.close();
-
+    
     for (int r = 0; r < repetitions; r++) {
       File outFile = new File(testDir, "testWrite_" + r + ".test");
       assertTrue(outFile.delete());
@@ -681,8 +684,8 @@ public class AudioWriterTest {
     // how long would the file take if it was encoded in stereo with 44100 samples per second
     double realWorldDurationNano = (samplesWritten * 1E09) / (samplingRate * inputChannelCount);
     System.out.printf("...File size              : %d bytes.%n", samplesWritten * 4);
-    System.out.printf("...Real world duration    : %f seconds.%n", realWorldDurationNano * 1E-09);
-    System.out.printf("...Write Performance      : %f units.%n", realWorldDurationNano / (stopTime - startTime));
+    System.out.printf("...Real world duration    : %.2f seconds.%n", realWorldDurationNano * 1E-09);
+    System.out.printf("...Write Performance      : %.2f units.%n", realWorldDurationNano / (stopTime - startTime));
   }
 
   /**
@@ -696,7 +699,7 @@ public class AudioWriterTest {
   @SuppressWarnings("SleepWhileInLoop")
   public void testRealisticTiming() throws InterruptedException, ExecutionException, IOException {
     System.out.println("testRealisticTiming");
-    int samplingRate = 44100 * 30;
+    int samplingRate = 44100 * 20; // by setting 20 times the normal sampling rate, we show that there is enough security margin
     int cycleDurationMillis = 5;
     int nFrames = (samplingRate * cycleDurationMillis) / 1000;
     int inputChannelCount = 2;
@@ -708,17 +711,17 @@ public class AudioWriterTest {
     int audioArraysToPut = audioArraysPerBuffer * 3; // we want three buffers to be written
     int framesToProcessPerTest = nFrames * audioArraysToPut;
     int framesTotal = framesToProcessPerTest * 3;
-
+    
     float estimatedTestDuration = (framesTotal) / samplingRate;
     System.out.println("... This test will take about " + estimatedTestDuration + " seconds to terminate.");
     Thread.sleep(100);// time to show the previous message
 
     File file1 = new File(testDir, "realisticTiming_1.test");
     File file2 = new File(testDir, "realisticTiming_2.test");
-
+    
     float[] audioWriterArray = new float[audioArraySize];
     float[] audioReaderArray = new float[audioArraySize];
-
+    
     AudioWriter audioWriter = new AudioWriter(executor, bufferSize);
     AudioReader audioReader = new AudioReader(executor, bufferSize);
 
@@ -748,16 +751,16 @@ public class AudioWriterTest {
       audioReader.getNext(audioReaderArray);
     }
     audioReader.stop();
-
+    
     assertEquals(0, audioReader.getOverflowCount());
     assertEquals(0, audioWriter.getOverflowCount());
-
+    
     audioReader.close();
     audioWriter.close();
-
+    
     assertTrue(file1.delete());
     assertTrue(file2.delete());
-
-
+    
+    
   }
 }
