@@ -16,22 +16,69 @@
  */
 package de.free_creations.netBeansSong;
 
+import de.free_creations.midisong.LessonProperties;
 import java.awt.Image;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.openide.loaders.DataNode;
+import org.openide.nodes.AbstractNode;
+import org.openide.nodes.ChildFactory;
 import org.openide.nodes.Children;
+import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.WeakListeners;
 
 /**
- * This class integrates the {@link Song Song class} into the
- * NetBeans Nodes framework. The SongNode manages the
- * iconised representation of a Song in NetBeans user interface.
+ * This class integrates the {@link Song Song class} into the NetBeans Nodes
+ * framework. The SongNode manages the iconised representation of a Song in
+ * NetBeans user interface.
+ *
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class SongNode extends DataNode {
+
+  private static final Logger logger = Logger.getLogger(SongNode.class.getName());
+
+  private static class SongNodeChildFactory extends ChildFactory<LessonProperties> {
+    private final String song;
+
+    private class LessonNode extends AbstractNode {
+
+      LessonNode(String name) {
+        super(Children.LEAF);
+        setName(name);
+        setDisplayName("Lesson: " + name);
+      }
+    }
+
+    public SongNodeChildFactory(String song) {
+      this.song = song;
+    }
+
+
+
+    @Override
+    protected boolean createKeys(List<LessonProperties> toPopulate) {
+      List<LessonProperties> lessons = SongSessionManager.getLessons();
+      for(LessonProperties lesson:lessons){
+        if(song.equalsIgnoreCase(lesson.getSong())) {
+          toPopulate.add(lesson);
+        }
+      }
+      return true;
+    }
+
+    @Override
+    protected Node createNodeForKey(LessonProperties lesson) {
+      logger.log(Level.INFO, ">>>>>createNodeForKey : {0}", lesson.getProperty("description"));
+      return new LessonNode(lesson.getProperty("description", "unknown"));
+    }
+  }
 
   private class SongDataObserver implements PropertyChangeListener {
 
@@ -50,7 +97,8 @@ public class SongNode extends DataNode {
   private static final String ICON_SONG_OPEN_ACTIVE32 = "de/free_creations/netBeansSong/artwork/songNodeOpenActive32.png";
 
   public SongNode(SongDataSupport dataSupport, Lookup lookup) {
-    super(dataSupport, Children.LEAF, lookup);
+
+    super(dataSupport, Children.create(new SongNodeChildFactory(dataSupport.getName()), true), lookup);
     this.dataSupport = dataSupport;
 
     fileObserver = new SongDataObserver();
@@ -104,6 +152,7 @@ public class SongNode extends DataNode {
 
   /**
    * Reacts on a change of a property in the SongDataSupport object.
+   *
    * @param evt
    */
   private void songDataPropertyChange(PropertyChangeEvent evt) {
@@ -114,5 +163,4 @@ public class SongNode extends DataNode {
       fireIconChange();
     }
   }
-
 }

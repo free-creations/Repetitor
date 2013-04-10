@@ -19,10 +19,15 @@ package de.free_creations.netBeansSong;
 import de.free_creations.microsequencer.MicroSequencer;
 import de.free_creations.microsequencer.MicroSequencerManager;
 import de.free_creations.midisong.EInvalidSongFile;
+import de.free_creations.midisong.LessonProperties;
 import de.free_creations.midisong.Song;
 import de.free_creations.midisong.SongSession;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,6 +59,8 @@ public class SongSessionManager {
   public static final String PROP_ACTIVESONGSESSION = "activeSongSession";
   private static volatile SessionActivationTask currentSessionActivationTask = null;
   private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+  private static final ArrayList<File> lessonPathes = new ArrayList<File>();
+  private static final ArrayList<LessonProperties> lessons = new ArrayList<LessonProperties>();
 
   /**
    * Create a new {@link SongSession SongSession}.
@@ -100,7 +107,7 @@ public class SongSessionManager {
         logger.warning("The Audio System is not correctly initialized.");
         success = false;
         return null;
-      }else{
+      } else {
         success = true;
       }
 
@@ -263,5 +270,41 @@ public class SongSessionManager {
       currentSession = currentSessionActivationTask.get();
     }
     return currentSession;
+  }
+
+  /**
+   * Adds a lesson to the list of lessons.
+   *
+   * Note: this solution is a hack to get the lesson handling implemented
+   * quickly. The Song Session Manager is miss-used to have a central point that
+   * collects all lessons. The MediaNodesFactory in package MediaContainer2 adds
+   * the lessons whenever it discovers one.
+   *
+   * @param filePath the file where the lesson resides on disk.
+   * @param lesson a property object describing the lesson.
+   */
+  public static void addLesson(File filePath, LessonProperties lesson) {
+    if (hasLesson(filePath)) {
+      return;
+    }
+    lessonPathes.add(filePath);
+    lessons.add(lesson);
+    logger.log(Level.INFO, ">>>>> !!!! a new lesson has been added: {0} !!!!!", filePath.getName());
+    logger.log(Level.INFO, ">>>>> !!!! description: {0} !!!!!", lesson.getProperty("description"));
+    logger.log(Level.INFO, ">>>>> !!!! song: {0} !!!!!", lesson.getProperty("song"));
+  }
+
+  /**
+   * Check if a given lesson has been registered.
+   *
+   * @param filePath the file where the lesson resides on disk.
+   * @return true if this lesson has already been registered.
+   */
+  public static boolean hasLesson(File filePath) {
+    return lessonPathes.contains(filePath);
+  }
+
+  public static List<LessonProperties> getLessons() {
+    return lessons;
   }
 }
