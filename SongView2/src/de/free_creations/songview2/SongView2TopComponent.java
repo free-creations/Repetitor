@@ -54,7 +54,7 @@ public class SongView2TopComponent extends SongTopComponent {
              */
             @Override
             public void propertyChange(PropertyChangeEvent pce) {
-              if (SongDataSupport.PROP_SESSION.equals(pce.getPropertyName())) {
+              if (SongDataSupport.PROP_SESSION_LOADED.equals(pce.getPropertyName())) {
                 try {
                   songDataSupport.setOpen(true);
                   session = songDataSupport.getSession();
