@@ -18,10 +18,13 @@ package de.free_creations.netBeansSong;
 
 import de.free_creations.midisong.LessonProperties;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.ChildFactory;
 import org.openide.nodes.Children;
@@ -38,17 +41,17 @@ import org.openide.util.WeakListeners;
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class SongNode extends DataNode {
-
+  
   private static final Logger logger = Logger.getLogger(SongNode.class.getName());
-
+  
   private static class SongNodeChildFactory extends ChildFactory<LessonProperties> {
-
+    
     private final SongDataSupport songDataSupport;
-
+    
     public SongNodeChildFactory(SongDataSupport dataSupport) {
       this.songDataSupport = dataSupport;
     }
-
+    
     @Override
     protected boolean createKeys(List<LessonProperties> toPopulate) {
       List<LessonProperties> lessons = SongSessionManager.getLessons();
@@ -60,15 +63,15 @@ public class SongNode extends DataNode {
       }
       return true;
     }
-
+    
     @Override
     protected Node createNodeForKey(LessonProperties lesson) {
       return new LessonNode(lesson, songDataSupport);
     }
   }
-
+  
   private class SongDataObserver implements PropertyChangeListener {
-
+    
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
       SongNode.this.songDataPropertyChange(evt);
@@ -82,18 +85,43 @@ public class SongNode extends DataNode {
   private static final String ICON_SONG32 = "de/free_creations/netBeansSong/artwork/songNode32.png";
   private static final String ICON_SONG_OPEN32 = "de/free_creations/netBeansSong/artwork/songNodeOpen32.png";
   private static final String ICON_SONG_OPEN_ACTIVE32 = "de/free_creations/netBeansSong/artwork/songNodeOpenActive32.png";
-
+  private final Action songOpenAction = new AbstractAction("open") {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      SongOpenSupport songOpenSupport = new SongOpenSupport(dataSupport);
+      songOpenSupport.open();
+    }
+  };
+  private final Action saveLessonAction = new AbstractAction("save lesson") {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      logger.info(">>>>>>>>>>>>> save lesson action");
+      
+    }
+  };
+  private final Action[] songActions = new Action[]{songOpenAction, saveLessonAction};
+  
   public SongNode(SongDataSupport dataSupport, Lookup lookup) {
-
+    
     super(dataSupport, Children.create(new SongNodeChildFactory(dataSupport), true), lookup);
     this.dataSupport = dataSupport;
-
+    
     fileObserver = new SongDataObserver();
     dataSupport.addPropertyChangeListener(WeakListeners.propertyChange(fileObserver, dataSupport));
-
+    
     setIconBaseWithExtension(ICON_SONG_OPEN_ACTIVE);
   }
-
+  
+  @Override
+  public Action[] getActions(boolean context) {
+    return songActions;
+  }
+  
+  @Override
+  public Action getPreferredAction() {
+    return songOpenAction;
+  }
+  
   @Override
   public Image getIcon(int type) {
     if (dataSupport.isOpen()) {
@@ -105,7 +133,7 @@ public class SongNode extends DataNode {
     }
     return getClosedIcon(type);
   }
-
+  
   private Image getActiveIcon(int type) {
     switch (type) {
       case java.beans.BeanInfo.ICON_COLOR_16x16:
@@ -115,7 +143,7 @@ public class SongNode extends DataNode {
     }
     return null;
   }
-
+  
   public Image getClosedIcon(int type) {
     switch (type) {
       case java.beans.BeanInfo.ICON_COLOR_16x16:
@@ -125,7 +153,7 @@ public class SongNode extends DataNode {
     }
     return null;
   }
-
+  
   @Override
   public Image getOpenedIcon(int type) {
     switch (type) {
@@ -150,6 +178,4 @@ public class SongNode extends DataNode {
       fireIconChange();
     }
   }
-
-
 }

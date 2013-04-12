@@ -17,8 +17,10 @@ package de.free_creations.midisong;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
 import java.util.Properties;
 import org.openide.util.Exceptions;
 
@@ -30,6 +32,7 @@ public class LessonProperties extends Properties {
 
   public static final String PROP_SONG = "song";
   public static final String PROP_DESCRIPTION = "description";
+  public static final String PROP_TEMPOFACTOR = "tempofactor";
 
   public LessonProperties() {
     super();
@@ -45,7 +48,20 @@ public class LessonProperties extends Properties {
   }
 
   public String getDescription() {
+
     return getProperty(PROP_DESCRIPTION);
+  }
+
+  public float getTempoFactor() {
+    try {
+      return Float.valueOf(getProperty(PROP_TEMPOFACTOR, "1.0"));
+    } catch (NumberFormatException ex) {
+      return 1.0F;
+    }
+  }
+
+  public void setTempoFactor(float value) {
+    setProperty(PROP_TEMPOFACTOR, Float.toString(value));
   }
 
   public final void loadFromFile(File file) {
@@ -59,6 +75,22 @@ public class LessonProperties extends Properties {
       try {
         reader.close();
       } catch (Exception e) {
+      }
+    }
+  }
+
+  public final void writeToFile(File file) {
+    Writer writer = null;
+    try {
+      writer = new FileWriter(file);
+      store(writer, "");
+    } catch (IOException e) {
+      Exceptions.printStackTrace(e);
+    } finally {
+      try {
+        writer.close();
+      } catch (Exception e) {
+        Exceptions.printStackTrace(e);
       }
     }
   }

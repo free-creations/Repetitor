@@ -895,6 +895,14 @@ public class SongSession {
     }
   }
 
+
+  public void apllyLesson(LessonProperties lesson) {
+    if(lesson != null) {
+      setTempoFactor(lesson.getTempoFactor()); 
+
+    }
+  }
+
   private class MidiTrackHandler implements GenericTrack.EventHandler {
 
     final int trackIndex;

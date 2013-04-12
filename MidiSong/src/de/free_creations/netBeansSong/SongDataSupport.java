@@ -17,6 +17,7 @@
 package de.free_creations.netBeansSong;
 
 import de.free_creations.midisong.EInvalidSongFile;
+import de.free_creations.midisong.LessonProperties;
 import de.free_creations.midisong.Song;
 import de.free_creations.midisong.SongSession;
 import java.beans.PropertyChangeEvent;
@@ -24,7 +25,6 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
@@ -46,18 +46,16 @@ import org.openide.windows.CloneableTopComponent;
  * A SongDataSupport can attach one session and one sessionView.
  */
 public class SongDataSupport extends MultiDataObject {
-  
-    private static final Logger logger = Logger.getLogger(SongDataSupport.class.getName());
 
+  private static final Logger logger = Logger.getLogger(SongDataSupport.class.getName());
   protected boolean open = false;
   public static final String PROP_SESSION_OPENED = "sessionopened";
   public static final String PROP_SESSION_ACTIVE = "sessionactive";
   public static final String PROP_SESSION_LOADED = "sessionloaded";
   private CloneableTopComponent sessionView;
   private final FileObject primaryFileObject;
-  private Song song = null;
-  private int sessionCount = 0;
   private SessionOpeningTask sessionOpeningTask = null;
+  private LessonProperties lesson = null;
 
   /**
    * This SwingWorker reads the song file outside the Swing thread so that the
@@ -69,10 +67,13 @@ public class SongDataSupport extends MultiDataObject {
 
     @Override
     protected SongSession doInBackground() throws FileStateInvalidException, EInvalidSongFile {
-      URL xmlFileUrl = primaryFileObject.getURL();
+      URL xmlFileUrl = primaryFileObject.toURL();
       Song song = Song.createFromFile(xmlFileUrl);
       String sessionName = song.getName();
       newSongSession = SongSessionManager.getSongSession(song, sessionName);
+      if (lesson != null) {
+        newSongSession.apllyLesson(lesson);
+      }
       return newSongSession;
     }
 
@@ -105,9 +106,10 @@ public class SongDataSupport extends MultiDataObject {
   public SongDataSupport(FileObject pf, MultiFileLoader loader) throws DataObjectExistsException, IOException {
     super(pf, loader);
     primaryFileObject = pf;
-    CookieSet cookies = getCookieSet();
-    SongOpenSupport actionSupport = new SongOpenSupport(this);
-    cookies.assign(OpenCookie.class, (OpenCookie) actionSupport);
+    // cookie stuff removed, action are handeled in the songNode
+//    CookieSet cookies = getCookieSet();
+//    SongOpenSupport actionSupport = new SongOpenSupport(this);
+//    cookies.assign(OpenCookie.class, (OpenCookie) actionSupport);
   }
 
   @Override
@@ -177,29 +179,6 @@ public class SongDataSupport extends MultiDataObject {
     throw new IOException("Cannot open this Song. You must install a View Provider.");
   }
 
-//  /**
-//   * Do not use this function in the context of the AWT thread, because it takes
-//   * too much time.
-//   *
-//   * @deprecated
-//   * @return
-//   * @throws FileStateInvalidException
-//   * @throws EInvalidSongFile
-//   */
-//  @Deprecated
-//  public SongSession createSessionXX() throws FileStateInvalidException, EInvalidSongFile {
-//    if (song == null) {
-//      URL xmlFileUrl = primaryFileObject.getURL();
-//      song = Song.createFromFile(xmlFileUrl);
-//    }
-//    String sessionName = song.getName();
-//    sessionCount++;
-//    if (sessionCount > 1) {
-//      sessionName = song.getName() + " (" + sessionCount + ")";
-//    }
-//    setOpen(true);
-//    return SongSessionManager.getSongSession(song, sessionName);
-//  }
   /**
    * Asynchronously creates a session and attaches it to this object.
    *
@@ -213,6 +192,33 @@ public class SongDataSupport extends MultiDataObject {
   }
 
   /**
+   * Applies the given properties to the song session.
+   *
+   * If the song is not yet loaded it will be loaded.
+   *
+   * This function is called by the lesson node in its open procedure.
+   *
+   * @param lesson
+   */
+  public void applyLessonProperties(LessonProperties lesson) {
+    if (sessionOpeningTask != null) {
+      if (sessionOpeningTask.isDone()) {
+        try {
+          sessionOpeningTask.get().apllyLesson(lesson);
+        } catch (InterruptedException ex) {
+          Exceptions.printStackTrace(ex);
+        } catch (ExecutionException ex) {
+          Exceptions.printStackTrace(ex);
+        }
+      }
+    }
+    this.lesson = lesson;
+    SongOpenSupport songOpenSupport = new SongOpenSupport(this);
+    songOpenSupport.open();
+
+  }
+
+  /**
    * Get the SongSession object belonging to this data object.
    *
    * @return the SongSession object belonging to this data object.
@@ -223,13 +229,13 @@ public class SongDataSupport extends MultiDataObject {
    * @throws TimeoutException if this SongSession is still loading.
    */
   public SongSession getSession() throws InterruptedException, ExecutionException, TimeoutException {
-   if(sessionOpeningTask == null){
-     throw new RuntimeException("Session was not opened.");
-   }
-   if(!sessionOpeningTask.isDone()){
-     logger.warning("Song session still loading.");
-   }
-    
+    if (sessionOpeningTask == null) {
+      throw new RuntimeException("Session was not opened.");
+    }
+    if (!sessionOpeningTask.isDone()) {
+      logger.warning("Song session still loading.");
+    }
+
     return sessionOpeningTask.get();
   }
 

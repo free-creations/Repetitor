@@ -43,7 +43,7 @@ public class LessonNode extends AbstractNode {
   private final Action lessonOpenAction = new AbstractAction("open") {
     @Override
     public void actionPerformed(ActionEvent e) {
-      logger.info(">>>>>>>>>>>>>>>>>>>>  actionPerformed >>>>>>>>>>>>>>>>>");
+      songDataSupport.applyLessonProperties(lesson);
       setOpen(true);
     }
   };
