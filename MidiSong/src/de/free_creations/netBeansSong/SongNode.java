@@ -21,11 +21,8 @@ import java.awt.Image;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
-import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openide.loaders.DataNode;
-import org.openide.nodes.AbstractNode;
 import org.openide.nodes.ChildFactory;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
@@ -45,28 +42,19 @@ public class SongNode extends DataNode {
   private static final Logger logger = Logger.getLogger(SongNode.class.getName());
 
   private static class SongNodeChildFactory extends ChildFactory<LessonProperties> {
-    private final String song;
 
-    private class LessonNode extends AbstractNode {
+    private final SongDataSupport songDataSupport;
 
-      LessonNode(String name) {
-        super(Children.LEAF);
-        setName(name);
-        setDisplayName("Lesson: " + name);
-      }
+    public SongNodeChildFactory(SongDataSupport dataSupport) {
+      this.songDataSupport = dataSupport;
     }
-
-    public SongNodeChildFactory(String song) {
-      this.song = song;
-    }
-
-
 
     @Override
     protected boolean createKeys(List<LessonProperties> toPopulate) {
       List<LessonProperties> lessons = SongSessionManager.getLessons();
-      for(LessonProperties lesson:lessons){
-        if(song.equalsIgnoreCase(lesson.getSong())) {
+      String songname = songDataSupport.getName();
+      for (LessonProperties lesson : lessons) {
+        if (songname.equalsIgnoreCase(lesson.getSong())) {
           toPopulate.add(lesson);
         }
       }
@@ -75,8 +63,7 @@ public class SongNode extends DataNode {
 
     @Override
     protected Node createNodeForKey(LessonProperties lesson) {
-      logger.log(Level.INFO, ">>>>>createNodeForKey : {0}", lesson.getProperty("description"));
-      return new LessonNode(lesson.getProperty("description", "unknown"));
+      return new LessonNode(lesson, songDataSupport);
     }
   }
 
@@ -98,7 +85,7 @@ public class SongNode extends DataNode {
 
   public SongNode(SongDataSupport dataSupport, Lookup lookup) {
 
-    super(dataSupport, Children.create(new SongNodeChildFactory(dataSupport.getName()), true), lookup);
+    super(dataSupport, Children.create(new SongNodeChildFactory(dataSupport), true), lookup);
     this.dataSupport = dataSupport;
 
     fileObserver = new SongDataObserver();
@@ -163,4 +150,6 @@ public class SongNode extends DataNode {
       fireIconChange();
     }
   }
+
+
 }

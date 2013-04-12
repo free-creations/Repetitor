@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
 import javax.swing.SwingWorker;
 import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
@@ -45,20 +46,24 @@ import org.openide.windows.CloneableTopComponent;
  * A SongDataSupport can attach one session and one sessionView.
  */
 public class SongDataSupport extends MultiDataObject {
+  
+    private static final Logger logger = Logger.getLogger(SongDataSupport.class.getName());
 
   protected boolean open = false;
   public static final String PROP_SESSION_OPENED = "sessionopened";
   public static final String PROP_SESSION_ACTIVE = "sessionactive";
-  public static final String PROP_SESSION = "session";
+  public static final String PROP_SESSION_LOADED = "sessionloaded";
   private CloneableTopComponent sessionView;
   private final FileObject primaryFileObject;
   private Song song = null;
   private int sessionCount = 0;
+  private SessionOpeningTask sessionOpeningTask = null;
+
   /**
    * This SwingWorker reads the song file outside the Swing thread so that the
    * user interface does not get blocked.
    */
-  private SwingWorker<SongSession, Void> sessionOpeningTask = new SwingWorker<SongSession, Void>() {
+  private class SessionOpeningTask extends SwingWorker<SongSession, Void> {
 
     private SongSession newSongSession = null;
 
@@ -75,7 +80,7 @@ public class SongDataSupport extends MultiDataObject {
     protected void done() {
       setOpen(newSongSession != null);
       newSongSession.addPropertyChangeListener(songSessionListener);
-      SongDataSupport.this.firePropertyChange(PROP_SESSION, null, newSongSession);
+      SongDataSupport.this.firePropertyChange(PROP_SESSION_LOADED, null, newSongSession);
     }
   };
   /**
@@ -84,7 +89,6 @@ public class SongDataSupport extends MultiDataObject {
    */
   private final PropertyChangeListener songSessionListener =
           new PropertyChangeListener() {
-
             /**
              * Forwards changes in the active property to the clients of this
              * object.
@@ -129,7 +133,7 @@ public class SongDataSupport extends MultiDataObject {
   }
 
   /**
-   * Indicates the state of the attached file.
+   * Indicates that the is session loaded and the session view is shown
    *
    * @return true if the file has been loaded into memory and a corresponding
    * SongSession object has been created.
@@ -139,7 +143,8 @@ public class SongDataSupport extends MultiDataObject {
   }
 
   /**
-   * Set the value of open
+   * This function is used by the session view to indicate the the view is
+   * available.
    *
    * @param open new value of open
    */
@@ -172,37 +177,38 @@ public class SongDataSupport extends MultiDataObject {
     throw new IOException("Cannot open this Song. You must install a View Provider.");
   }
 
+//  /**
+//   * Do not use this function in the context of the AWT thread, because it takes
+//   * too much time.
+//   *
+//   * @deprecated
+//   * @return
+//   * @throws FileStateInvalidException
+//   * @throws EInvalidSongFile
+//   */
+//  @Deprecated
+//  public SongSession createSessionXX() throws FileStateInvalidException, EInvalidSongFile {
+//    if (song == null) {
+//      URL xmlFileUrl = primaryFileObject.getURL();
+//      song = Song.createFromFile(xmlFileUrl);
+//    }
+//    String sessionName = song.getName();
+//    sessionCount++;
+//    if (sessionCount > 1) {
+//      sessionName = song.getName() + " (" + sessionCount + ")";
+//    }
+//    setOpen(true);
+//    return SongSessionManager.getSongSession(song, sessionName);
+//  }
   /**
-   * Do not use this function in the context of the AWT thread, because it takes
-   * too much time.
+   * Asynchronously creates a session and attaches it to this object.
    *
-   * @deprecated
-   * @return
-   * @throws FileStateInvalidException
-   * @throws EInvalidSongFile
-   */
-  @Deprecated
-  public SongSession createSession() throws FileStateInvalidException, EInvalidSongFile {
-    if (song == null) {
-      URL xmlFileUrl = primaryFileObject.getURL();
-      song = Song.createFromFile(xmlFileUrl);
-    }
-    String sessionName = song.getName();
-    sessionCount++;
-    if (sessionCount > 1) {
-      sessionName = song.getName() + " (" + sessionCount + ")";
-    }
-    setOpen(true);
-    return SongSessionManager.getSongSession(song, sessionName);
-  }
-
-  /**
-   * Asynchronously creates a session and attaches it to this object. Clients
-   * must listen to the PROP_SESSION_OPENED property in order to discover when
-   * the session becomes available. Note: this function is only designed to be
-   * executed once
+   * Clients must listen to the PROP_SESSION_OPENED property in order to
+   * discover when the session becomes available. Note: this function is only
+   * designed to be executed once
    */
   public void openSession() {
+    sessionOpeningTask = new SessionOpeningTask();
     sessionOpeningTask.execute();
   }
 
@@ -217,7 +223,14 @@ public class SongDataSupport extends MultiDataObject {
    * @throws TimeoutException if this SongSession is still loading.
    */
   public SongSession getSession() throws InterruptedException, ExecutionException, TimeoutException {
-    return sessionOpeningTask.get(0, TimeUnit.MILLISECONDS);
+   if(sessionOpeningTask == null){
+     throw new RuntimeException("Session was not opened.");
+   }
+   if(!sessionOpeningTask.isDone()){
+     logger.warning("Song session still loading.");
+   }
+    
+    return sessionOpeningTask.get();
   }
 
   /**
