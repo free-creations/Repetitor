@@ -49,7 +49,7 @@ public class LessonProperties extends Properties {
 
   public String getDescription() {
 
-    return getProperty(PROP_DESCRIPTION);
+    return getProperty(PROP_DESCRIPTION, "");
   }
 
   public float getTempoFactor() {
@@ -93,5 +93,9 @@ public class LessonProperties extends Properties {
         Exceptions.printStackTrace(e);
       }
     }
+  }
+
+  public void setDescription(String value) {
+    setProperty(PROP_DESCRIPTION, value);
   }
 }

@@ -22,6 +22,7 @@ import de.free_creations.midisong.Song;
 import de.free_creations.midisong.SongSession;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
@@ -56,6 +57,33 @@ public class SongDataSupport extends MultiDataObject {
   private final FileObject primaryFileObject;
   private SessionOpeningTask sessionOpeningTask = null;
   private LessonProperties lesson = null;
+  private File lessonsDirectory = null;
+
+  /**
+   * Set the directory where lessons to this song may be located.
+   *
+   * Note: This is a hack to get the lessons handling quickly implemented. The
+   * "MediaContainerDataObject" in package "MediaContainer2" will update this
+   * value in procedure "createNodeForKey".
+   *
+   * @param lessonsDirectory
+   */
+  public void setLessonsDirectory(File lessonsDirectory) {
+    this.lessonsDirectory = lessonsDirectory;
+  }
+
+  /**
+   * Get the directory where lessons to this song may be located.
+   *
+   * Note: This is a hack to get the lessons handling quickly implemented. The
+   * "MediaContainerDataObject" in package "MediaContainer2" will update this
+   * value in procedure "createNodeForKey".
+   *
+   * @return the lessons directory.
+   */
+  public File getLessonsDirectory() {
+    return lessonsDirectory;
+  }
 
   /**
    * This SwingWorker reads the song file outside the Swing thread so that the

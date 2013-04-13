@@ -903,6 +903,12 @@ public class SongSession {
     }
   }
 
+  public LessonProperties getLessonProperties() {
+    LessonProperties lesson = new LessonProperties();
+    lesson.setDescription("This is a test");
+    return lesson;
+  }
+
   private class MidiTrackHandler implements GenericTrack.EventHandler {
 
     final int trackIndex;

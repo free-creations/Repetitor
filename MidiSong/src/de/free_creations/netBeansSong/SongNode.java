@@ -17,18 +17,26 @@
 package de.free_creations.netBeansSong;
 
 import de.free_creations.midisong.LessonProperties;
+import de.free_creations.midisong.SongSession;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import org.openide.DialogDescriptor;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.loaders.DataNode;
 import org.openide.nodes.ChildFactory;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.WeakListeners;
@@ -41,17 +49,17 @@ import org.openide.util.WeakListeners;
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class SongNode extends DataNode {
-  
+
   private static final Logger logger = Logger.getLogger(SongNode.class.getName());
-  
+
   private static class SongNodeChildFactory extends ChildFactory<LessonProperties> {
-    
+
     private final SongDataSupport songDataSupport;
-    
+
     public SongNodeChildFactory(SongDataSupport dataSupport) {
       this.songDataSupport = dataSupport;
     }
-    
+
     @Override
     protected boolean createKeys(List<LessonProperties> toPopulate) {
       List<LessonProperties> lessons = SongSessionManager.getLessons();
@@ -63,15 +71,15 @@ public class SongNode extends DataNode {
       }
       return true;
     }
-    
+
     @Override
     protected Node createNodeForKey(LessonProperties lesson) {
       return new LessonNode(lesson, songDataSupport);
     }
   }
-  
+
   private class SongDataObserver implements PropertyChangeListener {
-    
+
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
       SongNode.this.songDataPropertyChange(evt);
@@ -92,36 +100,101 @@ public class SongNode extends DataNode {
       songOpenSupport.open();
     }
   };
-  private final Action saveLessonAction = new AbstractAction("save lesson") {
+  private final SaveLessonAction saveLessonAction;
+
+  private class SaveLessonAction extends AbstractAction {
+
+    private final SongDataSupport dataSupport;
+
+    public SaveLessonAction(SongDataSupport dataSupport) {
+      super("save lesson");
+      this.dataSupport = dataSupport;
+    }
+
+    @Override
+    public boolean isEnabled() {
+      return dataSupport.isSessionActive();
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-      logger.info(">>>>>>>>>>>>> save lesson action");
-      
+      try {
+        SongSession session = dataSupport.getSession();
+        File lessonsDirectory = dataSupport.getLessonsDirectory();
+        if (lessonsDirectory == null) {
+          lessonsDirectory = new File(System.getProperty("user.home"));
+        }
+        LessonProperties lesson = session.getLessonProperties();
+        SaveLessonDialog form = new SaveLessonDialog(lesson, lessonsDirectory);
+        String msg = "Save Lesson...";
+        DialogDescriptor dd = new DialogDescriptor(form, msg);
+        boolean done = false;
+        while (!done) {
+          Object result = DialogDisplayer.getDefault().notify(dd);
+          if (result != NotifyDescriptor.OK_OPTION) {
+            break;
+          }
+          File verifiedFile = verifyFilename(form.getFilename(), lessonsDirectory);
+          if (verifiedFile != null) {
+
+            LessonProperties resultProperties = form.getLessonProperties();
+            resultProperties.writeToFile(verifiedFile);
+            break;
+          }
+        }
+
+      } catch (Exception ex) {
+        Exceptions.printStackTrace(ex);
+      }
+    }
+
+    File verifyFilename(String Filename, File lessonsDirectory) {
+      if (Filename.length() < 1) {
+        NotifyDescriptor nd = new NotifyDescriptor.Message("You must specify a filename.", NotifyDescriptor.INFORMATION_MESSAGE);
+        DialogDisplayer.getDefault().notify(nd);
+        return null;
+      }
+
+      String FilenameExt = Filename + ".lesson";
+      File lessonFile = new File(lessonsDirectory, FilenameExt);
+
+      if (lessonFile.exists()) {
+        NotifyDescriptor nd = new NotifyDescriptor.Confirmation(Filename + " already exists, OK to overwrite?.", NotifyDescriptor.YES_NO_OPTION);
+        Object okToOverwrite = DialogDisplayer.getDefault().notify(nd);
+        if (NotifyDescriptor.YES_OPTION == okToOverwrite) {
+          return lessonFile;
+        } else {
+          return null;
+        }
+      }
+      return lessonFile;
     }
   };
-  private final Action[] songActions = new Action[]{songOpenAction, saveLessonAction};
-  
+  private final Action[] songActions;
+
   public SongNode(SongDataSupport dataSupport, Lookup lookup) {
-    
+
     super(dataSupport, Children.create(new SongNodeChildFactory(dataSupport), true), lookup);
     this.dataSupport = dataSupport;
-    
+    saveLessonAction = new SaveLessonAction(dataSupport);
+    songActions = new Action[]{songOpenAction, saveLessonAction};
+
     fileObserver = new SongDataObserver();
     dataSupport.addPropertyChangeListener(WeakListeners.propertyChange(fileObserver, dataSupport));
-    
+
     setIconBaseWithExtension(ICON_SONG_OPEN_ACTIVE);
   }
-  
+
   @Override
   public Action[] getActions(boolean context) {
     return songActions;
   }
-  
+
   @Override
   public Action getPreferredAction() {
     return songOpenAction;
   }
-  
+
   @Override
   public Image getIcon(int type) {
     if (dataSupport.isOpen()) {
@@ -133,7 +206,7 @@ public class SongNode extends DataNode {
     }
     return getClosedIcon(type);
   }
-  
+
   private Image getActiveIcon(int type) {
     switch (type) {
       case java.beans.BeanInfo.ICON_COLOR_16x16:
@@ -143,7 +216,7 @@ public class SongNode extends DataNode {
     }
     return null;
   }
-  
+
   public Image getClosedIcon(int type) {
     switch (type) {
       case java.beans.BeanInfo.ICON_COLOR_16x16:
@@ -153,7 +226,7 @@ public class SongNode extends DataNode {
     }
     return null;
   }
-  
+
   @Override
   public Image getOpenedIcon(int type) {
     switch (type) {

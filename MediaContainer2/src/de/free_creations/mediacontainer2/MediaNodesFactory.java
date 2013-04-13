@@ -18,12 +18,8 @@ package de.free_creations.mediacontainer2;
 import de.free_creations.midisong.LessonProperties;
 import de.free_creations.netBeansSong.SongSessionManager;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
@@ -83,7 +79,7 @@ class MediaNodesFactory extends ChildFactory.Detachable<File> {
   }
 
   /**
-   * if the given file is a lesson file add it to the collection lessons held by
+   * if the given file is a lesson-file, add it to the collection of lessons held by
    * the SongSession manager.
    *
    * Note: this solution is a hack to get the lesson handling implemented

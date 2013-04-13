@@ -15,6 +15,8 @@
  */
 package de.free_creations.mediacontainer2;
 
+import de.free_creations.netBeansSong.SongDataSupport;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -158,9 +160,13 @@ public class MediaContainerDataObject extends MultiDataObject {
         Exceptions.printStackTrace(new RuntimeException("could not find" + fileUri + " in " + zipRoot));
         return errorNode;
       }
-      DataObject songData;
+      SongDataSupport songData;
       try {
-        songData = DataObject.find(songFile);
+        songData = (SongDataSupport)DataObject.find(songFile);
+        File containerFile = FileUtil.toFile(getPrimaryFile());
+        if(containerFile != null){
+          songData.setLessonsDirectory(containerFile.getParentFile());
+        }
       } catch (DataObjectNotFoundException ex) {
         Node errorNode = new AbstractNode(Children.LEAF);
         errorNode.setDisplayName("Error 2: " + fileUri);
