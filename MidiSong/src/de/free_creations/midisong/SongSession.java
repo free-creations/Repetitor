@@ -881,10 +881,10 @@ public class SongSession {
   }
 
   /**
-   * Forces the sequencer to close. 
-   * 
-   * Can be used to force to throw exceptions
-   * that where collected during process cycles.
+   * Forces the sequencer to close.
+   *
+   * Can be used to force to throw exceptions that where collected during
+   * process cycles.
    *
    * @deprecated only for test.
    */
@@ -895,17 +895,28 @@ public class SongSession {
     }
   }
 
-
   public void apllyLesson(LessonProperties lesson) {
-    if(lesson != null) {
-      setTempoFactor(lesson.getTempoFactor()); 
+    if (lesson != null) {
+      // set start an end point fotr the first time (note the result may not be what we want)
+      setStartPoint(lesson.getStartPoint());
+      setLoopStartPoint(lesson.getSelectionStart());
+      setLoopEndPoint(lesson.getSelectionEnd());
+      // set start an end point a second time (now the result should be correct)
+      setStartPoint(lesson.getStartPoint());
+      setLoopStartPoint(lesson.getSelectionStart());
+      setLoopEndPoint(lesson.getSelectionEnd());
+
+      setTempoFactor(lesson.getTempoFactor());
 
     }
   }
 
   public LessonProperties getLessonProperties() {
     LessonProperties lesson = new LessonProperties();
-    lesson.setDescription("This is a test");
+    lesson.setStartPoint(getStartPoint());
+    lesson.setSelectionStart(getLoopStartPoint());
+    lesson.setSelectionEnd(getLoopEndPoint());
+    lesson.setTempoFactor(getTempoFactor());
     return lesson;
   }
 

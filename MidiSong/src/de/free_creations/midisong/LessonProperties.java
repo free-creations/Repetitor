@@ -32,7 +32,10 @@ public class LessonProperties extends Properties {
 
   public static final String PROP_SONG = "song";
   public static final String PROP_DESCRIPTION = "description";
-  public static final String PROP_TEMPOFACTOR = "tempofactor";
+  public static final String PROP_TEMPOFACTOR = "tempoFactor";
+  public static final String PROP_SELECTIONSTART = "selectionStart";
+  public static final String PROP_SELECTIONEND = "selectionEnd";
+  public static final String PROP_STARTPOINT = "startPoint";
 
   public LessonProperties() {
     super();
@@ -44,24 +47,93 @@ public class LessonProperties extends Properties {
   }
 
   public String getSong() {
-    return getProperty(PROP_SONG);
+    return getProperty(PROP_SONG, "unknown");
+  }
+
+  public void setSong(String value) {
+    setProperty(PROP_SONG, value);
   }
 
   public String getDescription() {
-
     return getProperty(PROP_DESCRIPTION, "");
   }
 
-  public float getTempoFactor() {
+  /**
+   * Get the value of selectionStart
+   *
+   * @return the value of selectionStart
+   */
+  public long getSelectionStart() {
     try {
-      return Float.valueOf(getProperty(PROP_TEMPOFACTOR, "1.0"));
-    } catch (NumberFormatException ex) {
-      return 1.0F;
+      return Long.valueOf(getProperty(PROP_SELECTIONSTART, "0"));
+    } catch (NumberFormatException ignored) {
+      return 0;
     }
   }
 
-  public void setTempoFactor(float value) {
-    setProperty(PROP_TEMPOFACTOR, Float.toString(value));
+  /**
+   * Set the value of selectionStart
+   *
+   * @param selectionStart new value of selectionStart
+   */
+  public void setSelectionStart(long selectionStart) {
+    setProperty(PROP_SELECTIONSTART, Long.toString(selectionStart));
+  }
+
+  /**
+   * Get the value of selectionEnd
+   *
+   * @return the value of selectionEnd
+   */
+  public long getSelectionEnd() {
+    try {
+      return Long.valueOf(getProperty(PROP_SELECTIONEND, "0"));
+    } catch (NumberFormatException ignored) {
+      return 0;
+    }
+  }
+
+  /**
+   * Set the value of selectionEnd
+   *
+   * @param selectionEnd new value of selectionEnd
+   */
+  public void setSelectionEnd(long selectionEnd) {
+    setProperty(PROP_SELECTIONEND, Long.toString(selectionEnd));
+  }
+
+  /**
+   * Get the value of startPoint
+   *
+   * @return the value of startPoint
+   */
+  public long getStartPoint() {
+    try {
+      return Long.valueOf(getProperty(PROP_STARTPOINT, "0"));
+    } catch (NumberFormatException ignored) {
+      return 0;
+    }
+  }
+
+  /**
+   * Set the value of startPoint
+   *
+   * @param startPoint new value of startPoint
+   */
+  public void setStartPoint(long startPoint) {
+    setProperty(PROP_STARTPOINT, Long.toString(startPoint));
+  }
+
+  public double getTempoFactor() {
+    try {
+      return Double.valueOf(getProperty(PROP_TEMPOFACTOR, "1.0"));
+    } catch (NumberFormatException ignored) {
+      return 1.0D;
+    }
+  }
+
+  public void setTempoFactor(double value) {
+    setProperty(PROP_TEMPOFACTOR, Double.toString(value));
   }
 
   public final void loadFromFile(File file) {

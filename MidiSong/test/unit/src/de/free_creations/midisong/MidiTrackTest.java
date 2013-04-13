@@ -40,10 +40,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * This class tests the {@link MidiSythesizerTrack } class.
- * The tests are merely the same as in
- * {@link SongTest } because {@link Song } and {@link MidiSythesizerTrack } are
- * quite dependant on each other.
+ * This class tests the {@link MidiSythesizerTrack } class. The tests are merely
+ * the same as in {@link SongTest } because {@link Song } and {@link MidiSythesizerTrack
+ * } are quite dependant on each other.
+ *
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class MidiTrackTest {
@@ -69,7 +69,7 @@ public class MidiTrackTest {
   private File tempDir;
 
   /**
-  
+   *
    * @throws URISyntaxException
    * @throws PropertyVetoException
    * @throws IOException
@@ -88,11 +88,13 @@ public class MidiTrackTest {
 
 
   }
+
   /**
    * Test the method clone of MidiTrack
+   *
    * @throws MalformedURLException
    * @throws IOException
-   * @throws EInvalidSongFile 
+   * @throws EInvalidSongFile
    */
   @Test
   public void testClone() throws MalformedURLException, IOException, EInvalidSongFile {
@@ -102,14 +104,14 @@ public class MidiTrackTest {
     Song originalSong = new Song();
     originalSong.setName(SONGNAME);
     originalSong.setDescription(DESC);
-    
+
     MasterTrack masterTrack = originalSong.createMastertrack();
     assertEquals(masterTrack, originalSong.getMastertrack());
     masterTrack.setName(MASTERTRACKNAME);
 
     MidiTrack originalMidiTrack = new MidiTrack();
     masterTrack.addSubtrack(originalMidiTrack);
-    
+
     originalMidiTrack.setName(MIDITRACKNAME);
     originalMidiTrack.setMidiChannel(CHANNEL);
     originalMidiTrack.setMidiTrackIndex(TRACKINDEX);
@@ -123,8 +125,8 @@ public class MidiTrackTest {
     assertEquals(clonedMidiTrack.getName(), MIDITRACKNAME);
     assertEquals(clonedMidiTrack.getMidiChannel(), CHANNEL);
     assertEquals(clonedMidiTrack.getMidiTrackIndex(), TRACKINDEX);
-    assertTrue(clonedMidiTrack != originalMidiTrack); 
-     
+    assertTrue(clonedMidiTrack != originalMidiTrack);
+
   }
 
   @After
@@ -134,6 +136,7 @@ public class MidiTrackTest {
   /**
    * Verify that a Track object can be marshaled into an XML stream and
    * un-marshaled back to the original structure.
+   *
    * @throws MalformedURLException
    * @throws IOException
    */
@@ -182,10 +185,9 @@ public class MidiTrackTest {
   }
 
   /**
-   * Test the load Midi files function.
-   * To make things a little bit more complicated, we use a midi file
-   * that is hidden in NetBeans file system (thus the URL
-   * will look like "nbfs://nbhost//testmidi.mid", which is only
+   * Test the load Midi files function. To make things a little bit more
+   * complicated, we use a midi file that is hidden in NetBeans file system
+   * (thus the URL will look like "nbfs://nbhost//testmidi.mid", which is only
    * understood by the NetBeans utilities).
    *
    * @throws IOException

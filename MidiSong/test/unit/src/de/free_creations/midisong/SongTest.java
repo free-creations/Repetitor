@@ -49,7 +49,7 @@ public class SongTest {
   private File tempDir;
 
   /**
-  
+   *
    * @throws URISyntaxException
    * @throws PropertyVetoException
    * @throws IOException
@@ -76,6 +76,7 @@ public class SongTest {
   /**
    * Verify that a song object can be marshaled into an XML stream and
    * un-marshaled back to the original object.
+   *
    * @throws MalformedURLException
    * @throws IOException
    */
@@ -120,9 +121,10 @@ public class SongTest {
 
   /**
    * Test the clone method.
+   *
    * @throws MalformedURLException
    * @throws IOException
-   * @throws EInvalidSongFile 
+   * @throws EInvalidSongFile
    */
   @Test
   public void testClone() throws MalformedURLException, IOException, EInvalidSongFile {
@@ -163,8 +165,8 @@ public class SongTest {
   }
 
   /**
-   * What happens when the song file cannot be read?
-   * We expect an exception to be thrown.
+   * What happens when the song file cannot be read? We expect an exception to
+   * be thrown.
    */
   @Test(expected = EInvalidSongFile.class)
   public void testBadSongFile() throws EInvalidSongFile {
@@ -174,10 +176,9 @@ public class SongTest {
   }
 
   /**
-   * In the resources we have a hand-carved song file
-   * called "sanctusAll.xml" . We are going to read 
-   * this file  and we will check whether the resultant song object is
-   * as expected.
+   * In the resources we have a hand-carved song file called "sanctusAll.xml" .
+   * We are going to read this file and we will check whether the resultant song
+   * object is as expected.
    */
   @Test
   public void testCreateFromFile() throws EInvalidSongFile {
@@ -207,9 +208,8 @@ public class SongTest {
   }
 
   /**
-   * Check if a song that is set immutable, cannot be changed by accident.
-   * We are again using the hand-carved song file
-   * called "sanctusAll.xml" .
+   * Check if a song that is set immutable, cannot be changed by accident. We
+   * are again using the hand-carved song file called "sanctusAll.xml" .
    */
   @Test(expected = EIllegalUpdate.class)
   public void testImmutableSong() throws EInvalidSongFile {
@@ -243,9 +243,10 @@ public class SongTest {
   }
 
   /**
-   * This is not really a test. Here we let the JAXB system produce a schema.
-   * If you need a schema of the Song file you may paste and copy from the
-   * file that's announced in the Output.
+   * This is not really a test. Here we let the JAXB system produce a schema. If
+   * you need a schema of the Song file you may paste and copy from the file
+   * that's announced in the Output.
+   *
    * @throws JAXBException
    * @throws IOException
    */
@@ -262,7 +263,6 @@ public class SongTest {
             Song.class);
 
     SchemaOutputResolver sor = new SchemaOutputResolver() {
-
       @Override
       public Result createOutput(String namespaceUri, String suggestedFileName) throws MalformedURLException {
         File file = new File(tempDir, suggestedFileName);

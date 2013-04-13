@@ -44,10 +44,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * This class tests the {@link MidiSythesizerTrack } class.
- * The tests are merely the same as in
- * {@link SongTest } because {@link Song } and {@link MidiSythesizerTrack } are
- * quite dependant on each other.
+ * This class tests the {@link MidiSythesizerTrack } class. The tests are merely
+ * the same as in {@link SongTest } because {@link Song } and {@link MidiSythesizerTrack
+ * } are quite dependant on each other.
+ *
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class MidiSynthesizerTrackTest {
@@ -74,7 +74,7 @@ public class MidiSynthesizerTrackTest {
   private File tempDir;
 
   /**
-  
+   *
    * @throws URISyntaxException
    * @throws PropertyVetoException
    * @throws IOException
@@ -101,6 +101,7 @@ public class MidiSynthesizerTrackTest {
   /**
    * Verify that a Track object can be marshaled into an XML stream and
    * unmarshaled back to the original structure.
+   *
    * @throws MalformedURLException
    * @throws IOException
    */
@@ -159,15 +160,13 @@ public class MidiSynthesizerTrackTest {
   }
 
   /**
-   * Test whether a soundbank referenced by the song's data is
-   * correctly loaded. The point to be tested is that the
-   * {@link  Song} object knows about the base directory whereas the 
-   * {@link BuiltinSynthesizer} object knows about a relative path 
-   * to the soundbank file. When accessing the soundbank these two informations
-   * must be correctly linked.
-   * To make things a little bit more complicated, we use a midi file
-   * that is hidden in a NetBeans file system (thus the URL
-   * will look like "nbfs://nbhost//testmidi.mid", which is only
+   * Test whether a soundbank referenced by the song's data is correctly loaded.
+   * The point to be tested is that the {@link  Song} object knows about the base
+   * directory whereas the {@link BuiltinSynthesizer} object knows about a
+   * relative path to the soundbank file. When accessing the soundbank these two
+   * informations must be correctly linked. To make things a little bit more
+   * complicated, we use a midi file that is hidden in a NetBeans file system
+   * (thus the URL will look like "nbfs://nbhost//testmidi.mid", which is only
    * understood by the NetBeans utilities).
    *
    * @throws IOException
@@ -223,9 +222,10 @@ public class MidiSynthesizerTrackTest {
 
   /**
    * Test the method clone of MidiTrack
+   *
    * @throws MalformedURLException
    * @throws IOException
-   * @throws EInvalidSongFile 
+   * @throws EInvalidSongFile
    */
   @Test
   public void testClone() throws MalformedURLException, IOException, EInvalidSongFile {
@@ -261,7 +261,7 @@ public class MidiSynthesizerTrackTest {
     assertEquals(clonedSynthTrack.getMidiTrackIndex(), trackindex);
 
     assertTrue(clonedSynthTrack != originalSynthTrack);
-    
+
     // also the sythesizer should not point to the same object
     assertTrue(clonedSynthTrack.getSynthesizer() != originalSynthTrack.getSynthesizer());
     assertTrue(originalSynthTrack.getSynthesizer().getTrack() == originalSynthTrack);
@@ -269,12 +269,13 @@ public class MidiSynthesizerTrackTest {
 
 
   }
-  
-    /**
+
+  /**
    * Test the method detachAudio of MidiTrack
+   *
    * @throws MalformedURLException
    * @throws IOException
-   * @throws EInvalidSongFile 
+   * @throws EInvalidSongFile
    */
   @Test
   public void testDetach() throws MalformedURLException, IOException, EInvalidSongFile {
@@ -298,7 +299,6 @@ public class MidiSynthesizerTrackTest {
     synth.setName(SYNTHNAME);
     synthTrack.setSynthesizer(synth);
     synth.setPort(new SequencerMidiPort() {
-
       @Override
       public AudioPort getAudioPort() {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -337,7 +337,7 @@ public class MidiSynthesizerTrackTest {
     // -------------------------------------------------------------------------
     // now call detachAudio on the song => we expect the port on the sysnth to have disapeard
     song.detachAudio();
-    
+
     assertNull(synth.getPort());
 
 

@@ -24,8 +24,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -125,7 +123,8 @@ public class SongNode extends DataNode {
           lessonsDirectory = new File(System.getProperty("user.home"));
         }
         LessonProperties lesson = session.getLessonProperties();
-        SaveLessonDialog form = new SaveLessonDialog(lesson, lessonsDirectory);
+        lesson.setSong(dataSupport.getName());
+        SaveLessonDialog form = new SaveLessonDialog(dataSupport.getName(), lesson, lessonsDirectory);
         String msg = "Save Lesson...";
         DialogDescriptor dd = new DialogDescriptor(form, msg);
         boolean done = false;

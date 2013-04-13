@@ -51,12 +51,13 @@ public class SongDataSupportTest {
     assertNotNull(songFile);
 
   }
-  
+
   /**
-   * This test verifies that the MIME-resolver and the Data-loader
-   * do their job for the song files.
-   * @throws DataObjectNotFoundException if this exception is thrown,
-   * than the test-setup is buggy.
+   * This test verifies that the MIME-resolver and the Data-loader do their job
+   * for the song files.
+   *
+   * @throws DataObjectNotFoundException if this exception is thrown, than the
+   * test-setup is buggy.
    */
   @Test
   public void testDataLoader() throws DataObjectNotFoundException {
@@ -66,13 +67,12 @@ public class SongDataSupportTest {
   }
 
   /**
-   * Make sure that a song file is represented by the correct
-   * kind of node.
+   * Make sure that a song file is represented by the correct kind of node.
    */
   @Test
-  public void testGetNodeDelegate() throws DataObjectNotFoundException  {
+  public void testGetNodeDelegate() throws DataObjectNotFoundException {
     DataObject songFileSupport = DataObject.find(songFile);
-    Node node =  songFileSupport.getNodeDelegate() ;
+    Node node = songFileSupport.getNodeDelegate();
     assertNotNull(node);
     assertEquals(SongNode.class, node.getClass());
   }

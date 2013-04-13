@@ -29,13 +29,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
-import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.loaders.DataObjectExistsException;
 import org.openide.loaders.MultiDataObject;
 import org.openide.loaders.MultiFileLoader;
-import org.openide.nodes.CookieSet;
 import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
@@ -99,9 +97,7 @@ public class SongDataSupport extends MultiDataObject {
       Song song = Song.createFromFile(xmlFileUrl);
       String sessionName = song.getName();
       newSongSession = SongSessionManager.getSongSession(song, sessionName);
-      if (lesson != null) {
-        newSongSession.apllyLesson(lesson);
-      }
+
       return newSongSession;
     }
 
@@ -110,6 +106,9 @@ public class SongDataSupport extends MultiDataObject {
       setOpen(newSongSession != null);
       newSongSession.addPropertyChangeListener(songSessionListener);
       SongDataSupport.this.firePropertyChange(PROP_SESSION_LOADED, null, newSongSession);
+      if (lesson != null) {
+        newSongSession.apllyLesson(lesson);
+      }
     }
   };
   /**
