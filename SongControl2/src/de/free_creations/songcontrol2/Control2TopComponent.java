@@ -17,11 +17,13 @@ package de.free_creations.songcontrol2;
 
 import de.free_creations.guicomponents.SongTopComponent;
 import de.free_creations.midisong.*;
+import de.free_creations.midisong.GenericTrack.EventHandler;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JCheckBox;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import org.netbeans.api.settings.ConvertAsProperties;
@@ -69,6 +71,25 @@ public final class Control2TopComponent extends SongTopComponent {
   private final Timer timer = new Timer(timerDelay, timedTask);
   private MidiSynthesizerTrack voicesTrack;
   private GenericTrack[] voicesSubTracks;
+
+  private static class TrackConnector implements EventHandler {
+
+    private final JCheckBox checkbox;
+
+    public TrackConnector(JCheckBox checkbox) {
+
+      this.checkbox = checkbox;
+    }
+
+    @Override
+    public void onMuteChange(boolean value) {
+      checkbox.setSelected(!value);
+    }
+
+    @Override
+    public void onAttenuationChange(float value) {
+    }
+  }
 
   public Control2TopComponent() {
     initComponents();
@@ -627,6 +648,7 @@ public final class Control2TopComponent extends SongTopComponent {
       voice1.setSelected(true);
       voice1.setText(voicesSubTracks[0].getName());
       voice1.setSelected(!voicesSubTracks[0].isMute());
+      voicesSubTracks[0].addNonAudioEventHandler(new TrackConnector(voice1));
       voice1.setEnabled(true);
     } else {
       voice1.setText(noVoice);
@@ -635,6 +657,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 1) {
       voice2.setText(voicesSubTracks[1].getName());
       voice2.setSelected(!voicesSubTracks[1].isMute());
+      voicesSubTracks[1].addNonAudioEventHandler(new TrackConnector(voice2));
       voice2.setEnabled(true);
     } else {
       voice2.setText(noVoice);
@@ -643,6 +666,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 2) {
       voice3.setText(voicesSubTracks[2].getName());
       voice3.setSelected(!voicesSubTracks[2].isMute());
+      voicesSubTracks[2].addNonAudioEventHandler(new TrackConnector(voice3));
       voice3.setEnabled(true);
     } else {
       voice3.setText(noVoice);
@@ -652,6 +676,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 3) {
       voice4.setText(voicesSubTracks[3].getName());
       voice4.setSelected(!voicesSubTracks[3].isMute());
+      voicesSubTracks[3].addNonAudioEventHandler(new TrackConnector(voice4));
       voice4.setEnabled(true);
     } else {
       voice4.setText(noVoice);
@@ -660,6 +685,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 4) {
       voice5.setText(voicesSubTracks[4].getName());
       voice5.setSelected(!voicesSubTracks[4].isMute());
+      voicesSubTracks[4].addNonAudioEventHandler(new TrackConnector(voice5));
       voice5.setEnabled(true);
     } else {
       voice5.setText(noVoice);
@@ -668,6 +694,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 5) {
       voice6.setText(voicesSubTracks[5].getName());
       voice6.setSelected(!voicesSubTracks[5].isMute());
+      voicesSubTracks[5].addNonAudioEventHandler(new TrackConnector(voice6));
       voice6.setEnabled(true);
     } else {
       voice6.setText(noVoice);

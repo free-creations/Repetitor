@@ -99,7 +99,7 @@ public class SongSession {
   public static final String PROP_PLAYINGMODE = "playingMode";
   private Sequence nullSequence;
   /**
-   * the length in midi tick of this song*
+   * the length in midi tick of this song
    */
   private final long tickLength;
   private double tempoFactor = 1.0;
@@ -906,8 +906,30 @@ public class SongSession {
       setLoopStartPoint(lesson.getSelectionStart());
       setLoopEndPoint(lesson.getSelectionEnd());
 
+      apllyLessonToVoicesTracks(lesson);
+      apllyLessonToAudioAttenuations(lesson);
       setTempoFactor(lesson.getTempoFactor());
 
+    }
+  }
+
+  private void apllyLessonToVoicesTracks(LessonProperties lesson) {
+    GenericTrack[] voicesSubTracks = findVoicesSubtracks();
+    if (voicesSubTracks != null) {
+      for (int i = 0; i < voicesSubTracks.length; i++) {
+        voicesSubTracks[i].setMute(lesson.getVoiceMute(i));
+      }
+    }
+  }
+
+  private void apllyLessonToAudioAttenuations(LessonProperties lesson) {
+    MidiSynthesizerTrack voicesMainTrack = findVoicesMainTrack();
+    MidiSynthesizerTrack orchestraMainTrack = findOrchestraMainTrack();
+    if (voicesMainTrack != null) {
+      voicesMainTrack.setAttenuation(lesson.getVoicesAttenuation());
+    }
+    if (orchestraMainTrack != null) {
+      orchestraMainTrack.setAttenuation(lesson.getOrchestraAttenuation());
     }
   }
 
@@ -917,7 +939,79 @@ public class SongSession {
     lesson.setSelectionStart(getLoopStartPoint());
     lesson.setSelectionEnd(getLoopEndPoint());
     lesson.setTempoFactor(getTempoFactor());
+    writeVoicesTrackStateToLesson(lesson);
+    writeAudioAttenuationsToLesson(lesson);
     return lesson;
+  }
+
+  private void writeAudioAttenuationsToLesson(LessonProperties lesson) {
+    MidiSynthesizerTrack voicesMainTrack = findVoicesMainTrack();
+    MidiSynthesizerTrack orchestraMainTrack = findOrchestraMainTrack();
+    if (voicesMainTrack != null) {
+      lesson.setVoicesAttenuation(voicesMainTrack.getAttenuation());
+    }
+    if (orchestraMainTrack != null) {
+      lesson.setOrchestraAttenuation(orchestraMainTrack.getAttenuation());
+    }
+  }
+
+  private void writeVoicesTrackStateToLesson(LessonProperties lesson) {
+    GenericTrack[] voicesSubTracks = findVoicesSubtracks();
+    if (voicesSubTracks != null) {
+      for (int i = 0; i < voicesSubTracks.length; i++) {
+        lesson.setVoiceMute(i, voicesSubTracks[i].isMute());
+      }
+    }
+  }
+
+  private GenericTrack[] findSubTracks() {
+    Song activeSong = getActiveSong();
+    if (activeSong == null) {
+      return null;
+    }
+    MasterTrack mastertrack = activeSong.getMastertrack();
+    if (mastertrack == null) {
+      return null;
+    }
+    return mastertrack.getSubtracks();
+  }
+
+  private MidiSynthesizerTrack findVoicesMainTrack() {
+    GenericTrack[] subtracks = findSubTracks();
+    if (subtracks == null) {
+      return null;
+    }
+    if (subtracks.length < 2) {
+      return null;
+    }
+    if (subtracks[1] instanceof MidiSynthesizerTrack) {
+      return (MidiSynthesizerTrack) subtracks[1];
+    } else {
+      return null;
+    }
+  }
+
+  private MidiSynthesizerTrack findOrchestraMainTrack() {
+    GenericTrack[] subtracks = findSubTracks();
+    if (subtracks == null) {
+      return null;
+    }
+    if (subtracks.length < 1) {
+      return null;
+    }
+    if (subtracks[1] instanceof MidiSynthesizerTrack) {
+      return (MidiSynthesizerTrack) subtracks[0];
+    } else {
+      return null;
+    }
+  }
+
+  private GenericTrack[] findVoicesSubtracks() {
+    MidiSynthesizerTrack voicesMainTrack = findVoicesMainTrack();
+    if (voicesMainTrack == null) {
+      return null;
+    }
+    return voicesMainTrack.getSubtracks();
   }
 
   private class MidiTrackHandler implements GenericTrack.EventHandler {

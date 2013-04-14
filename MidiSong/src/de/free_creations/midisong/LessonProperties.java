@@ -36,6 +36,9 @@ public class LessonProperties extends Properties {
   public static final String PROP_SELECTIONSTART = "selectionStart";
   public static final String PROP_SELECTIONEND = "selectionEnd";
   public static final String PROP_STARTPOINT = "startPoint";
+  public static final String PROP_VOICEMUTE = "voiceMute";
+  public static final String PROP_VOICESATTENUATION = "voicesAttenuation";
+  public static final String PROP_ORCHESTRAATTENUATION = "orchestraAttenuation";
 
   public LessonProperties() {
     super();
@@ -169,5 +172,39 @@ public class LessonProperties extends Properties {
 
   public void setDescription(String value) {
     setProperty(PROP_DESCRIPTION, value);
+  }
+
+  public void setVoiceMute(int i, boolean mute) {
+    String key = String.format(PROP_VOICEMUTE + ".%d", i);
+    setProperty(key, Boolean.toString(mute));
+  }
+
+  public boolean getVoiceMute(int i) {
+    String key = String.format(PROP_VOICEMUTE + ".%d", i);
+    return Boolean.parseBoolean(getProperty(key, "false"));
+  }
+
+  public float getVoicesAttenuation() {
+    try {
+      return Float.valueOf(getProperty(PROP_VOICESATTENUATION, "0.0"));
+    } catch (NumberFormatException ignored) {
+      return 0.0F;
+    }
+  }
+
+  public void setVoicesAttenuation(float value) {
+    setProperty(PROP_VOICESATTENUATION, Float.toString(value));
+  }
+
+  public float getOrchestraAttenuation() {
+    try {
+      return Float.valueOf(getProperty(PROP_ORCHESTRAATTENUATION, "0.0"));
+    } catch (NumberFormatException ignored) {
+      return 0.0F;
+    }
+  }
+
+  public void setOrchestraAttenuation(float value) {
+    setProperty(PROP_ORCHESTRAATTENUATION, Float.toString(value));
   }
 }
