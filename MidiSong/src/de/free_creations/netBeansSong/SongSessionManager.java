@@ -26,8 +26,8 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,10 +57,12 @@ public class SongSessionManager {
   private static final Logger logger = Logger.getLogger(SongSessionManager.class.getName());
   static private final SongSessionManager instance = new SongSessionManager();
   public static final String PROP_ACTIVESONGSESSION = "activeSongSession";
+    private static long activeLesson;
+  public static final String PROP_ACTIVELESSON = "activeLesson";
   private static volatile SessionActivationTask currentSessionActivationTask = null;
   private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
   private static final ArrayList<File> lessonPathes = new ArrayList<File>();
-  private static final ArrayList<LessonProperties> lessons = new ArrayList<LessonProperties>();
+  private static final TreeSet<LessonProperties> lessons = new TreeSet<LessonProperties>();
 
   /**
    * Create a new {@link SongSession SongSession}.
@@ -304,7 +306,33 @@ public class SongSessionManager {
     return lessonPathes.contains(filePath);
   }
 
-  public static List<LessonProperties> getLessons() {
+  public static Set<LessonProperties> getLessons() {
     return lessons;
   }
+  
+
+
+  /**
+   * Get the Id of the active Lesson.
+   *
+   * @return the value of activeLesson
+   */
+  public static long getActiveLesson() {
+    return activeLesson;
+  }
+
+  /**
+   * Set the value of activeLesson
+   *
+   * @param activeLesson the Id of the new active lesson.
+   */
+  public static void setActiveLesson(long activeLesson) {
+    long oldActiveLesson = SongSessionManager.activeLesson;
+    if(oldActiveLesson == activeLesson){
+      return;
+    }
+    SongSessionManager.activeLesson = activeLesson;
+    instance.propertyChangeSupport.firePropertyChange(PROP_ACTIVELESSON, oldActiveLesson, activeLesson);
+  }
+
 }

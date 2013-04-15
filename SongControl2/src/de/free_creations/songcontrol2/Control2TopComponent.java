@@ -15,6 +15,7 @@
  */
 package de.free_creations.songcontrol2;
 
+import de.free_creations.guicomponents.SliderVuMeter;
 import de.free_creations.guicomponents.SongTopComponent;
 import de.free_creations.midisong.*;
 import de.free_creations.midisong.GenericTrack.EventHandler;
@@ -31,6 +32,7 @@ import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.TopComponent;
+
 
 /**
  * Top component which displays something.
@@ -72,11 +74,29 @@ public final class Control2TopComponent extends SongTopComponent {
   private MidiSynthesizerTrack voicesTrack;
   private GenericTrack[] voicesSubTracks;
 
-  private static class TrackConnector implements EventHandler {
+  private static class TrackAttenuationConnector implements EventHandler {
+
+    private final SliderVuMeter slider;
+
+    public TrackAttenuationConnector(SliderVuMeter slider) {
+      this.slider = slider;
+    }
+
+    @Override
+    public void onMuteChange(boolean value) {
+    }
+
+    @Override
+    public void onAttenuationChange(float value) {
+      slider.setValue((int) value);
+    }
+  }
+
+  private static class TrackMuteConnector implements EventHandler {
 
     private final JCheckBox checkbox;
 
-    public TrackConnector(JCheckBox checkbox) {
+    public TrackMuteConnector(JCheckBox checkbox) {
 
       this.checkbox = checkbox;
     }
@@ -133,8 +153,6 @@ public final class Control2TopComponent extends SongTopComponent {
     jPanel1 = new javax.swing.JPanel();
     sliderFeedback = new de.free_creations.guicomponents.SliderVuMeter();
     jLabel3 = new javax.swing.JLabel();
-    cbxPlayingMode = new javax.swing.JComboBox();
-    btnForceClose = new javax.swing.JButton();
 
     setLayout(new java.awt.GridBagLayout());
 
@@ -142,7 +160,7 @@ public final class Control2TopComponent extends SongTopComponent {
     pnlSingstimmen.setPreferredSize(new java.awt.Dimension(362, 400));
 
     sliderVoices.setInverted(true);
-    sliderVoices.setMaximum(60);
+    sliderVoices.setMaximum(50);
     sliderVoices.setMinimum(-10);
     sliderVoices.setOrientation(1);
     sliderVoices.setValue(0);
@@ -287,7 +305,7 @@ public final class Control2TopComponent extends SongTopComponent {
     pnlOrchestra.setPreferredSize(new java.awt.Dimension(97, 400));
 
     sliderOrchestra.setInverted(true);
-    sliderOrchestra.setMaximum(60);
+    sliderOrchestra.setMaximum(50);
     sliderOrchestra.setMinimum(-10);
     sliderOrchestra.setOrientation(1);
     sliderOrchestra.setValue(0);
@@ -308,7 +326,7 @@ public final class Control2TopComponent extends SongTopComponent {
         .addGroup(pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(sliderOrchestra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(jLabel1))
-        .addContainerGap(17, Short.MAX_VALUE))
+        .addContainerGap(58, Short.MAX_VALUE))
     );
     pnlOrchestraLayout.setVerticalGroup(
       pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -334,7 +352,7 @@ public final class Control2TopComponent extends SongTopComponent {
 
     sliderFeedback.setInverted(true);
     sliderFeedback.setMaximum(60);
-    sliderFeedback.setMinimum(-30);
+    sliderFeedback.setMinimum(-40);
     sliderFeedback.setOrientation(1);
     sliderFeedback.setValue(0);
     sliderFeedback.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -345,21 +363,6 @@ public final class Control2TopComponent extends SongTopComponent {
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(Control2TopComponent.class, "Control2TopComponent.jLabel3.text")); // NOI18N
 
-    cbxPlayingMode.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "MidiOnly", "RecordAudio", "PlayAudio", "PlayRecordAudio" }));
-    cbxPlayingMode.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
-        cbxPlayingModeActionPerformed(evt);
-      }
-    });
-
-    btnForceClose.setBackground(new java.awt.Color(255, 51, 51));
-    org.openide.awt.Mnemonics.setLocalizedText(btnForceClose, org.openide.util.NbBundle.getMessage(Control2TopComponent.class, "Control2TopComponent.btnForceClose.text")); // NOI18N
-    btnForceClose.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
-        btnForceCloseActionPerformed(evt);
-      }
-    });
-
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
     jPanel1Layout.setHorizontalGroup(
@@ -367,27 +370,16 @@ public final class Control2TopComponent extends SongTopComponent {
       .addGroup(jPanel1Layout.createSequentialGroup()
         .addContainerGap()
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addGroup(jPanel1Layout.createSequentialGroup()
-            .addComponent(sliderFeedback, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-              .addComponent(btnForceClose, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-              .addComponent(cbxPlayingMode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+          .addComponent(sliderFeedback, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(jLabel3))
-        .addContainerGap(28, Short.MAX_VALUE))
+        .addContainerGap(110, Short.MAX_VALUE))
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel1Layout.createSequentialGroup()
         .addComponent(jLabel3)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(sliderFeedback, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
-          .addGroup(jPanel1Layout.createSequentialGroup()
-            .addComponent(cbxPlayingMode, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addGap(18, 18, 18)
-            .addComponent(btnForceClose)
-            .addGap(0, 0, Short.MAX_VALUE)))
+        .addComponent(sliderFeedback, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
         .addContainerGap())
     );
 
@@ -397,7 +389,7 @@ public final class Control2TopComponent extends SongTopComponent {
       pnlFeedbackLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(pnlFeedbackLayout.createSequentialGroup()
         .addGap(0, 0, 0)
-        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
+        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 190, Short.MAX_VALUE)
         .addContainerGap())
     );
     pnlFeedbackLayout.setVerticalGroup(
@@ -474,26 +466,7 @@ public final class Control2TopComponent extends SongTopComponent {
     }
   }//GEN-LAST:event_sliderFeedbackStateChanged
 
-  private void cbxPlayingModeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxPlayingModeActionPerformed
-    if (activeSongSession != null) {
-      try {
-        activeSongSession.setPlayingModeStr((String) cbxPlayingMode.getSelectedItem());
-      } catch (Exception ex) {
-        logger.log(Level.SEVERE, null, ex);
-      }
-    }
-    // TODO add your handling code here:
-  }//GEN-LAST:event_cbxPlayingModeActionPerformed
-
-  private void btnForceCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnForceCloseActionPerformed
-    // TODO add your handling code here:
-    if (activeSongSession != null) {
-      activeSongSession.forceClosing();
-    }
-  }//GEN-LAST:event_btnForceCloseActionPerformed
   // Variables declaration - do not modify//GEN-BEGIN:variables
-  private javax.swing.JButton btnForceClose;
-  private javax.swing.JComboBox cbxPlayingMode;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
   private javax.swing.JLabel jLabel3;
@@ -634,11 +607,18 @@ public final class Control2TopComponent extends SongTopComponent {
     //climb down the hierarchy and verify that all elements are at their expected position
     Song activeSong = activeSongSession.getActiveSong();
     MasterTrack mastertrack = activeSong.getMastertrack();
+    
+    // hack to make all songs play in mode "PlayRecordAudio"
+    activeSongSession.setPlayingModeStr("PlayRecordAudio");
+    activeSongSession.setLooping(true);
 
     orchestraTrack = (MidiSynthesizerTrack) mastertrack.getSubtracks()[0];
     sliderOrchestra.setValue((int) orchestraTrack.getAttenuation());
+    orchestraTrack.addNonAudioEventHandler(new TrackAttenuationConnector(sliderOrchestra));
+
     voicesTrack = (MidiSynthesizerTrack) mastertrack.getSubtracks()[1];
     sliderVoices.setValue((int) voicesTrack.getAttenuation());
+    voicesTrack.addNonAudioEventHandler(new TrackAttenuationConnector(sliderVoices));
 
     voicesSubTracks = voicesTrack.getSubtracks();
 
@@ -648,7 +628,7 @@ public final class Control2TopComponent extends SongTopComponent {
       voice1.setSelected(true);
       voice1.setText(voicesSubTracks[0].getName());
       voice1.setSelected(!voicesSubTracks[0].isMute());
-      voicesSubTracks[0].addNonAudioEventHandler(new TrackConnector(voice1));
+      voicesSubTracks[0].addNonAudioEventHandler(new TrackMuteConnector(voice1));
       voice1.setEnabled(true);
     } else {
       voice1.setText(noVoice);
@@ -657,7 +637,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 1) {
       voice2.setText(voicesSubTracks[1].getName());
       voice2.setSelected(!voicesSubTracks[1].isMute());
-      voicesSubTracks[1].addNonAudioEventHandler(new TrackConnector(voice2));
+      voicesSubTracks[1].addNonAudioEventHandler(new TrackMuteConnector(voice2));
       voice2.setEnabled(true);
     } else {
       voice2.setText(noVoice);
@@ -666,7 +646,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 2) {
       voice3.setText(voicesSubTracks[2].getName());
       voice3.setSelected(!voicesSubTracks[2].isMute());
-      voicesSubTracks[2].addNonAudioEventHandler(new TrackConnector(voice3));
+      voicesSubTracks[2].addNonAudioEventHandler(new TrackMuteConnector(voice3));
       voice3.setEnabled(true);
     } else {
       voice3.setText(noVoice);
@@ -676,7 +656,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 3) {
       voice4.setText(voicesSubTracks[3].getName());
       voice4.setSelected(!voicesSubTracks[3].isMute());
-      voicesSubTracks[3].addNonAudioEventHandler(new TrackConnector(voice4));
+      voicesSubTracks[3].addNonAudioEventHandler(new TrackMuteConnector(voice4));
       voice4.setEnabled(true);
     } else {
       voice4.setText(noVoice);
@@ -685,7 +665,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 4) {
       voice5.setText(voicesSubTracks[4].getName());
       voice5.setSelected(!voicesSubTracks[4].isMute());
-      voicesSubTracks[4].addNonAudioEventHandler(new TrackConnector(voice5));
+      voicesSubTracks[4].addNonAudioEventHandler(new TrackMuteConnector(voice5));
       voice5.setEnabled(true);
     } else {
       voice5.setText(noVoice);
@@ -694,7 +674,7 @@ public final class Control2TopComponent extends SongTopComponent {
     if (voicesSubTracks.length > 5) {
       voice6.setText(voicesSubTracks[5].getName());
       voice6.setSelected(!voicesSubTracks[5].isMute());
-      voicesSubTracks[5].addNonAudioEventHandler(new TrackConnector(voice6));
+      voicesSubTracks[5].addNonAudioEventHandler(new TrackMuteConnector(voice6));
       voice6.setEnabled(true);
     } else {
       voice6.setText(noVoice);
@@ -708,7 +688,7 @@ public final class Control2TopComponent extends SongTopComponent {
   }
 
   private void disableVoiceSelection() {
-    cbxPlayingMode.setEnabled(false);
+
     voice1.setEnabled(false);
     voice2.setEnabled(false);
     voice3.setEnabled(false);
@@ -720,7 +700,7 @@ public final class Control2TopComponent extends SongTopComponent {
   private void enableVoiceSelection() {
     //this is a hack. To indicate that
     //currently voices cannont be changed whenn playing
-    cbxPlayingMode.setEnabled(true);
+
     if (voicesSubTracks.length > 0) {
       voice1.setText(voicesSubTracks[0].getName());
       voice1.setSelected(!voicesSubTracks[0].isMute());

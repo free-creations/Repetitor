@@ -38,6 +38,7 @@ import org.openide.windows.TopComponent;
  * the JavaDoc for "org.openide.explorer.ExplorerUtils" and
  * http://platform.netbeans.org/tutorials/nbm-selection-2.html
  * http://platform.netbeans.org/tutorials/nbm-nodesapi.html
+ *
  * @author Harald Postner <Harald at free-creations.de>
  */
 @ConvertAsProperties(dtd = "-//de.free_creations.mediaContainerExplorer2//MediaContainerExplorer//EN",
@@ -65,11 +66,7 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
   static final String PREF_MEDIAFOLDER = "mediafolder";
   private final ExplorerManager explorerManager = new ExplorerManager();
   private final MediaRootNode rootNode = MediaRootNode.create();
-
-
   private final BeanTreeView treeView;
-
-
 
   public MediaContainerExplorerTopComponent() {
     initComponents();
@@ -84,7 +81,8 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
     // following line tells the top component which lookup should be associated with it
     associateLookup(ExplorerUtils.createLookup(explorerManager, actionMap));
 
-
+    scanMediaDirectory();
+    ExplorerUtils.activateActions(explorerManager, true);
     explorerManager.setRootContext(rootNode);
     treeView.setRootVisible(false);
   }
@@ -112,7 +110,6 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
   private void treeViewScrollPanelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_treeViewScrollPanelMouseClicked
     // TODO add your handling code here:
   }//GEN-LAST:event_treeViewScrollPanelMouseClicked
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane treeViewScrollPanel;
     // End of variables declaration//GEN-END:variables
@@ -141,17 +138,19 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
 
   @Override
   protected void componentActivated() {
-    // It is good idea to switch all listeners on when the
+    // It is (not?) agood idea to switch all listeners on when the
     // component is shown.
-    scanMediaDirectory();
-    ExplorerUtils.activateActions(explorerManager, true);
+//    scanMediaDirectory();
+//    ExplorerUtils.activateActions(explorerManager, true);
+ //   logger.info(">>>>>>>  componentActivated()");
   }
 
   @Override
   protected void componentDeactivated() {
-    // It is good idea to switch all listeners off when the
+    // It is (not?) a good idea to switch all listeners off when the
     // component is hidden.
-    ExplorerUtils.activateActions(explorerManager, false);
+//    ExplorerUtils.activateActions(explorerManager, false);
+//    logger.info(">>>>>>>  componentDeactivated()");
   }
 
   @Override
@@ -186,6 +185,4 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
     }
     return mediaDir;
   }
-
-
 }

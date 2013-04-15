@@ -28,7 +28,7 @@ import org.openide.util.Exceptions;
  *
  * @author Harald Postner
  */
-public class LessonProperties extends Properties {
+public class LessonProperties extends Properties implements Comparable<LessonProperties> {
 
   public static final String PROP_SONG = "song";
   public static final String PROP_DESCRIPTION = "description";
@@ -39,6 +39,7 @@ public class LessonProperties extends Properties {
   public static final String PROP_VOICEMUTE = "voiceMute";
   public static final String PROP_VOICESATTENUATION = "voicesAttenuation";
   public static final String PROP_ORCHESTRAATTENUATION = "orchestraAttenuation";
+  private long identity = 0;
 
   public LessonProperties() {
     super();
@@ -47,6 +48,16 @@ public class LessonProperties extends Properties {
   public LessonProperties(File file) {
     this();
     loadFromFile(file);
+    identity = caculateIdentiy(file);
+  }
+
+  /**
+   * Get the value of identity
+   *
+   * @return the value of identity
+   */
+  public long getIdentity() {
+    return identity;
   }
 
   public String getSong() {
@@ -206,5 +217,14 @@ public class LessonProperties extends Properties {
 
   public void setOrchestraAttenuation(float value) {
     setProperty(PROP_ORCHESTRAATTENUATION, Float.toString(value));
+  }
+
+  @Override
+  public int compareTo(LessonProperties other) {
+    return getDescription().compareTo(other.getDescription());
+  }
+
+  private long caculateIdentiy(File file) {
+    return file.getAbsolutePath().hashCode();
   }
 }

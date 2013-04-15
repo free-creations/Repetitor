@@ -24,6 +24,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -60,7 +61,7 @@ public class SongNode extends DataNode {
 
     @Override
     protected boolean createKeys(List<LessonProperties> toPopulate) {
-      List<LessonProperties> lessons = SongSessionManager.getLessons();
+      Set<LessonProperties> lessons = SongSessionManager.getLessons();
       String songname = songDataSupport.getName();
       for (LessonProperties lesson : lessons) {
         if (songname.equalsIgnoreCase(lesson.getSong())) {
