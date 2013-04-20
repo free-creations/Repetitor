@@ -1,0 +1,6 @@
+[AutoRun]
+open=correpetitor4-windows.exe
+icon=appIcon.ico
+action=Programm installieren
+label=Correpetitor4
+

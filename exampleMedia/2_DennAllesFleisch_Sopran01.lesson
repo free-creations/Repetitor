@@ -1,0 +1,14 @@
+#
+#Tue Apr 16 13:15:56 CEST 2013
+voiceMute.1=true
+voiceMute.0=false
+startPoint=540240
+voicesAttenuation=-6.0
+tempoFactor=1.0
+song=2_DennAllesFleisch
+selectionStart=540240
+description=Sopran( 1) Seite 27 Takt 333 (ewige Freude)
+orchestraAttenuation=-3.0
+selectionEnd=547920
+voiceMute.3=true
+voiceMute.2=true

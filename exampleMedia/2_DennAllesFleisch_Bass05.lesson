@@ -1,0 +1,14 @@
+#
+#Tue Apr 16 14:42:21 CEST 2013
+voiceMute.1=true
+voiceMute.0=true
+startPoint=481920
+voicesAttenuation=-3.0
+tempoFactor=1.0
+song=2_DennAllesFleisch
+selectionStart=481920
+description=Bass( 5) Seite 26 Takt 303 (ewige Freude)
+orchestraAttenuation=9.0
+selectionEnd=549120
+voiceMute.3=false
+voiceMute.2=true
