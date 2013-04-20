@@ -127,7 +127,7 @@ abstract class Band implements PropertyChangeListener, Layer {
     if (track != null) {
       long oldMax = canvas.getDimensions().getMaximumMidi();
       if (track.ticks() > oldMax) {
-        logger.log(Level.FINER, "setting MaximumMidi to {0} .", track.ticks());
+        logger.log(Level.FINER, "adjustMaximum():setting MaximumMidi to {0} .", track.ticks());
         canvas.getDimensions().setMaximumMidi(track.ticks());
       }
     }

@@ -462,14 +462,14 @@ class Dimensions {
       this.minimumMidi = newViewportLeftMidi;
       propertyChangeSupport.firePropertyChange(Prop.MINIMUM_MIDI, oldMinimumMidi, getMinimumMidi());
     }
-    // make sure that the current viewport is at least within the range covered by maxMidi
-    long newViewportRightMidi = pixelToMidi(getViewportLeftPixel() + getViewportWidthPixel(), newPixelToMidiFactor);
-    if (this.maximumMidi < newViewportRightMidi) {
-      long oldMaximumMidi = this.maximumMidi;
-      this.maximumMidi = newViewportRightMidi;
-      logger.log(Level.FINER, "setPixelToMidiFactor newMaximumMidi ={0}; oldMaximumMidi= {1}", new Object[]{this.maximumMidi, oldMaximumMidi});
-      propertyChangeSupport.firePropertyChange(Prop.MAXIMUM_MIDI, oldMaximumMidi, getMaximumMidi());
-    }
+//    // make sure that the current viewport is at least within the range covered by maxMidi
+//    long newViewportRightMidi = pixelToMidi(getViewportLeftPixel() + getViewportWidthPixel(), newPixelToMidiFactor);
+//    if (this.maximumMidi < newViewportRightMidi) {
+//      long oldMaximumMidi = this.maximumMidi;
+//      this.maximumMidi = newViewportRightMidi;
+//      logger.log(Level.FINER, "setPixelToMidiFactor newMaximumMidi ={0}; oldMaximumMidi= {1}", new Object[]{this.maximumMidi, oldMaximumMidi});
+//      propertyChangeSupport.firePropertyChange(Prop.MAXIMUM_MIDI, oldMaximumMidi, getMaximumMidi());
+//    }
 
     this.pixelToMidiFactor = newPixelToMidiFactor;
     this.midiToPixelFactor = newMidiToPixelMidiFactor;

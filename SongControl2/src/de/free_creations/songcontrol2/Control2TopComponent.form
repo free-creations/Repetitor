@@ -330,7 +330,7 @@
               <Properties>
                 <Property name="inverted" type="boolean" value="true"/>
                 <Property name="maximum" type="int" value="60"/>
-                <Property name="minimum" type="int" value="-40"/>
+                <Property name="minimum" type="int" value="-60"/>
                 <Property name="orientation" type="int" value="1"/>
                 <Property name="value" type="int" value="0"/>
               </Properties>

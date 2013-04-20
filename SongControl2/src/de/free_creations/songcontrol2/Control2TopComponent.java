@@ -33,7 +33,6 @@ import org.openide.awt.ActionReference;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.TopComponent;
 
-
 /**
  * Top component which displays something.
  */
@@ -124,6 +123,7 @@ public final class Control2TopComponent extends SongTopComponent {
     sliderOrchestra.setVuValue(sliderOrchestra.getMinVuValue());
     sliderVoices.setVuValue(sliderOrchestra.getMinVuValue());
     sliderFeedback.setVuValue(sliderFeedback.getMinVuValue());
+    sliderFeedback.setValue(-10);
 
   }
 
@@ -352,7 +352,7 @@ public final class Control2TopComponent extends SongTopComponent {
 
     sliderFeedback.setInverted(true);
     sliderFeedback.setMaximum(60);
-    sliderFeedback.setMinimum(-40);
+    sliderFeedback.setMinimum(-60);
     sliderFeedback.setOrientation(1);
     sliderFeedback.setValue(0);
     sliderFeedback.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -465,7 +465,6 @@ public final class Control2TopComponent extends SongTopComponent {
       activeSongSession.setAudioAttenuation(sliderFeedback.getValue());
     }
   }//GEN-LAST:event_sliderFeedbackStateChanged
-
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
@@ -495,17 +494,26 @@ public final class Control2TopComponent extends SongTopComponent {
   public void componentClosed() {
     super.componentClosed();
   }
+  static final String PROP_FEEDBACK_ATTENUATION = "feedbackAttenuation";
 
   void writeProperties(java.util.Properties p) {
     // better to version settings since initial version as advocated at
     // http://wiki.apidesign.org/wiki/PropertyFiles
     p.setProperty("version", "1.0");
-    // TODO store your settings
+    p.setProperty("PROP_FEEDBACK_ATTENUATION", Integer.toString(sliderFeedback.getValue()));
+
   }
 
   void readProperties(java.util.Properties p) {
     String version = p.getProperty("version");
-    // TODO read your settings according to their version
+    int feedbackAttenuation;
+    String feedbackAttenuationStr = p.getProperty("PROP_FEEDBACK_ATTENUATION", "-10");
+    try {
+      feedbackAttenuation = Integer.parseInt(feedbackAttenuationStr);
+    } catch (Throwable ignored) {
+      feedbackAttenuation = -10;
+    }
+    sliderFeedback.setValue(feedbackAttenuation);
   }
 
   /**
@@ -607,10 +615,10 @@ public final class Control2TopComponent extends SongTopComponent {
     //climb down the hierarchy and verify that all elements are at their expected position
     Song activeSong = activeSongSession.getActiveSong();
     MasterTrack mastertrack = activeSong.getMastertrack();
-    
+
     // hack to make all songs play in mode "PlayRecordAudio"
     activeSongSession.setPlayingModeStr("PlayRecordAudio");
-    activeSongSession.setLooping(true);
+
 
     orchestraTrack = (MidiSynthesizerTrack) mastertrack.getSubtracks()[0];
     sliderOrchestra.setValue((int) orchestraTrack.getAttenuation());
@@ -683,7 +691,8 @@ public final class Control2TopComponent extends SongTopComponent {
     oSynth = (BuiltinSynthesizer) orchestraTrack.getSynthesizer();
     vSynth = (BuiltinSynthesizer) voicesTrack.getSynthesizer();
 
-
+    activeSongSession.setLooping(true);
+    activeSongSession.setAudioAttenuation(sliderFeedback.getValue());
 
   }
 

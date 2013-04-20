@@ -107,6 +107,7 @@ public class SongDataSupport extends MultiDataObject {
       newSongSession.addPropertyChangeListener(songSessionListener);
       SongDataSupport.this.firePropertyChange(PROP_SESSION_LOADED, null, newSongSession);
       if (lesson != null) {
+        logger.info("SessionOpeningTask.done(): applying lesson to loaded song.");
         newSongSession.apllyLesson(lesson);
       }
     }
