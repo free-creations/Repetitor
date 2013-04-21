@@ -26,6 +26,9 @@ public class SaveLessonDialog extends javax.swing.JPanel {
 
   private final LessonProperties lesson;
   private final String song;
+  private static String previousPhrase = "";
+  private static String previousNumber = "1";
+  private static String previousPage = "";
 
   /**
    * Creates new form SaveLessonDialog
@@ -33,9 +36,15 @@ public class SaveLessonDialog extends javax.swing.JPanel {
   public SaveLessonDialog(String song, LessonProperties lesson, File lessonsDirectory) {
     initComponents();
     this.song = song;
+    edFirstBar.setText(lesson.getFirstBar());
+    edPhrase.setText(previousPhrase);
+    edLessonNumber.setText(previousNumber);
     edDescription.setText(lesson.getDescription());
+    cbxCategory.setSelectedItem(lesson.getCategory());
     lblDirectory.setText(lessonsDirectory.getAbsolutePath());
+    edPage.setText(previousPage);
     this.lesson = lesson;
+    updateDescriptionAndFilename();
   }
 
   /**
@@ -61,6 +70,8 @@ public class SaveLessonDialog extends javax.swing.JPanel {
     lblDirectory = new javax.swing.JLabel();
     jLabel7 = new javax.swing.JLabel();
     edLessonNumber = new javax.swing.JTextField();
+    jLabel8 = new javax.swing.JLabel();
+    edPhrase = new javax.swing.JTextField();
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.jLabel1.text")); // NOI18N
 
@@ -102,10 +113,12 @@ public class SaveLessonDialog extends javax.swing.JPanel {
     org.openide.awt.Mnemonics.setLocalizedText(jLabel4, org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.jLabel4.text")); // NOI18N
 
     edDescription.setText(org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.edDescription.text")); // NOI18N
+    edDescription.setEnabled(false);
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel5, org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.jLabel5.text")); // NOI18N
 
     edFilename.setText(org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.edFilename.text")); // NOI18N
+    edFilename.setEnabled(false);
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel6, org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.jLabel6.text")); // NOI18N
 
@@ -125,6 +138,20 @@ public class SaveLessonDialog extends javax.swing.JPanel {
       }
     });
 
+    org.openide.awt.Mnemonics.setLocalizedText(jLabel8, org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.jLabel8.text")); // NOI18N
+
+    edPhrase.setText(org.openide.util.NbBundle.getMessage(SaveLessonDialog.class, "SaveLessonDialog.edPhrase.text")); // NOI18N
+    edPhrase.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        edPhraseActionPerformed(evt);
+      }
+    });
+    edPhrase.addFocusListener(new java.awt.event.FocusAdapter() {
+      public void focusLost(java.awt.event.FocusEvent evt) {
+        edPhraseFocusLost(evt);
+      }
+    });
+
     javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
     this.setLayout(layout);
     layout.setHorizontalGroup(
@@ -138,7 +165,8 @@ public class SaveLessonDialog extends javax.swing.JPanel {
           .addComponent(jLabel4)
           .addComponent(jLabel5)
           .addComponent(jLabel6)
-          .addComponent(jLabel7))
+          .addComponent(jLabel7)
+          .addComponent(jLabel8))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(lblDirectory, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -150,7 +178,8 @@ public class SaveLessonDialog extends javax.swing.JPanel {
               .addComponent(edFirstBar, javax.swing.GroupLayout.DEFAULT_SIZE, 82, Short.MAX_VALUE)
               .addComponent(edLessonNumber)
               .addComponent(cbxCategory, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGap(0, 231, Short.MAX_VALUE)))
+            .addGap(0, 231, Short.MAX_VALUE))
+          .addComponent(edPhrase))
         .addContainerGap())
     );
     layout.setVerticalGroup(
@@ -170,6 +199,10 @@ public class SaveLessonDialog extends javax.swing.JPanel {
           .addComponent(edFirstBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(jLabel8)
+          .addComponent(edPhrase, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(jLabel3)
           .addComponent(cbxCategory, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -184,7 +217,7 @@ public class SaveLessonDialog extends javax.swing.JPanel {
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(jLabel6)
           .addComponent(lblDirectory))
-        .addContainerGap(12, Short.MAX_VALUE))
+        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
     );
   }// </editor-fold>//GEN-END:initComponents
 
@@ -215,6 +248,15 @@ public class SaveLessonDialog extends javax.swing.JPanel {
   private void edFirstBarFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_edFirstBarFocusLost
     updateDescriptionAndFilename();
   }//GEN-LAST:event_edFirstBarFocusLost
+
+  private void edPhraseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_edPhraseActionPerformed
+    updateDescriptionAndFilename();
+  }//GEN-LAST:event_edPhraseActionPerformed
+
+  private void edPhraseFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_edPhraseFocusLost
+    updateDescriptionAndFilename();
+  }//GEN-LAST:event_edPhraseFocusLost
+
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JComboBox cbxCategory;
   private javax.swing.JTextField edDescription;
@@ -222,6 +264,7 @@ public class SaveLessonDialog extends javax.swing.JPanel {
   private javax.swing.JTextField edFirstBar;
   private javax.swing.JTextField edLessonNumber;
   private javax.swing.JTextField edPage;
+  private javax.swing.JTextField edPhrase;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
   private javax.swing.JLabel jLabel3;
@@ -229,15 +272,25 @@ public class SaveLessonDialog extends javax.swing.JPanel {
   private javax.swing.JLabel jLabel5;
   private javax.swing.JLabel jLabel6;
   private javax.swing.JLabel jLabel7;
+  private javax.swing.JLabel jLabel8;
   private javax.swing.JLabel lblDirectory;
   // End of variables declaration//GEN-END:variables
 
   public String getFilename() {
+    updateDescriptionAndFilename();
     return edFilename.getText();
   }
 
   public LessonProperties getLessonProperties() {
+    updateDescriptionAndFilename();
+    lesson.setFirstBar(edFirstBar.getText());
     lesson.setDescription(edDescription.getText());
+    lesson.setPhrase(edPhrase.getText());
+    previousPhrase = edPhrase.getText();
+    lesson.setLessonNumber(edLessonNumber.getText());
+    lesson.setCategory(cbxCategory.getSelectedItem().toString());
+    previousNumber = edLessonNumber.getText();
+    previousPage = edPage.getText();
     return lesson;
   }
 
@@ -249,11 +302,12 @@ public class SaveLessonDialog extends javax.swing.JPanel {
     }
 
 
-    String desc = String.format("%s(%2d) Seite %s Takt %s",
+    String desc = String.format("%s(%2d) Seite %s Takt %s \"%s\"",
             cbxCategory.getSelectedItem(),
             lessonNumber,
             edPage.getText(),
-            edFirstBar.getText());
+            edFirstBar.getText(),
+            edPhrase.getText());
     edDescription.setText(desc);
 
     String filename = String.format("%s_%s%02d",

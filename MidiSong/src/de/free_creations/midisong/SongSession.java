@@ -936,6 +936,8 @@ public class SongSession {
   public LessonProperties getLessonProperties() {
     LessonProperties lesson = new LessonProperties();
     lesson.setStartPoint(getStartPoint());
+    long firstBar = tickToRPositionEx(getLoopStartPoint()).getMeasure() ;
+    lesson.setFirstBar(Long.toString(firstBar+1));
     lesson.setSelectionStart(getLoopStartPoint());
     lesson.setSelectionEnd(getLoopEndPoint());
     lesson.setTempoFactor(getTempoFactor());
@@ -960,6 +962,9 @@ public class SongSession {
     if (voicesSubTracks != null) {
       for (int i = 0; i < voicesSubTracks.length; i++) {
         lesson.setVoiceMute(i, voicesSubTracks[i].isMute());
+        if(!voicesSubTracks[i].isMute()){
+          lesson.setCategory(voicesSubTracks[i].getName());
+        }
       }
     }
   }

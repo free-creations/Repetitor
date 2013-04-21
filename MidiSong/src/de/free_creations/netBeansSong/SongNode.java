@@ -127,6 +127,8 @@ public class SongNode extends DataNode {
         lesson.setSong(dataSupport.getName());
         SaveLessonDialog form = new SaveLessonDialog(dataSupport.getName(), lesson, lessonsDirectory);
         String msg = "Save Lesson...";
+    
+        
         DialogDescriptor dd = new DialogDescriptor(form, msg);
         boolean done = false;
         while (!done) {

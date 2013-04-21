@@ -39,6 +39,10 @@ public class LessonProperties extends Properties implements Comparable<LessonPro
   public static final String PROP_VOICEMUTE = "voiceMute";
   public static final String PROP_VOICESATTENUATION = "voicesAttenuation";
   public static final String PROP_ORCHESTRAATTENUATION = "orchestraAttenuation";
+  public static final String PROP_PHRASE = "phrase";
+  public static final String PROP_CATEGORY = "category";
+  public static final String PROP_LESSONNUMBER = "lessonnumber";
+  public static final String PROP_FIRSTBAR = "firstbar";
   private long identity = 0;
 
   public LessonProperties() {
@@ -58,6 +62,38 @@ public class LessonProperties extends Properties implements Comparable<LessonPro
    */
   public long getIdentity() {
     return identity;
+  }
+
+  public String getPhrase() {
+    return getProperty(PROP_PHRASE, "");
+  }
+
+  public String getCategory() {
+    return getProperty(PROP_CATEGORY, "");
+  }
+
+  public String getLessonNumber() {
+    return getProperty(PROP_LESSONNUMBER, "");
+  }
+
+  public void setPhrase(String value) {
+    setProperty(PROP_PHRASE, value);
+  }
+
+  public void setFirstBar(String value) {
+    setProperty(PROP_FIRSTBAR, value);
+  }
+
+  public String getFirstBar() {
+    return getProperty(PROP_FIRSTBAR, "");
+  }
+
+  public void setCategory(String value) {
+    setProperty(PROP_CATEGORY, value);
+  }
+
+  public void setLessonNumber(String value) {
+    setProperty(PROP_LESSONNUMBER, value);
   }
 
   public String getSong() {
