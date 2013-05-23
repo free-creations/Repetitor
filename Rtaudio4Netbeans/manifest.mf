@@ -1,6 +1,0 @@
-Manifest-Version: 1.0
-OpenIDE-Module: de.free_creations.rtaudio4netbeans
-OpenIDE-Module-Install: de/free_creations/rtaudioinstaller/Installer.class
-OpenIDE-Module-Localizing-Bundle: de/free_creations/rtaudio4netbeans/Bundle.properties
-OpenIDE-Module-Specification-Version: 1.0
-

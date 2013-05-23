@@ -42,11 +42,11 @@ public class SongPanel extends SongCanvasImpl {
   /**
    * The proposed size of one measure in pixels.
    */
-  private static final double MAESUREDEFAULTPX =100;
+  private static final double MAESUREDEFAULTPX = 100;
   /**
    * a PixelToMidiFactor that permits to display the currently loaded song in a
-   * reasonable resolution. This value is automatically adjusted when a new sequence
-   * is loaded.
+   * reasonable resolution. This value is automatically adjusted when a new
+   * sequence is loaded.
    */
   private double defaultPixelToMidiFactor = 10.0D;
 
@@ -82,7 +82,6 @@ public class SongPanel extends SongCanvasImpl {
    * timer.
    */
   private final ActionListener cursorUpdateTask = new ActionListener() {
-
     @Override
     public void actionPerformed(ActionEvent e) {
       SongPanel.this.synchronizeCursor();
@@ -179,6 +178,7 @@ public class SongPanel extends SongCanvasImpl {
         trackBands.add(trackBand);
         directorBand = new DirectorBand(SongPanel.this);
         addBand(directorBand);
+        setDefaultDraggingLayer(directorBand);
 
         addZone(new LoopZone(SongPanel.this));
         addZone(new StartPointZone(SongPanel.this));
@@ -244,7 +244,7 @@ public class SongPanel extends SongCanvasImpl {
     }
     try {
       clear();
-      defaultPixelToMidiFactor = (4*resolution)/MAESUREDEFAULTPX;
+      defaultPixelToMidiFactor = (4 * resolution) / MAESUREDEFAULTPX;
       leftVoidZone = new LeftVoidZone(SongPanel.this);
       addZone(leftVoidZone);
       //addZone(new LeadInZone(SongPanel.this));
@@ -272,6 +272,7 @@ public class SongPanel extends SongCanvasImpl {
       }
       directorBand = new DirectorBand(SongPanel.this);
       addBand(directorBand);
+      setDefaultDraggingLayer(directorBand);
       addZone(new LoopZone(SongPanel.this));
       addZone(new StartPointZone(SongPanel.this));
       addZone(new CursorZone(SongPanel.this));
@@ -376,7 +377,6 @@ public class SongPanel extends SongCanvasImpl {
 
   private void sessionPlayingChanged(final boolean playing) {
     Runnable playingUpdateTask = new Runnable() {
-
       @Override
       public void run() {
         logger.log(Level.FINER, "sessionPlayingChanged( {0} )", playing);

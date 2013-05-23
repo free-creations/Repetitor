@@ -137,7 +137,7 @@ class LoopZone extends Zone {
 
   @Override
   public void setDraggedBorder(int newValue) {
-    System.out.println("LoopZone.setDraggedBorder(" + newValue + ")");
+
     if (newValue > resizingStartX) {
       int midiLeft = canvas.getDimensions().floorQuarterMidiTick(resizingStartX);
       int midiRight = canvas.getDimensions().ceilQuarterMidiTick(newValue);

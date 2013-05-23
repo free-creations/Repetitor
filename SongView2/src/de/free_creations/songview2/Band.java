@@ -158,11 +158,42 @@ abstract class Band implements PropertyChangeListener, Layer {
    * the canvas. this implementation does nothing.
    *
    * @param x_canvas X position of the mouse in the canvas coordinate system
-   * (note that the offset to the viewport coordinate system is taken into account)
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
    * @param y_canvas Y position of the mouse in the canvas coordinate system
-   * (note that the offset to the viewport coordinate system is taken into account)
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
    */
   @Override
   public void mouseClicked(int x_canvas, int y_canvas) {
+  }
+
+  /**
+   * This function is called by the canvas whenever the mouse is being dragged
+   * to a new position.
+   *
+   * The default implementation ignores these events. Can be overwritten as in
+   * Director band.
+   *
+   * @param x the new X position of the mouse in the canvas coordinate system
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
+   */
+  @Override
+  public void mouseDragged(int x) {
+  }
+
+  /**
+   * Indicate whether the layer participates in a dragging action.
+   *
+   * @param startDragging true if we start a dragging action. False if we end
+   * the dragging action.
+   * @param mouseX the start X-coordinate of the dragging action in the canvas
+   * coordinate system.
+   * @param mouseY the start Y-coordinate of the dragging action in the canvas
+   * coordinate system.
+   */
+  @Override
+  public void setDraggingActivated(boolean startDragging, int mouseX, int mouseY) {
   }
 }

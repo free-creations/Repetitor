@@ -18,39 +18,64 @@ package de.free_creations.songview2;
 import java.awt.Graphics2D;
 
 /**
- * All visible elements of the songview are layers.
- * A layer shows the visible representation of some element
- * of a media.
- * The {@link SongCanvasImpl} is responsible to draw all layers.
+ * All visible elements of the songview are layers. A layer shows the visible
+ * representation of some element of a media. The {@link SongCanvasImpl} is
+ * responsible to draw all layers.
+ *
  * @author Harald Postner
  */
 interface Layer {
 
   /**
    * Draw the layers visible representation on the given graphics.
-   * @param g 
+   *
+   * @param g
    */
   public void draw(Graphics2D g);
-  
+
   /**
-   * The exact meaning of an active or inactive layer depends
-   * on what the layer represents, in general a layer is 
-   * shown less colorfully when inactive.
+   * The exact meaning of an active or inactive layer depends on what the layer
+   * represents, in general a layer is shown less colorfully when inactive.
+   *
    * @return true if the object represented by this layer is active.
    */
   public boolean isActive();
-  
+
   /**
    * Change the active status of this layer.
-   * @param value 
+   *
+   * @param value
    */
   public void setActive(boolean value);
 
-      /**
+  /**
    * Invoked when the mouse button has been clicked (pressed and released) on
    * the canvas.
-   * @param x_canvas x coordinate of the mouse position on the canvas expressed in pixels.
-   * @param y_canvas y coordinate of the mouse position on the canvas expressed in pixels.
+   *
+   * @param x_canvas x coordinate of the mouse position on the canvas expressed
+   * in pixels.
+   * @param y_canvas y coordinate of the mouse position on the canvas expressed
+   * in pixels.
    */
   public void mouseClicked(int x_canvas, int y_canvas);
+
+  /**
+   * This function is called by the canvas whenever the mouse is being dragged
+   * to a new position.
+   *
+   * @param x the new X position of the mouse in the canvas coordinate system
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
+   */
+  public void mouseDragged(int x);
+
+  /**
+   * Indicate whether the layer participates in a dragging action.
+   *
+   * @param startDragging true if we start a dragging action. False if we end
+   * the dragging action.
+   * @param mouseX the start X-coordinate of the dragging action in the canvas coordinate system.
+   * @param mouseY the start Y-coordinate of the dragging action in the canvas coordinate system.
+   */
+  public void setDraggingActivated(boolean startDragging, int mouseX, int mouseY);
 }

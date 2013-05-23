@@ -17,10 +17,13 @@ package de.free_creations.songview2;
 
 import de.free_creations.midiutil.TimeSignature;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.Track;
+import javax.swing.Timer;
 
 /**
  *
@@ -32,6 +35,79 @@ final class DirectorBand extends Band {
   //private long trackSize;
   private ArrayList<TimeSignature> timeSignatures =
           new ArrayList<TimeSignature>();
+  private boolean isDragging = true;
+  private int draggingStartX;
+
+  private class Drifter {
+
+    private double speed; // pixel / per nano-second
+    private final double minSpeed = 5E-8; // pixel / per nano-second
+    private final double damping = 1E-1; // 
+    private final int updatePeriode = 100;
+    private final Timer timer = new Timer(updatePeriode,
+            new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        if(Math.abs(speed)<minSpeed){
+          stop();
+          return;
+        }
+        speed = speed - (speed * damping);
+        int deltaX = (int) Math.round(updatePeriode * speed * 1E6);
+        int newLeft = canvas.getDimensions().getViewportLeftPixel() - deltaX;
+        canvas.getDimensions().setViewportLeftPixel(newLeft);
+      }
+    });
+
+    public void start(double speed) {
+      this.speed = speed;
+      timer.start();
+    }
+
+    public void stop() {
+      timer.start();
+    }
+    public boolean isRunning(){
+      return timer.isRunning();
+    }
+  }
+  private Drifter drifter = new Drifter();
+
+  private class SpeedCalculator {
+
+    private double speed = 0D; // pixel / per nano-second
+    private double totalShift = 0D;
+    private double startTime = 0D;
+
+    public double getSpeed() {
+
+      return speed;
+
+    }
+
+    public void reset() {
+      startNewMean(0D, System.nanoTime());
+
+      speed = 0D;
+    }
+
+    private void startNewMean(double previousSpeed, double time) {
+      startTime = time;
+      totalShift = 0D;
+      speed = previousSpeed;
+
+    }
+
+    public void newShift(double value) {
+      double currentTime = System.nanoTime();
+      double elapsedTime = currentTime - startTime;
+      totalShift = totalShift + value;
+      if (elapsedTime > 200E6) {
+        startNewMean(totalShift / elapsedTime, currentTime);
+      }
+    }
+  }
+  private SpeedCalculator speedCalculator = new SpeedCalculator();
 
   DirectorBand(SongCanvas parent) {
     super(parent);
@@ -100,6 +176,7 @@ final class DirectorBand extends Band {
 
   /**
    * Draw measures
+   *
    * @param g the graphics context to draw onto.
    * @param number the index of the first measure
    * @param timeSig the time signature to start with
@@ -207,9 +284,10 @@ final class DirectorBand extends Band {
   }
 
   /**
-   * Scan the given track for time-signatures and record 
-   * them in the {@link #timeSignatures} list.
-   * @param newTrack 
+   * Scan the given track for time-signatures and record them in the
+   * {@link #timeSignatures} list.
+   *
+   * @param newTrack
    */
   @Override
   protected void processTrack(Track newTrack) {
@@ -217,7 +295,7 @@ final class DirectorBand extends Band {
     if (newTrack == null) {
       initDefaults();
     } else {
-      trackSize = Math.max(trackSize,  newTrack.size());
+      trackSize = Math.max(trackSize, newTrack.size());
       timeSignatures.clear();
       for (int i = 0; i < newTrack.size(); i++) {
         MidiEvent midiEvent = newTrack.get(i);
@@ -241,7 +319,7 @@ final class DirectorBand extends Band {
    * are initialized with reasonable values.
    */
   private void initDefaults() {
-    
+
     timeSignatures.clear();
     timeSignatures.add(new TimeSignature(4, 4, resolution, 0L));
   }
@@ -258,16 +336,60 @@ final class DirectorBand extends Band {
 
   @Override
   public void mouseClicked(int x_canvas, int y_canvas) {
+    if(drifter.isRunning()){
+      drifter.stop();
+      return;
+    }
     int oldPixelPos = canvas.getDimensions().getCursorPixel();
     int newMidiPos = canvas.getDimensions().calulateSnapMidiTick(oldPixelPos, x_canvas);
     canvas.getDimensions().setCursorMidi(newMidiPos);
     canvas.getDimensions().setStartPointMidi(newMidiPos);
   }
-  
+
   @Override
   public void setTrack(Track newTrack, int resolution) {
     super.setTrack(newTrack, resolution);
     canvas.getDimensions().setResolution(resolution);
   }
-  
+
+  /**
+   * Indicate whether the layer participates in a dragging action.
+   *
+   * @param startDragging true if we start a dragging action. False if we end
+   * the dragging action.
+   * @param mouseX the start X-coordinate of the dragging action in the canvas
+   * coordinate system.
+   * @param mouseY the start Y-coordinate of the dragging action in the canvas
+   * coordinate system.
+   */
+  @Override
+  public void setDraggingActivated(boolean startDragging, int mouseX, int mouseY) {
+    isDragging = startDragging;
+    if (startDragging) {
+      drifter.stop();
+    } else {
+      drifter.start(speedCalculator.getSpeed());
+    }
+    draggingStartX = mouseX;
+    speedCalculator.reset();
+  }
+
+  /**
+   * This function is called by the canvas whenever the mouse is being dragged
+   * to a new position.
+   *
+   * @param x the new X position of the mouse in the canvas coordinate system
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
+   */
+  @Override
+  public void mouseDragged(int mouseX) {
+    int deltaX = mouseX - draggingStartX;
+    speedCalculator.newShift(deltaX);
+    int newLeft = canvas.getDimensions().getViewportLeftPixel() - deltaX;
+    canvas.getDimensions().setViewportLeftPixel(newLeft);
+
+
+
+  }
 }

@@ -91,10 +91,23 @@ interface SongCanvas extends ImageObserver {
   public Layer getDraggingActivatedLayer();
 
   /**
+   * This layer is the "Dragging Activated Layer" when no other layer has been
+   * set as dragging layer.
+   *
+   * @return the layer that is dragged per default (might be null).
+   */
+  public Layer getDefaultDraggingLayer();
+
+  /**
+   * Set the Layer that shall be dragged per default.
+   */
+  public void setDefaultDraggingLayer(Layer layer);
+
+  /**
    * At a given time only one layer can be dragged by the mouse.
    *
    * @param layer the layer that shall currently gain the mouse focus or null if
-   * there is none.
+   * it shall be reset to the default.
    */
   public void setDraggingActivatedLayer(Layer layer);
 

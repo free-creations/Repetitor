@@ -37,13 +37,20 @@ class SongCanvasImpl extends JPanel
   static final int PREFEREDWIDTH = 800;
   private ArrayList<Zone> zones = new ArrayList<Zone>();
   private ArrayList<Layer> layers = new ArrayList<Layer>();
+  /**
+   * The one and only layer that is currently being dragged (null if there is none).
+   */
   private Layer draggingActivatedLayer = null;
   private boolean animated = false;
+  /**
+   * A layer that might be chosen for dragging if no other has priority.
+   */
+  private Layer defaultDraggingLayer = null;
+  private boolean defaultDraggingLayerIsDragged = false;
 
   public SongCanvasImpl() {
 
     dimensions.addPropertyChangeListener(new PropertyChangeListener() {
-
       @Override
       public void propertyChange(PropertyChangeEvent evt) {
         Object eventTag = evt.getPropertyName();
@@ -59,7 +66,6 @@ class SongCanvasImpl extends JPanel
     setOpaque(true);
 
     addMouseListener(new MouseAdapter() {
-
       /**
        * Invoked when the mouse button has been clicked (pressed and released)
        * on the canvas.
@@ -75,10 +81,38 @@ class SongCanvasImpl extends JPanel
 
         }
       }
+
+      @Override
+      public void mousePressed(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+          if (draggingActivatedLayer != null) {
+            if (draggingActivatedLayer == defaultDraggingLayer) {
+              defaultDraggingLayerIsDragged = true;
+              setMousePointer(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+              int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
+              int y_canvas = e.getY();
+              draggingActivatedLayer.setDraggingActivated(true, x_canvas, y_canvas);
+            }
+          }
+
+        }
+      }
+
+      @Override
+      public void mouseReleased(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+          if (defaultDraggingLayerIsDragged) {
+            defaultDraggingLayerIsDragged = false;
+            setMousePointer(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
+            int y_canvas = e.getY();
+            draggingActivatedLayer.setDraggingActivated(false, x_canvas, y_canvas);
+          }
+        }
+      }
     });
 
     addMouseMotionListener(new MouseMotionListener() {
-
       /**
        * Invoked when the mouse cursor has been moved onto the canvas but no
        * buttons have been pushed.
@@ -104,14 +138,15 @@ class SongCanvasImpl extends JPanel
       public void mouseDragged(MouseEvent e) {
         //transform the mouse coordinates to canvas coordinates
         int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
-        for (Zone zone : zones) {
-          zone.mouseDragged(x_canvas);
+        for (Layer layer : layers) {
+          if (SongCanvasImpl.this.draggingActivatedLayer == layer) {
+            layer.mouseDragged(x_canvas);
+          }
         }
       }
     });
 
     addComponentListener(new ComponentAdapter() {
-
       @Override
       public void componentResized(ComponentEvent e) {
         dimensions.setViewportHeight(SongCanvasImpl.this.getHeight());
@@ -235,7 +270,11 @@ class SongCanvasImpl extends JPanel
   @Override
   public void setDraggingActivatedLayer(Layer layer) {
     if (this.draggingActivatedLayer != layer) {
-      draggingActivatedLayer = layer;
+      if (layer == null) {
+        draggingActivatedLayer = defaultDraggingLayer;
+      } else {
+        draggingActivatedLayer = layer;
+      }
     }
   }
 
@@ -244,6 +283,7 @@ class SongCanvasImpl extends JPanel
    */
   public void clear() {
     draggingActivatedLayer = null;
+    defaultDraggingLayer = null;
     //dimensions = new Dimensions();
     // horizontalScrollModel = new HorizontalScrollModel(dimensions);
     dimensions.setMaximumPixel(0);
@@ -264,5 +304,18 @@ class SongCanvasImpl extends JPanel
     }
     this.animated = animated;
     repaint();
+  }
+
+  @Override
+  public Layer getDefaultDraggingLayer() {
+    return defaultDraggingLayer;
+  }
+
+  @Override
+  public void setDefaultDraggingLayer(Layer layer) {
+    this.defaultDraggingLayer = layer;
+    if (draggingActivatedLayer == null) {
+      draggingActivatedLayer = layer;
+    }
   }
 }

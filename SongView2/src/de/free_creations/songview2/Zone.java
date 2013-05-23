@@ -212,7 +212,7 @@ abstract class Zone implements Layer, PropertyChangeListener {
    */
   public void mouseMoved(int x, int y) {
     if (isSweetspot(x, y)) {
-      if (canvas.getDraggingActivatedLayer() == null) {
+      if (canvas.getDraggingActivatedLayer() == canvas.getDefaultDraggingLayer()) {
         setDraggingActivated(true, x, y);
       }
     } else {
@@ -225,6 +225,7 @@ abstract class Zone implements Layer, PropertyChangeListener {
    * @param x the new X position of the mouse in the canvas coordinate system
    * (note that the offset to the viewport coordinate system is taken into account)
    */
+  @Override
   public final void mouseDragged(int x) {
     if (isDraggingActivated()) {
       setDraggedBorder(x);
@@ -317,7 +318,8 @@ abstract class Zone implements Layer, PropertyChangeListener {
    * @param mouseX the start X-coordinate of the dragging action.
    * @param mouseY the start Y-coordinate of the dragging action.
    */
-  private void setDraggingActivated(boolean startDragging, int mouseX, int mouseY) {
+  @Override
+  public void setDraggingActivated(boolean startDragging, int mouseX, int mouseY) {
     if (draggingActivated == startDragging) {
       return;
     }

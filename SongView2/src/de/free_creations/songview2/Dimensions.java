@@ -25,6 +25,12 @@ import java.util.logging.Logger;
  * canvas. The dimensions are converted between different references systems;
  * pixel-units and midi-ticks. If one item is changed, the other are
  * automatically adjusted.
+ * 
+ * Internally, all dimensions are stored in the midi coordinate system.
+ * 
+ * Changes: 21. May 2013, the max and min values are not anymore adjusted when
+ * the pixelToMidiFactor changes. This was done because displayed region became
+ * too huge after "setMidiToPixel". Problem: there might be a white space appearing on the left.
  *
  * @author Harald Postner <Harald at H-Postner.de>
  */
@@ -440,29 +446,29 @@ class Dimensions {
       throw new IllegalArgumentException("pixelToMidiFactor too large");
     }
 
-    double newMidiToPixelMidiFactor = 1.0D / newPixelToMidiFactor;
+    double newMidiToPixeFactor = 1.0D / newPixelToMidiFactor;
 
     double oldPixelToMidiFactor = getPixelToMidiFactor();
     double oldMidiToPixelFactor = getMidiToPixelFactor();
 
-    int oldMinimum = getMinimumPixel();
-    int oldMaximum = getMaximumPixel();
-    int oldLoopStart = getLoopStartPixel();
-    int oldLeadinEnd = getLeadInEndPixel();
-    int oldLeadoutStart = getLeadOutStartPixel();
-    int oldLoopEnd = getLoopEndPixel();
-    int oldCursor = getCursorPixel();
+    int oldMinimumPixel = getMinimumPixel();
+    int oldMaximumPixel = getMaximumPixel();
+    int oldLoopStartPixel = getLoopStartPixel();
+    int oldLeadinEndPixel = getLeadInEndPixel();
+    int oldLeadoutStartPixel = getLeadOutStartPixel();
+    int oldLoopEndPixel = getLoopEndPixel();
+    int oldCursorPixel = getCursorPixel();
     int oldViewportLeftPixel = getViewportLeftPixel();
     long oldViewportWidthMidi = getViewportWidthMidi();
 
 
-    long newViewportLeftMidi = pixelToMidi(getViewportLeftPixel(), newPixelToMidiFactor);
-    if (getMinimumMidi() > newViewportLeftMidi) {
-      long oldMinimumMidi = this.minimumMidi;
-      this.minimumMidi = newViewportLeftMidi;
-      propertyChangeSupport.firePropertyChange(Prop.MINIMUM_MIDI, oldMinimumMidi, getMinimumMidi());
-    }
-//    // make sure that the current viewport is at least within the range covered by maxMidi
+//    long newViewportLeftMidi = pixelToMidi(getViewportLeftPixel(), newPixelToMidiFactor);
+//    if (getMinimumMidi() > newViewportLeftMidi) {
+//      long oldMinimumMidi = this.minimumMidi;
+//      this.minimumMidi = newViewportLeftMidi;
+//      propertyChangeSupport.firePropertyChange(Prop.MINIMUM_MIDI, oldMinimumMidi, getMinimumMidi());
+//    }
+////    // make sure that the current viewport is at least within the range covered by maxMidi
 //    long newViewportRightMidi = pixelToMidi(getViewportLeftPixel() + getViewportWidthPixel(), newPixelToMidiFactor);
 //    if (this.maximumMidi < newViewportRightMidi) {
 //      long oldMaximumMidi = this.maximumMidi;
@@ -472,20 +478,20 @@ class Dimensions {
 //    }
 
     this.pixelToMidiFactor = newPixelToMidiFactor;
-    this.midiToPixelFactor = newMidiToPixelMidiFactor;
+    this.midiToPixelFactor = newMidiToPixeFactor;
 
 
     propertyChangeSupport.firePropertyChange(Prop.PIXELTOMIDIFACTOR, oldPixelToMidiFactor, newPixelToMidiFactor);
     propertyChangeSupport.firePropertyChange(Prop.MIDITOPIXELFACTOR, oldMidiToPixelFactor, getMidiToPixelFactor());
 
-    propertyChangeSupport.firePropertyChange(Prop.MINIMUM_PIXEL, oldMinimum, getMinimumPixel());
-    propertyChangeSupport.firePropertyChange(Prop.MAXIMUM_PIXEL, oldMaximum, getMaximumPixel());
+    propertyChangeSupport.firePropertyChange(Prop.MINIMUM_PIXEL, oldMinimumPixel, getMinimumPixel());
+    propertyChangeSupport.firePropertyChange(Prop.MAXIMUM_PIXEL, oldMaximumPixel, getMaximumPixel());
 
-    propertyChangeSupport.firePropertyChange(Prop.LOOPSTART_PIXEL, oldLoopStart, getLoopStartPixel());
-    propertyChangeSupport.firePropertyChange(Prop.LEADINEND_PIXEL, oldLeadinEnd, getLeadInEndPixel());
-    propertyChangeSupport.firePropertyChange(Prop.LEADOUTSTART_PIXEL, oldLeadoutStart, getLeadOutStartPixel());
-    propertyChangeSupport.firePropertyChange(Prop.LOOPEND_PIXEL, oldLoopEnd, getLoopEndPixel());
-    propertyChangeSupport.firePropertyChange(Prop.CURSOR_PIXEL, oldCursor, getCursorPixel());
+    propertyChangeSupport.firePropertyChange(Prop.LOOPSTART_PIXEL, oldLoopStartPixel, getLoopStartPixel());
+    propertyChangeSupport.firePropertyChange(Prop.LEADINEND_PIXEL, oldLeadinEndPixel, getLeadInEndPixel());
+    propertyChangeSupport.firePropertyChange(Prop.LEADOUTSTART_PIXEL, oldLeadoutStartPixel, getLeadOutStartPixel());
+    propertyChangeSupport.firePropertyChange(Prop.LOOPEND_PIXEL, oldLoopEndPixel, getLoopEndPixel());
+    propertyChangeSupport.firePropertyChange(Prop.CURSOR_PIXEL, oldCursorPixel, getCursorPixel());
     propertyChangeSupport.firePropertyChange(Prop.VIEWPORTLEFT_PIXEL, oldViewportLeftPixel, getViewportLeftPixel());
 
     propertyChangeSupport.firePropertyChange(Prop.VIEWPORTWIDTH_MIDI, oldViewportWidthMidi, getViewportWidthMidi());
@@ -678,6 +684,8 @@ class Dimensions {
   /**
    * Set the value of maximumMidi. This value records the largest value
    * encountered so far.
+   * 
+   * Note: the maximum never shrinks....
    *
    * @param newMaximumMidi new value of maximumMidi. If the given value is
    * smaller than the current value, the update will be ignored.
