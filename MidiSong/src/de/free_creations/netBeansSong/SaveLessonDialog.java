@@ -27,24 +27,32 @@ public class SaveLessonDialog extends javax.swing.JPanel {
   private final LessonProperties lesson;
   private final String song;
   private static String previousPhrase = "";
-  private static String previousNumber = "1";
+  private static String previousNumber = "0";
   private static String previousPage = "";
 
   /**
    * Creates new form SaveLessonDialog
    */
-  public SaveLessonDialog(String song, LessonProperties lesson, File lessonsDirectory) {
+  public SaveLessonDialog(LessonProperties lesson, File lessonsDirectory) {
     initComponents();
-    this.song = song;
+    this.song = lesson.getSong();
     edFirstBar.setText(lesson.getFirstBar());
     edPhrase.setText(previousPhrase);
-    edLessonNumber.setText(previousNumber);
+    edLessonNumber.setText(Long.toString(previousNumberAsLong()+1));
     edDescription.setText(lesson.getDescription());
     cbxCategory.setSelectedItem(lesson.getCategory());
     lblDirectory.setText(lessonsDirectory.getAbsolutePath());
     edPage.setText(previousPage);
     this.lesson = lesson;
     updateDescriptionAndFilename();
+  }
+
+  private long previousNumberAsLong() {
+    try {
+      return Long.valueOf(previousNumber);
+    } catch (NumberFormatException ignored) {
+      return 0;
+    }
   }
 
   /**
@@ -256,7 +264,6 @@ public class SaveLessonDialog extends javax.swing.JPanel {
   private void edPhraseFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_edPhraseFocusLost
     updateDescriptionAndFilename();
   }//GEN-LAST:event_edPhraseFocusLost
-
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JComboBox cbxCategory;
   private javax.swing.JTextField edDescription;

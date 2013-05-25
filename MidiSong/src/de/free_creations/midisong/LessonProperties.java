@@ -31,6 +31,7 @@ import org.openide.util.Exceptions;
 public class LessonProperties extends Properties implements Comparable<LessonProperties> {
 
   public static final String PROP_SONG = "song";
+  public static final String PROP_CONTAINER = "container";
   public static final String PROP_DESCRIPTION = "description";
   public static final String PROP_TEMPOFACTOR = "tempoFactor";
   public static final String PROP_SELECTIONSTART = "selectionStart";
@@ -195,7 +196,9 @@ public class LessonProperties extends Properties implements Comparable<LessonPro
       Exceptions.printStackTrace(e);
     } finally {
       try {
-        reader.close();
+        if (reader != null) {
+          reader.close();
+        }
       } catch (Exception e) {
       }
     }
@@ -210,7 +213,9 @@ public class LessonProperties extends Properties implements Comparable<LessonPro
       Exceptions.printStackTrace(e);
     } finally {
       try {
-        writer.close();
+        if (writer != null) {
+          writer.close();
+        }
       } catch (Exception e) {
         Exceptions.printStackTrace(e);
       }
@@ -219,6 +224,14 @@ public class LessonProperties extends Properties implements Comparable<LessonPro
 
   public void setDescription(String value) {
     setProperty(PROP_DESCRIPTION, value);
+  }
+
+  public void setContainer(String value) {
+    setProperty(PROP_CONTAINER, value);
+  }
+
+  public String getContainer() {
+    return getProperty(PROP_CONTAINER, "");
   }
 
   public void setVoiceMute(int i, boolean mute) {

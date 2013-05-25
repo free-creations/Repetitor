@@ -63,9 +63,18 @@ public class SongNode extends DataNode {
     protected boolean createKeys(List<LessonProperties> toPopulate) {
       Set<LessonProperties> lessons = SongSessionManager.getLessons();
       String songname = songDataSupport.getName();
+      String containerName = songDataSupport.getContainerName();
       for (LessonProperties lesson : lessons) {
         if (songname.equalsIgnoreCase(lesson.getSong())) {
-          toPopulate.add(lesson);
+          if (lesson.getContainer().equals("")) {
+            // if the lesson does not indicate the container, we just add.
+            toPopulate.add(lesson);
+          } else {
+            // if the lesson does indicate the container, we match for the container name.
+            if (lesson.getContainer().equals(containerName)) {
+              toPopulate.add(lesson);
+            }
+          }
         }
       }
       return true;
@@ -86,6 +95,7 @@ public class SongNode extends DataNode {
   }
   private final SongDataObserver fileObserver;
   private final SongDataSupport dataSupport;
+  private static final String PROP_CHILDREN = "chidren";
   private static final String ICON_SONG = "de/free_creations/netBeansSong/artwork/songNode.png";
   private static final String ICON_SONG_OPEN = "de/free_creations/netBeansSong/artwork/songNodeOpen.png";
   private static final String ICON_SONG_OPEN_ACTIVE = "de/free_creations/netBeansSong/artwork/songNodeOpenActive.png";
@@ -125,10 +135,11 @@ public class SongNode extends DataNode {
         }
         LessonProperties lesson = session.getLessonProperties();
         lesson.setSong(dataSupport.getName());
-        SaveLessonDialog form = new SaveLessonDialog(dataSupport.getName(), lesson, lessonsDirectory);
+        lesson.setContainer(dataSupport.getContainerName());
+        SaveLessonDialog form = new SaveLessonDialog(lesson, lessonsDirectory);
         String msg = "Save Lesson...";
-    
-        
+
+
         DialogDescriptor dd = new DialogDescriptor(form, msg);
         boolean done = false;
         while (!done) {
@@ -141,6 +152,9 @@ public class SongNode extends DataNode {
 
             LessonProperties resultProperties = form.getLessonProperties();
             resultProperties.writeToFile(verifiedFile);
+            SongSessionManager.addLesson(verifiedFile, resultProperties);
+            SongNode.this.setChildren(Children.create(new SongNodeChildFactory(dataSupport), true));
+            SongNode.this.firePropertyChange(PROP_CHILDREN, null, null);
             break;
           }
         }

@@ -56,6 +56,15 @@ public class SongDataSupport extends MultiDataObject {
   private SessionOpeningTask sessionOpeningTask = null;
   private LessonProperties lesson = null;
   private File lessonsDirectory = null;
+ private String containerName = null;
+
+  public String getContainerName() {
+    return containerName;
+  }
+
+  public void setContainerName(String containerName) {
+    this.containerName = containerName;
+  }
 
   /**
    * Set the directory where lessons to this song may be located.

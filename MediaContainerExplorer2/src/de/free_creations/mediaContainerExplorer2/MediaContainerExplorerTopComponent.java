@@ -17,13 +17,9 @@ package de.free_creations.mediaContainerExplorer2;
 
 import de.free_creations.mediacontainer2.MediaRootNode;
 import de.free_creations.netBeansSong.SongNode;
-import java.awt.Component;
-import java.awt.Image;
-import java.awt.datatransfer.Transferable;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -36,12 +32,9 @@ import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
 import org.openide.nodes.Node;
-import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.NbPreferences;
-import org.openide.util.datatransfer.NewType;
-import org.openide.util.datatransfer.PasteType;
 import org.openide.windows.TopComponent;
 
 /**
@@ -81,6 +74,7 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
   private PropertyChangeListener nodesListener = new PropertyChangeListener() {
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
+     System.out.println("BeanTreeView property "+evt.getPropertyName());
       if (ExplorerManager.PROP_SELECTED_NODES.equals(evt.getPropertyName())) {
         Node[] nodes = explorerManager.getSelectedNodes();
         if (nodes != null) {

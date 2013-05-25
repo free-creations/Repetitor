@@ -165,6 +165,7 @@ public class MediaContainerDataObject extends MultiDataObject {
         songData = (SongDataSupport)DataObject.find(songFile);
         File containerFile = FileUtil.toFile(getPrimaryFile());
         if(containerFile != null){
+          songData.setContainerName(containerFile.getName());
           songData.setLessonsDirectory(containerFile.getParentFile());
         }
       } catch (DataObjectNotFoundException ex) {
