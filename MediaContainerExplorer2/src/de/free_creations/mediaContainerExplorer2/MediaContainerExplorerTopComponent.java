@@ -16,7 +16,14 @@
 package de.free_creations.mediaContainerExplorer2;
 
 import de.free_creations.mediacontainer2.MediaRootNode;
+import de.free_creations.netBeansSong.SongNode;
+import java.awt.Component;
+import java.awt.Image;
+import java.awt.datatransfer.Transferable;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -28,9 +35,13 @@ import org.openide.awt.ActionReference;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
+import org.openide.nodes.Node;
+import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.NbPreferences;
+import org.openide.util.datatransfer.NewType;
+import org.openide.util.datatransfer.PasteType;
 import org.openide.windows.TopComponent;
 
 /**
@@ -42,18 +53,18 @@ import org.openide.windows.TopComponent;
  * @author Harald Postner <Harald at free-creations.de>
  */
 @ConvertAsProperties(dtd = "-//de.free_creations.mediaContainerExplorer2//MediaContainerExplorer//EN",
-autostore = false)
+        autostore = false)
 @TopComponent.Description(preferredID = "MediaContainerExplorerTopComponent",
-iconBase = "de/free_creations/mediaContainerExplorer/folderClosed.png",
-persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+        iconBase = "de/free_creations/mediaContainerExplorer/folderClosed.png",
+        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
 @TopComponent.Registration(mode = "explorer", openAtStartup = true)
 @ActionID(category = "Window",
-id = "de.free_creations.mediaContainerExplorer2.MediaContainerExplorerTopComponent")
+        id = "de.free_creations.mediaContainerExplorer2.MediaContainerExplorerTopComponent")
 @ActionReference(path = "Menu/Window" /*
- * , position = 333
- */)
+         * , position = 333
+         */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_MediaContainerExplorerAction",
-preferredID = "MediaContainerExplorerTopComponent")
+        preferredID = "MediaContainerExplorerTopComponent")
 @Messages({
   "CTL_MediaContainerExplorerAction=Media",
   "CTL_MediaContainerExplorerTopComponent=Media Catalogue",
@@ -67,6 +78,22 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
   private final ExplorerManager explorerManager = new ExplorerManager();
   private final MediaRootNode rootNode = MediaRootNode.create();
   private final BeanTreeView treeView;
+  private PropertyChangeListener nodesListener = new PropertyChangeListener() {
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+      if (ExplorerManager.PROP_SELECTED_NODES.equals(evt.getPropertyName())) {
+        Node[] nodes = explorerManager.getSelectedNodes();
+        if (nodes != null) {
+          if (nodes.length > 0) {
+            Node node = nodes[0];
+            if (node instanceof SongNode) {
+              treeView.expandNode(node);
+            }
+          }
+        }
+      }
+    }
+  };
 
   public MediaContainerExplorerTopComponent() {
     initComponents();
@@ -74,6 +101,8 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
     setToolTipText(Bundle.HINT_MediaContainerExplorerTopComponent());
     putClientProperty(TopComponent.PROP_CLOSING_DISABLED, Boolean.TRUE);
     treeView = (BeanTreeView) treeViewScrollPanel;
+
+    explorerManager.addPropertyChangeListener(nodesListener);
 
     ActionMap actionMap = getActionMap();
     //actionMap.put("delete", ExplorerUtils.actionDelete(explorerManager, true)); // or false
@@ -142,7 +171,7 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
     // component is shown.
 //    scanMediaDirectory();
 //    ExplorerUtils.activateActions(explorerManager, true);
- //   logger.info(">>>>>>>  componentActivated()");
+    //   logger.info(">>>>>>>  componentActivated()");
   }
 
   @Override
