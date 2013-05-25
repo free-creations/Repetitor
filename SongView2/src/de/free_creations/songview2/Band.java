@@ -196,4 +196,12 @@ abstract class Band implements PropertyChangeListener, Layer {
   @Override
   public void setDraggingActivated(boolean startDragging, int mouseX, int mouseY) {
   }
+  
+  @Override
+  public void mouseDown(int x_canvas, int y_canvas){
+    
+  }
+    @Override
+  public void mouseReleased(int x_canvas, int y_canvas) {
+  }
 }

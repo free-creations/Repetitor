@@ -206,6 +206,8 @@ public class SongView2TopComponent extends SongTopComponent {
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(SongView2TopComponent.class, "SongView2TopComponent.jLabel2.text")); // NOI18N
 
+    songPanel.setFont(new java.awt.Font("SansSerif", 0, 14)); // NOI18N
+
     javax.swing.GroupLayout songPanelLayout = new javax.swing.GroupLayout(songPanel);
     songPanel.setLayout(songPanelLayout);
     songPanelLayout.setHorizontalGroup(
@@ -214,7 +216,7 @@ public class SongView2TopComponent extends SongTopComponent {
     );
     songPanelLayout.setVerticalGroup(
       songPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 230, Short.MAX_VALUE)
+      .addGap(0, 241, Short.MAX_VALUE)
     );
 
     sliderZoom.setMaximum(200);
@@ -239,7 +241,7 @@ public class SongView2TopComponent extends SongTopComponent {
       trackViewContainerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(trackViewContainerLayout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(scrollBarHorizontal, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE)
+        .addComponent(scrollBarHorizontal, javax.swing.GroupLayout.DEFAULT_SIZE, 193, Short.MAX_VALUE)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
         .addComponent(jLabel2)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -331,7 +333,7 @@ public class SongView2TopComponent extends SongTopComponent {
     spacer.setLayout(spacerLayout);
     spacerLayout.setHorizontalGroup(
       spacerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 94, Short.MAX_VALUE)
+      .addGap(0, 114, Short.MAX_VALUE)
     );
     spacerLayout.setVerticalGroup(
       spacerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

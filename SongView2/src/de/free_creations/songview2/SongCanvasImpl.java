@@ -38,7 +38,8 @@ class SongCanvasImpl extends JPanel
   private ArrayList<Zone> zones = new ArrayList<Zone>();
   private ArrayList<Layer> layers = new ArrayList<Layer>();
   /**
-   * The one and only layer that is currently being dragged (null if there is none).
+   * The one and only layer that is currently being dragged (null if there is
+   * none).
    */
   private Layer draggingActivatedLayer = null;
   private boolean animated = false;
@@ -75,7 +76,7 @@ class SongCanvasImpl extends JPanel
         //transform the mouse coordinates to canvas coordinates
         int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
         int y_canvas = e.getY();
-        //and inform all zones 
+        //and inform all layers 
         for (Layer layer : layers) {
           layer.mouseClicked(x_canvas, y_canvas);
 
@@ -85,27 +86,36 @@ class SongCanvasImpl extends JPanel
       @Override
       public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
+          int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
+          int y_canvas = e.getY();
+          for (Layer layer : layers) {
+            layer.mouseClicked(x_canvas, y_canvas);
+          }
           if (draggingActivatedLayer != null) {
             if (draggingActivatedLayer == defaultDraggingLayer) {
               defaultDraggingLayerIsDragged = true;
               setMousePointer(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
-              int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
-              int y_canvas = e.getY();
+
               draggingActivatedLayer.setDraggingActivated(true, x_canvas, y_canvas);
             }
           }
 
         }
+
       }
 
       @Override
       public void mouseReleased(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) {
+          int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
+          int y_canvas = e.getY();
+          for (Layer layer : layers) {
+            layer.mouseReleased(x_canvas, y_canvas);
+          }
           if (defaultDraggingLayerIsDragged) {
             defaultDraggingLayerIsDragged = false;
             setMousePointer(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
-            int y_canvas = e.getY();
+
             draggingActivatedLayer.setDraggingActivated(false, x_canvas, y_canvas);
           }
         }

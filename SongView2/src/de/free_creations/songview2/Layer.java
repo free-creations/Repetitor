@@ -60,6 +60,27 @@ interface Layer {
   public void mouseClicked(int x_canvas, int y_canvas);
 
   /**
+   * Invoked when the mouse button has been pressed (but not released) on the
+   * canvas.
+   *
+   * @param x_canvas x coordinate of the mouse position on the canvas expressed
+   * in pixels.
+   * @param y_canvas y coordinate of the mouse position on the canvas expressed
+   * in pixels.
+   */
+  public void mouseDown(int x_canvas, int y_canvas);
+
+  /**
+   * Invoked when the mouse button has been released on the canvas.
+   *
+   * @param x_canvas x coordinate of the mouse position on the canvas expressed
+   * in pixels.
+   * @param y_canvas y coordinate of the mouse position on the canvas expressed
+   * in pixels.
+   */
+  public void mouseReleased(int x_canvas, int y_canvas);
+
+  /**
    * This function is called by the canvas whenever the mouse is being dragged
    * to a new position.
    *
@@ -74,8 +95,10 @@ interface Layer {
    *
    * @param startDragging true if we start a dragging action. False if we end
    * the dragging action.
-   * @param mouseX the start X-coordinate of the dragging action in the canvas coordinate system.
-   * @param mouseY the start Y-coordinate of the dragging action in the canvas coordinate system.
+   * @param mouseX the start X-coordinate of the dragging action in the canvas
+   * coordinate system.
+   * @param mouseY the start Y-coordinate of the dragging action in the canvas
+   * coordinate system.
    */
   public void setDraggingActivated(boolean startDragging, int mouseX, int mouseY);
 }

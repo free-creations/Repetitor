@@ -25,12 +25,13 @@ import java.util.logging.Logger;
  * canvas. The dimensions are converted between different references systems;
  * pixel-units and midi-ticks. If one item is changed, the other are
  * automatically adjusted.
- * 
+ *
  * Internally, all dimensions are stored in the midi coordinate system.
- * 
+ *
  * Changes: 21. May 2013, the max and min values are not anymore adjusted when
  * the pixelToMidiFactor changes. This was done because displayed region became
- * too huge after "setMidiToPixel". Problem: there might be a white space appearing on the left.
+ * too huge after "setMidiToPixel". Problem: there might be a white space
+ * appearing on the left.
  *
  * @author Harald Postner <Harald at H-Postner.de>
  */
@@ -113,7 +114,12 @@ class Dimensions {
       return;
     }
     if (newViewportLeftMidi < getMinimumMidi()) {
-      setMinimumMidi(newViewportLeftMidi);
+//      setMinimumMidi(newViewportLeftMidi);
+      newViewportLeftMidi = getMinimumMidi();
+    }
+    long viewportLeftMaxMidi = getMaximumMidi() - getViewportWidthMidi();
+    if (newViewportLeftMidi > viewportLeftMaxMidi) {
+      newViewportLeftMidi = viewportLeftMaxMidi;
     }
     this.viewportLeftMidi = newViewportLeftMidi;
     propertyChangeSupport.firePropertyChange(Prop.VIEWPORTLEFT_MIDI, oldViewportLeftMidi, this.viewportLeftMidi);
@@ -145,7 +151,7 @@ class Dimensions {
     }
     int viewportRightPixel = newViewportWidthPixel + getViewportLeftPixel();
     if (viewportRightPixel > getMaximumPixel()) {
-      setMaximumPixel(viewportRightPixel);
+      // setMaximumPixel(viewportRightPixel);
     }
     this.viewportWidthPixel = newViewportWidthPixel;
     propertyChangeSupport.firePropertyChange(Prop.VIEWPORTWIDTH_MIDI, oldViewportWidthMidi, getViewportWidthMidi());
@@ -684,7 +690,7 @@ class Dimensions {
   /**
    * Set the value of maximumMidi. This value records the largest value
    * encountered so far.
-   * 
+   *
    * Note: the maximum never shrinks....
    *
    * @param newMaximumMidi new value of maximumMidi. If the given value is

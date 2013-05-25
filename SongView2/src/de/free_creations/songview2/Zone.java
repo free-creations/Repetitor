@@ -145,22 +145,23 @@ abstract class Zone implements Layer, PropertyChangeListener {
   public abstract int getLeftBorder();
 
   /**
-   * This function is called every time this object has been dragged to a new place.
-   * @param newPosition the new position in pixels. 
+   * This function is called every time this object has been dragged to a new
+   * place.
+   *
+   * @param newPosition the new position in pixels.
    */
   public abstract void setDraggedBorder(int newPosition);
-     
-    /**
+
+  /**
    * Invoked when the mouse button has been clicked (pressed and released) on
    * the canvas. this implementation does nothing.
+   *
    * @param x_canvas x coordinate of the mouse position in pixels
    * @param y_canvas y coordinate of the mouse position in pixels
    */
   @Override
-  public void mouseClicked(int x_canvas, int y_canvas){
-    
+  public void mouseClicked(int x_canvas, int y_canvas) {
   }
-
 
   /**
    * Set the position of LeftBorder
@@ -205,10 +206,13 @@ abstract class Zone implements Layer, PropertyChangeListener {
 
   /**
    * This function is called by the canvas whenever the mouse has moved.
+   *
    * @param x the new X position of the mouse in the canvas coordinate system
-   * (note that the offset to the viewport coordinate system is taken into account)
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
    * @param y the new Y position of the mouse in the canvas coordinate system
-   * (note that the offset to the viewport coordinate system is taken into account)
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
    */
   public void mouseMoved(int x, int y) {
     if (isSweetspot(x, y)) {
@@ -221,9 +225,12 @@ abstract class Zone implements Layer, PropertyChangeListener {
   }
 
   /**
-   * This function is called by the canvas whenever the mouse is being dragged to a new position.
+   * This function is called by the canvas whenever the mouse is being dragged
+   * to a new position.
+   *
    * @param x the new X position of the mouse in the canvas coordinate system
-   * (note that the offset to the viewport coordinate system is taken into account)
+   * (note that the offset to the viewport coordinate system is taken into
+   * account)
    */
   @Override
   public final void mouseDragged(int x) {
@@ -250,6 +257,7 @@ abstract class Zone implements Layer, PropertyChangeListener {
 
   /**
    * Get the value of color
+   *
    * @deprecated use make paint
    * @return the value of color
    */
@@ -357,4 +365,11 @@ abstract class Zone implements Layer, PropertyChangeListener {
    */
   protected abstract void redrawSweetspot();
 
+  @Override
+  public void mouseDown(int x_canvas, int y_canvas) {
+  }
+
+  @Override
+  public void mouseReleased(int x_canvas, int y_canvas) {
+  }
 }

@@ -125,7 +125,7 @@ public class TrackBand extends Band {
     }
     // OK, there was an overlap; calculate the squeeze-factor
     int originalTextWidth = fontMetrics.stringWidth(maxOverlapText);
-    int newTextWidth = originalTextWidth - maxOverlap;
+    int newTextWidth = originalTextWidth - ((maxOverlap*80)/100);
     double stretch = (double) newTextWidth / (double) originalTextWidth;
     return stretch;
   }
@@ -288,7 +288,7 @@ public class TrackBand extends Band {
     FontMetrics metrics = g.getFontMetrics();
     Rectangle2D rect = metrics.getStringBounds(text, g);
     int height = (int) Math.floor(rect.getHeight());
-    int width = (int) Math.floor(stretch * rect.getWidth()) + 1;
+    int width = (int) Math.floor(stretch * rect.getWidth()) + 3;
     //Image image = canvas.createImage(width, height);
     Image image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
 

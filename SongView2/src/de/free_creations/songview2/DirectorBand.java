@@ -43,12 +43,12 @@ final class DirectorBand extends Band {
     private double speed; // pixel / per nano-second
     private final double minSpeed = 5E-8; // pixel / per nano-second
     private final double damping = 1E-1; // 
-    private final int updatePeriode = 100;
+    private final int updatePeriode = 50;
     private final Timer timer = new Timer(updatePeriode,
             new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        if(Math.abs(speed)<minSpeed){
+        if (Math.abs(speed) < minSpeed) {
           stop();
           return;
         }
@@ -61,13 +61,16 @@ final class DirectorBand extends Band {
 
     public void start(double speed) {
       this.speed = speed;
+
       timer.start();
     }
 
     public void stop() {
-      timer.start();
+
+      timer.stop();
     }
-    public boolean isRunning(){
+
+    public boolean isRunning() {
       return timer.isRunning();
     }
   }
@@ -75,36 +78,41 @@ final class DirectorBand extends Band {
 
   private class SpeedCalculator {
 
-    private double speed = 0D; // pixel / per nano-second
     private double totalShift = 0D;
     private double startTime = 0D;
+    private double lastShiftTime = 0D;
 
+    public double getTotalShift() {
+      return totalShift;
+    }
+
+    /**
+     * The speed in pixel per nanosecond.
+     *
+     * @return The speed in pixel per nanosecond.
+     */
     public double getSpeed() {
+      double currentTime = System.nanoTime();
+      double elapsedSinceLastShift = currentTime - lastShiftTime;
+      if (elapsedSinceLastShift > 75E6) {
+        return 0D;
+      }
+      double totalElapsedTime = currentTime - startTime;
 
-      return speed;
+      double speed = totalShift / totalElapsedTime;
 
+
+      return speed * (Math.abs(speed)) * (2E6);
     }
 
     public void reset() {
-      startNewMean(0D, System.nanoTime());
-
-      speed = 0D;
-    }
-
-    private void startNewMean(double previousSpeed, double time) {
-      startTime = time;
+      startTime = System.nanoTime();
       totalShift = 0D;
-      speed = previousSpeed;
-
     }
 
     public void newShift(double value) {
-      double currentTime = System.nanoTime();
-      double elapsedTime = currentTime - startTime;
+      lastShiftTime = System.nanoTime();
       totalShift = totalShift + value;
-      if (elapsedTime > 200E6) {
-        startNewMean(totalShift / elapsedTime, currentTime);
-      }
     }
   }
   private SpeedCalculator speedCalculator = new SpeedCalculator();
@@ -335,15 +343,31 @@ final class DirectorBand extends Band {
   }
 
   @Override
+  public void mouseDown(int x_canvas, int y_canvas) {
+    drifter.stop();
+  }
+
+  @Override
   public void mouseClicked(int x_canvas, int y_canvas) {
-    if(drifter.isRunning()){
-      drifter.stop();
-      return;
+//    if (drifter.isRunning()) {
+//      drifter.stop();
+//      return;
+//    }
+//    int oldPixelPos = canvas.getDimensions().getCursorPixel();
+//    int newMidiPos = canvas.getDimensions().calulateSnapMidiTick(oldPixelPos, x_canvas);
+//    canvas.getDimensions().setCursorMidi(newMidiPos);
+//    canvas.getDimensions().setStartPointMidi(newMidiPos);
+  }
+
+  @Override
+  public void mouseReleased(int x_canvas, int y_canvas) {
+      if (Math.abs(speedCalculator.getTotalShift()) < 2) {
+
+      int oldPixelPos = canvas.getDimensions().getCursorPixel();
+      int newMidiPos = canvas.getDimensions().calulateSnapMidiTick(oldPixelPos, x_canvas);
+      canvas.getDimensions().setCursorMidi(newMidiPos);
+      canvas.getDimensions().setStartPointMidi(newMidiPos);
     }
-    int oldPixelPos = canvas.getDimensions().getCursorPixel();
-    int newMidiPos = canvas.getDimensions().calulateSnapMidiTick(oldPixelPos, x_canvas);
-    canvas.getDimensions().setCursorMidi(newMidiPos);
-    canvas.getDimensions().setStartPointMidi(newMidiPos);
   }
 
   @Override
@@ -368,7 +392,9 @@ final class DirectorBand extends Band {
     if (startDragging) {
       drifter.stop();
     } else {
-      drifter.start(speedCalculator.getSpeed());
+      if (Math.abs(speedCalculator.getTotalShift()) > 2) {
+        drifter.start(speedCalculator.getSpeed());
+      }
     }
     draggingStartX = mouseX;
     speedCalculator.reset();

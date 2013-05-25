@@ -78,7 +78,7 @@ public class Lyric extends TextualMeta implements Comparable<Lyric> {
 
     this.tickPos = LyricsEvent.getTick();
     try {
-      setText(new String(stringData, "UTF-8")); //<< should not call overwritten procedure here
+      setText(new String(stringData, "ISO-8859-1")); //<< should not call overwritten procedure here
     } catch (UnsupportedEncodingException ex) {
       Logger.getLogger(Lyric.class.getName()).log(Level.WARNING, null, ex);
     }
@@ -153,11 +153,11 @@ public class Lyric extends TextualMeta implements Comparable<Lyric> {
       hyphenized = false;
       return;
     }
-    if (text.endsWith("-")) {
-      hyphenized = true;
+    if (text.endsWith(" ")) {
+      hyphenized = false;
       this.text = text.substring(0, text.length() - 1);
     } else {
-      hyphenized = false;
+      hyphenized = true;
       this.text = text;
     }
   }
