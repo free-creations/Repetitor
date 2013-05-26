@@ -89,7 +89,7 @@ class SongCanvasImpl extends JPanel
           int x_canvas = e.getX() + dimensions.getViewportLeftPixel();
           int y_canvas = e.getY();
           for (Layer layer : layers) {
-            layer.mouseClicked(x_canvas, y_canvas);
+            layer.mouseDown(x_canvas, y_canvas);
           }
           if (draggingActivatedLayer != null) {
             if (draggingActivatedLayer == defaultDraggingLayer) {

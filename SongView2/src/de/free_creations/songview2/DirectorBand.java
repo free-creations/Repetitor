@@ -37,6 +37,11 @@ final class DirectorBand extends Band {
           new ArrayList<TimeSignature>();
   private boolean isDragging = true;
   private int draggingStartX;
+  /**
+   * indicates that the last mouse-down has stopped the drifter, thus do not
+   * move the cursor on the following mouse up.
+   */
+  private boolean stoppingDrifter = false;
 
   private class Drifter {
 
@@ -344,7 +349,12 @@ final class DirectorBand extends Band {
 
   @Override
   public void mouseDown(int x_canvas, int y_canvas) {
-    drifter.stop();
+    if (drifter.isRunning()) {
+      drifter.stop();
+      stoppingDrifter = true;
+    } else {
+      stoppingDrifter = false;
+    }
   }
 
   @Override
@@ -361,12 +371,13 @@ final class DirectorBand extends Band {
 
   @Override
   public void mouseReleased(int x_canvas, int y_canvas) {
-      if (Math.abs(speedCalculator.getTotalShift()) < 2) {
-
-      int oldPixelPos = canvas.getDimensions().getCursorPixel();
-      int newMidiPos = canvas.getDimensions().calulateSnapMidiTick(oldPixelPos, x_canvas);
-      canvas.getDimensions().setCursorMidi(newMidiPos);
-      canvas.getDimensions().setStartPointMidi(newMidiPos);
+    if (Math.abs(speedCalculator.getTotalShift()) < 2) {
+      if (!stoppingDrifter) {
+        int oldPixelPos = canvas.getDimensions().getCursorPixel();
+        int newMidiPos = canvas.getDimensions().calulateSnapMidiTick(oldPixelPos, x_canvas);
+        canvas.getDimensions().setCursorMidi(newMidiPos);
+        canvas.getDimensions().setStartPointMidi(newMidiPos);
+      }
     }
   }
 
