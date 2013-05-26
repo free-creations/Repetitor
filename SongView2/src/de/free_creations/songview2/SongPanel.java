@@ -72,7 +72,13 @@ public class SongPanel extends SongCanvasImpl {
    * The size (in pixels) of the jump- margin on both window borders. When the
    * cursor moves into this margin the display will shift to the next page.
    */
-  private final long JUMPMARGIN = 20;
+  //private final long JUMPMARGIN = 20;
+    /**
+   * The size (in midiTick) of the jump- margin on both window borders. When the
+   * cursor moves into this margin the display will shift to the next page.
+   */
+  private final long JUMPMARGINMIDI = 3*480; // one bar (assuming 3/4)
+
   private DirectorBand directorBand;
   private ArrayList<TrackBand> trackBands = new ArrayList<TrackBand>();
   private SongSession session = null;
@@ -334,7 +340,7 @@ public class SongPanel extends SongCanvasImpl {
     long leftBorder = getDimensions().getViewportLeftMidi();
 
 
-    long margin = getDimensions().pixelToMidi(JUMPMARGIN);
+    long margin = JUMPMARGINMIDI;//getDimensions().pixelToMidi(JUMPMARGIN);
     if ((rightBorder - leftBorder) <= 2 * margin) {
 
       margin = 0;

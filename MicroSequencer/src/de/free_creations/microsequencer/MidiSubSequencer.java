@@ -508,7 +508,7 @@ class MidiSubSequencer implements MasterSequencer.MidiSubSequencer, AudioProcess
       Map<String, Object> info = new HashMap<>();
       info.put("interpolation", "linear");
       //info.put("max polyphony", "1024");
-      info.put("max polyphony", "32");
+      info.put("max polyphony", "128");
 
       synthesizerStream = synthesizer.openStream(format, info);
       if (!synthesizer.isOpen()) {
