@@ -125,7 +125,7 @@ public class TrackBand extends Band {
     }
     // OK, there was an overlap; calculate the squeeze-factor
     int originalTextWidth = fontMetrics.stringWidth(maxOverlapText);
-    int newTextWidth = originalTextWidth - ((maxOverlap*80)/100);
+    int newTextWidth = originalTextWidth - ((maxOverlap*90)/100);
     double stretch = (double) newTextWidth / (double) originalTextWidth;
     return stretch;
   }

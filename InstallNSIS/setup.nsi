@@ -10,9 +10,11 @@ Name "Repetitor"
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.1.0
+!define VERSION 0.1.1
 !define COMPANY "free-creations"
 !define URL www.free-creations.de
+
+!define MEDIADIR "$MUSIC\Repetitor"
 
 RequestExecutionLevel user
 
@@ -20,7 +22,7 @@ RequestExecutionLevel user
 
 
 # Reserved Files
-ReserveFile "${NSISDIR}\Plugins\StartMenu.dll"
+ReserveFile "${NSISDIR}\Plugins\x86-unicode\StartMenu.dll"
 
 # Variables
 Var StartMenuGroup
@@ -60,7 +62,7 @@ Icon "${NSISDIR}\Contrib\Graphics\Icons\orange-install-nsis.ico"
 ShowInstDetails show
 AutoCloseWindow false
 LicenseData ..\LICENSE-2.0.txt
-VIProductVersion 0.1.0.0
+VIProductVersion 0.1.1.0
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductName Repetitor
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductVersion "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} CompanyName "${COMPANY}"
@@ -78,18 +80,18 @@ Section -Main SEC0000
     
     # The example Media
     SetOverwrite off
-    SetOutPath $MUSIC
+    SetOutPath ${MEDIADIR} 
     File /r ..\exampleMedia\*
     
     # The Java Runtime
     SetOverwrite on
     SetOutPath $INSTDIR\jre7
-    File /r "C:\Programme\Java\jdk1.7.0_21\jre\*"
+    File /r "C:\Program Files (x86)\Java\jre7\*"
 
 
-    # The Repetitor application
+    # The Repetitor application (unzip before running this)
     SetOutPath $INSTDIR
-    File /r ..\dist\repetitor\*
+    File /r ..\dist\repetitor\repetitor\*
     
     SetOutPath $INSTDIR\bin
     File ..\Install\specialFiles\repetitor.exe
@@ -100,7 +102,8 @@ Section -Main SEC0000
     # Write the prefences file for the example Media
     SetOutPath "$APPDATA\.repetitor\dev\config\Preferences\de\free_creations\"     
     FileOpen $0 "mediaContainerExplorer2.properties" w
-    ${StrRep} '$1' '$MUSIC' '\' '\\'
+    # replace single slash by double slash using the strRep function
+    ${StrRep} '$1' '${MEDIADIR}' '\' '\\'
     fileWrite $0 "mediafolder=$1"
     # close the file
     fileClose $0
@@ -178,11 +181,44 @@ done:
     Pop $R1
 FunctionEnd
 
+#--- Installer init functions
 Function .onInit
     InitPluginsDir
+    # Auto- uninstall old before installing new
+    # ..search for registry key
+    ReadRegStr $R0 HKCU \
+                   "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" \
+                   "UninstallString"
+    StrCmp $R0 "" done
+    
+    #.. ask user if OK to uninstall
+   # MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+   #           "$(^Name) is already installed. $\n$\nClick `OK` to remove the \
+   #            previous version or `Cancel` to cancel this upgrade." \
+   #            IDOK uninst
+   #            Abort
+   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+              $(allreadyInstalled) \
+               IDOK uninst
+               Abort
+
+    ;Run the uninstaller
+uninst:
+    ClearErrors
+    ExecWait '$R0 _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+ 
+    IfErrors no_remove_uninstaller done
+      ;You can either use Delete /REBOOTOK in the uninstaller or add some code
+      ;here to remove the uninstaller. Use a registry key to check
+      ;whether the user has chosen to uninstall. If you are using an uninstaller
+      ;components page, make sure all sections are uninstalled.
+   no_remove_uninstaller:
+ 
+done:
+
 FunctionEnd
 
-# Uninstaller functions
+#--- Uninstaller functions
 Function un.onInit
     ReadRegStr $INSTDIR HKCU "${REGKEY}" Path
     ReadRegStr $StartMenuGroup HKCU "${REGKEY}" StartMenuGroup
@@ -191,6 +227,13 @@ FunctionEnd
 
 # Installer Language Strings
 # TODO Update the Language Strings with the appropriate translations.
+
+LangString allreadyInstalled ${LANG_ENGLISH} "$(^Name) is already installed. $\n$\nClick `OK` to remove the \
+                                              previous version or `Cancel` to cancel this upgrade." 
+LangString allreadyInstalled ${LANG_GERMAN} "$(^Name) ist schon installiert. $\n$\n `OK` entfernt \
+                                              die alte Version; `Cancel` stoppt die Installation." 
+LangString allreadyInstalled ${LANG_FRENCH} "$(^Name) est deja installé. $\n$\n `OK` désinstal \
+                                              l'ancien version; `Cancel` arrete l'installation." 
 
 LangString StartMenuPageTitle ${LANG_ENGLISH} "Start Menu Folder"
 LangString StartMenuPageTitle ${LANG_GERMAN} "Start Menu Folder"

@@ -196,7 +196,7 @@ public final class MediaContainerExplorerTopComponent extends TopComponent
 
     String mediaDirName = NbPreferences.forModule(MediaContainerExplorerTopComponent.class).
             get(MediaContainerExplorerTopComponent.PREF_MEDIAFOLDER,
-            System.getProperty("user.home") + "/RepetitorMedia");
+            System.getProperty("user.home") + "/Music/Repetitor");
     File mediaDir = new File(mediaDirName);
     if (!mediaDir.exists()) {
       logger.log(Level.WARNING, "\"{0}\" not found.", mediaDirName);

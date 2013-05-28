@@ -91,7 +91,7 @@ final class MediaFilesPanel extends javax.swing.JPanel {
     // someTextField.setText(SomeSystemOption.getDefault().getSomeStringProperty());
     String storedMediaFolderPath = NbPreferences.forModule(MediaContainerExplorerTopComponent.class).
                      get(MediaContainerExplorerTopComponent.PREF_MEDIAFOLDER, 
-                     System.getProperty("user.home") + "/RepetitorMedia");
+                     System.getProperty("user.home") + "/Music/Repetitor");
     this.mediaFolderPath.setText(storedMediaFolderPath);
     
   }

@@ -42,7 +42,7 @@ public class SongPanel extends SongCanvasImpl {
   /**
    * The proposed size of one measure in pixels.
    */
-  private static final double MAESUREDEFAULTPX = 100;
+  private static final double MAESUREDEFAULTPX = 130;
   /**
    * a PixelToMidiFactor that permits to display the currently loaded song in a
    * reasonable resolution. This value is automatically adjusted when a new
