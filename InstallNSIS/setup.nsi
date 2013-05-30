@@ -231,7 +231,7 @@ FunctionEnd
 LangString allreadyInstalled ${LANG_ENGLISH} "$(^Name) is already installed. $\n$\nClick `OK` to remove the \
                                               previous version or `Cancel` to cancel this upgrade." 
 LangString allreadyInstalled ${LANG_GERMAN} "$(^Name) ist schon installiert. $\n$\n `OK` entfernt \
-                                              die alte Version; `Cancel` stoppt die Installation." 
+                                              die alte Version und installert die neue Version; `Abbrechen` stoppt die Installation." 
 LangString allreadyInstalled ${LANG_FRENCH} "$(^Name) est deja installé. $\n$\n `OK` désinstal \
                                               l'ancien version; `Cancel` arrete l'installation." 
 
