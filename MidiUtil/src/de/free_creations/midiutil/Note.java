@@ -16,15 +16,19 @@
  */
 package de.free_creations.midiutil;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.ShortMessage;
 
 /**
- * A Note-object represents a sound in a song.
- * Instances of this class represent specific MIDI events in a given MIDI sequence.
- * These events are a note-on event together with its corresponding note-off
- * event. The existence of a MIDI sequence is implied but not represented by this class.
+ * A Note-object represents a sound in a song. Instances of this class represent
+ * specific MIDI events in a given MIDI sequence. These events are a note-on
+ * event together with its corresponding note-off event. The existence of a MIDI
+ * sequence is implied but not represented by this class.
+ *
  * @author Harald Postner <Harald at H-Postner.de>
  */
 public class Note implements Comparable<Note> {
@@ -36,13 +40,15 @@ public class Note implements Comparable<Note> {
   private long tickPos;
 
   /**
-   * Constructs a new Note object for a given channel, pitch, velocity,
-   * starting position and duration.
+   * Constructs a new Note object for a given channel, pitch, velocity, starting
+   * position and duration.
+   *
    * @param channel an integer in the range from zero to fifteen.
    * @param pitch an integer in the range from 0 to 127
    * @param velocity an integer in the range from 0 to 127
    * @param tickPos the position in the sequence (expressed in midi ticks)
-   * @param duration the time between note-on and note off (expressed in midi ticks)
+   * @param duration the time between note-on and note off (expressed in midi
+   * ticks)
    */
   public Note(int channel, int pitch, int velocity, long tickPos, long duration) {
     this.channel = channel;
@@ -53,7 +59,9 @@ public class Note implements Comparable<Note> {
   }
 
   /**
-   * Construct a new Note object from a pair of note-on and note-off MIDI events.
+   * Construct a new Note object from a pair of note-on and note-off MIDI
+   * events.
+   *
    * @param noteOn the start of the sound
    * @param noteOff the end of the sound
    */
@@ -77,16 +85,46 @@ public class Note implements Comparable<Note> {
 
   }
 
+  public MidiEvent getNoteOnEvent() {
+    try {
+      ShortMessage shortMessage = new ShortMessage(
+              ShortMessage.NOTE_ON, channel, pitch, velocity);
+      return new MidiEvent(shortMessage, tickPos);
+    } catch (InvalidMidiDataException ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  public MidiEvent getNoteOffEvent() {
+    try {
+      ShortMessage shortMessage = new ShortMessage(
+              ShortMessage.NOTE_OFF, channel, pitch, 0);
+      return new MidiEvent(shortMessage, tickPos + duration);
+    } catch (InvalidMidiDataException ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
   /**
    * Time that the note is sounding.
+   *
    * @return the duration in midi ticks.
    */
   public long getDuration() {
     return duration;
   }
 
+  public void setDuration(long value) {
+    duration = value;
+  }
+
+  public void setVelocity(int value) {
+    velocity = value;
+  }
+
   /**
    * The channel in the track in the sequence.
+   *
    * @return a number between 0 and 15.
    */
   public int getChannel() {
@@ -95,6 +133,7 @@ public class Note implements Comparable<Note> {
 
   /**
    * The velocity of the note.
+   *
    * @return a number between 0 and 127.
    */
   public int getVelocity() {
@@ -103,6 +142,7 @@ public class Note implements Comparable<Note> {
 
   /**
    * The position in the implied sequence in MIDI ticks.
+   *
    * @return The position in the implied sequence in MIDI ticks.
    */
   public long getTickPos() {
@@ -111,6 +151,7 @@ public class Note implements Comparable<Note> {
 
   /**
    * The pitch in midi-note numbers.
+   *
    * @return a number between 0 and 127.
    */
   public int getPitch() {
@@ -119,6 +160,7 @@ public class Note implements Comparable<Note> {
 
   /**
    * Utility function helping to discover Note-on events in a sequence.
+   *
    * @param event any kind of MIDI event or null.
    * @return true, if the given event is a <em>real note-on</em> event (note-on
    * events with velocity=0 are not considered to be note-off events).
@@ -132,9 +174,10 @@ public class Note implements Comparable<Note> {
 
   /**
    * Utility function helping to discover Note-on messages in a MIDI-sequence.
+   *
    * @param message any kind of MIDI message or null.
-   * @return true, if the given event if a <em>real note-on event</em> (midi-note-on
-   * events with velocity=0 are considered to be note-off events).
+   * @return true, if the given event if a <em>real note-on event</em>
+   * (midi-note-on events with velocity=0 are considered to be note-off events).
    */
   public static boolean isNoteOnMessage(MidiMessage message) {
     if (null == message) {
@@ -152,9 +195,11 @@ public class Note implements Comparable<Note> {
 
   /**
    * Utility function helping to discover Note-off events in a MIDI-sequence.
+   *
    * @param event any kind of MIDI event or null.
-   * @return true, if the given event if a <em>real note-off event</em> (midi-note-on
-   * events with velocity=0 are also considered to be real note-off events).
+   * @return true, if the given event if a <em>real note-off event</em>
+   * (midi-note-on events with velocity=0 are also considered to be real
+   * note-off events).
    */
   public static boolean isNoteOffEvent(MidiEvent event) {
     if (null == event) {
@@ -165,9 +210,11 @@ public class Note implements Comparable<Note> {
 
   /**
    * Utility function helping to discover Note-off messages in a MIDI-sequence.
+   *
    * @param message any kind of MIDI message or null.
-   * @return true, if the given event if a <em>real note-off event</em> (midi-note-on
-   * events with velocity=0 are also considered to be real note-off events).
+   * @return true, if the given event if a <em>real note-off event</em>
+   * (midi-note-on events with velocity=0 are also considered to be real
+   * note-off events).
    */
   public static boolean isNoteOffMessage(MidiMessage message) {
     if (null == message) {
@@ -188,12 +235,13 @@ public class Note implements Comparable<Note> {
   }
 
   /**
-   * Utility function helping to discover the note-off event for a
-   * given note-on event.
+   * Utility function helping to discover the note-off event for a given note-on
+   * event.
+   *
    * @param noteOnEvent the given note-on event.
    * @param otherEvent any other midi event
-   * @return true if the given events form a pair of matching
-   * note-on and note-off events.
+   * @return true if the given events form a pair of matching note-on and
+   * note-off events.
    */
   public static boolean isNoteOffEventFor(MidiEvent noteOnEvent, MidiEvent otherEvent) {
     // the first Event must be a "note-on".
@@ -224,9 +272,10 @@ public class Note implements Comparable<Note> {
   }
 
   /**
-   * Compare this note to an other note regarding its position
-   * in an implied MIDI sequence. If both notes are simultaneous
-   * the comparison is expanded to the channel and the pitch.
+   * Compare this note to an other note regarding its position in an implied
+   * MIDI sequence. If both notes are simultaneous the comparison is expanded to
+   * the channel and the pitch.
+   *
    * @param otherNote the note to be inspected
    * @return 1 if the other note is earlier than this note.
    */

@@ -204,7 +204,7 @@ public class SongView2TopComponent extends SongTopComponent {
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(SongView2TopComponent.class, "SongView2TopComponent.jLabel2.text")); // NOI18N
 
-    songPanel.setFont(new java.awt.Font("SansSerif", 0, 14)); // NOI18N
+    songPanel.setFont(new java.awt.Font("SansSerif", 0, 16)); // NOI18N
 
     javax.swing.GroupLayout songPanelLayout = new javax.swing.GroupLayout(songPanel);
     songPanel.setLayout(songPanelLayout);
