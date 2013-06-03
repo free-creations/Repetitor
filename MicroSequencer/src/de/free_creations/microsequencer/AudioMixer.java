@@ -47,6 +47,19 @@ class AudioMixer extends AudioProcessor_Float32 {
   private volatile double maxLoad;
   private int processCount = 0; // (debugging variable) the number of times process was called
   private int badStatusCount = 0; // (debugging variable) the number of times RtAudio reported a timeout
+  private final Object streamTimeLock = new Object();
+  /**
+   * the latency in seconds.
+   */
+  private double latencySeconds;
+  /**
+   * The nanoSecond when the current cycle started.
+   */
+  private long cycleStartNano;
+  /**
+   * The stream time for which the current cycle is prepared.
+   */
+  private double cycleStreamTime;
 
   // for debugging
   private void reportStatus() {
@@ -107,12 +120,15 @@ class AudioMixer extends AudioProcessor_Float32 {
     resultBuffer = new float[framesPerCycle * outputChannelCount];
     Arrays.fill(resultBuffer, 0F);
 
-    long latency = masterSequencer.getLatency();
+    long latencyFrames = masterSequencer.getLatency();
+    latencySeconds = (double) latencyFrames / (double) samplingRate;
+    cycleStreamTime = 0;
+    cycleStartNano = System.nanoTime();
 
     synchronized (audioPortsLock) {
       ListIterator<AudioPortImpl> portIter = audioPorts.listIterator();
       while (portIter.hasNext()) {
-        portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved, latency);
+        portIter.next().open(samplingRate, framesPerCycle, inputChannelCount, outputChannelCount, noninterleaved, latencyFrames);
       }
     }
     logger.log(Level.FINER, "### onOpenStream executed.");
@@ -120,6 +136,18 @@ class AudioMixer extends AudioProcessor_Float32 {
     logger.log(Level.FINER, "... outputChannelCount: {0}", outputChannelCount);
 
     streamOpen = true;
+  }
+
+  double getStreamTime() {
+    if (!streamOpen) {
+      return 0D;
+    }
+    synchronized(streamTimeLock){
+      long deltaNano = System.nanoTime() - cycleStartNano;
+      double deltaSeconds = deltaNano * 1E-9;
+      return cycleStreamTime + deltaSeconds - latencySeconds;
+    }
+
   }
 
   @Override
@@ -166,7 +194,10 @@ class AudioMixer extends AudioProcessor_Float32 {
 
   @Override
   public float[] process(float[] input, double streamTime, int status) throws InterruptedException, ExecutionException {
-    long startNano = System.nanoTime();
+    synchronized (streamTimeLock) {
+      cycleStartNano = System.nanoTime();
+      cycleStreamTime = streamTime;
+    }
     if (status != 0) {
       badStatusCount++;
     }
@@ -192,7 +223,7 @@ class AudioMixer extends AudioProcessor_Float32 {
         }
       }
     }
-    long elapseNano = System.nanoTime() - startNano;
+    long elapseNano = System.nanoTime() - cycleStartNano;
     double load = (1E-9 * elapseNano) / cycleDuration;
     maxLoad = Math.max(load, maxLoad);
     processCount++;

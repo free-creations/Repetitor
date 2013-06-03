@@ -37,8 +37,17 @@ interface MasterSequencer {
 
   public void remove(SequencerEventListener listener);
 
+  /**
+   * 
+   * @return the latency in sample frames.
+   */
   public long getLatency();
 
+  /**
+   * Set the latency. The latency is defined as the number of sample frames an
+   * input signal is delayed before it is output.
+   * @param latency 
+   */
   public void setLatency(long latency);
 
   /**

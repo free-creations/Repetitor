@@ -198,11 +198,12 @@ class MicroSequencerImpl implements MicroSequencer {
   public double getTickPosition(double offset) {
     if (audioSystem != null) {
       if (audioSystem.isStreamRunning()) {
-        try {
-          return masterSequencer.getCurrentTickPosition(audioSystem.getStreamTime() + offset);
-        } catch (RtError ex) {
-          logger.log(Level.SEVERE, null, ex);
-        }
+        //try {
+          //return masterSequencer.getCurrentTickPosition(audioSystem.getStreamTime() + offset);
+          return masterSequencer.getCurrentTickPosition(audioMixer.getStreamTime() + offset);
+//        } catch (RtError ex) {
+//          logger.log(Level.SEVERE, null, ex);
+//        }
       }
     }
     return masterSequencer.getCurrentTickPosition(0D);

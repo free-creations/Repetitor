@@ -377,7 +377,7 @@ public class SongPanel extends SongCanvasImpl {
 
   private void synchronizeCursor() {
     if (session != null) {
-      setCursorVisible(session.getCursor());
+      setCursorVisible((long)session.getTickPosition(0.05));
     }
   }
 

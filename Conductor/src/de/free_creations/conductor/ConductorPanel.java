@@ -65,7 +65,7 @@ public class ConductorPanel extends JPanel {
   /**
    * the time-duration the conductor advances on the performance
    */
-  final double totalAdvance = 0.050; // in seconds
+  final double totalAdvance = 0.100; // in seconds
 
   private class LoaderTask extends SwingWorker<Object, Object> {
 
@@ -128,7 +128,7 @@ public class ConductorPanel extends JPanel {
       throw new RuntimeException("unknown beatType " + beatType);
     }
   }
-  private static final int frameRate = 20;
+  private static final int frameRate = 25;
   private static final int timerDelay = 1000 / frameRate;
   private Timer timer = new Timer(timerDelay, new ActionListener() {
 
