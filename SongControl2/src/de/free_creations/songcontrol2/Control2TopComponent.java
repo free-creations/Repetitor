@@ -15,6 +15,8 @@
  */
 package de.free_creations.songcontrol2;
 
+import Wii4Java.Manager;
+import Wii4Java.WiiListener;
 import de.free_creations.guicomponents.SliderVuMeter;
 import de.free_creations.guicomponents.SongTopComponent;
 import de.free_creations.midisong.*;
@@ -25,6 +27,7 @@ import java.beans.PropertyChangeEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import org.netbeans.api.settings.ConvertAsProperties;
@@ -37,17 +40,17 @@ import org.openide.windows.TopComponent;
  * Top component which displays something.
  */
 @ConvertAsProperties(dtd = "-//de.free_creations.songcontrol2//Control2//EN",
-autostore = false)
+        autostore = false)
 @TopComponent.Description(preferredID = "Control2TopComponent",
-//iconBase="SET/PATH/TO/ICON/HERE", 
-persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+        //iconBase="SET/PATH/TO/ICON/HERE", 
+        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
 @TopComponent.Registration(mode = "output", openAtStartup = true)
 @ActionID(category = "Window", id = "de.free_creations.songcontrol2.Control2TopComponent")
 @ActionReference(path = "Menu/Window" /*
- * , position = 333
- */)
+         * , position = 333
+         */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_Control2Action",
-preferredID = "Control2TopComponent")
+        preferredID = "Control2TopComponent")
 @Messages({
   "CTL_Control2Action=Control",
   "CTL_Control2TopComponent=Control Window", //  "HINT_Control2TopComponent="
@@ -62,6 +65,59 @@ public final class Control2TopComponent extends SongTopComponent {
   private BuiltinSynthesizer oSynth = null;
   private BuiltinSynthesizer vSynth = null;
   private MidiSynthesizerTrack orchestraTrack;
+  private volatile boolean wiiConnected = false;
+  private volatile boolean feedbackOn = true;
+  private volatile int feedbackOnAttenuation = -10;
+  private final WiiListener wiiListener = new WiiListener() {
+    @Override
+    public void connectionChanged(int status) {
+      switch (status) {
+        case WiiListener.ABORTED:
+          lblWiiMessage.setText("<html>Connection broken.</html>");
+          wiiConnected = false;
+          return;
+        case WiiListener.CONNECTED:
+          lblWiiMessage.setText("<html>Wii is connected.</html>");
+          btnWii.setText("Disconnect Wii");
+          wiiConnected = true;
+          return;
+        case WiiListener.ENDED:
+          lblWiiMessage.setText("<html>Connection terminated.</html>");
+          btnWii.setText("Wii");
+          wiiConnected = false;
+          return;
+        default:
+          lblWiiMessage.setText("");
+      }
+    }
+
+    @Override
+    public void buttonAChanged(boolean down) {
+      if (down) {
+        SwingUtilities.invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            toggleFeedback();
+          }
+        });
+      }
+    }
+
+    @Override
+    public void buttonBChanged(boolean down) {
+      if (down) {
+        SwingUtilities.invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            if (activeSongSession != null) {
+              // toggle the playing mode of the active song session
+              activeSongSession.setPlaying(!activeSongSession.isPlaying());
+            }
+          }
+        });
+      }
+    }
+  };
   private final ActionListener timedTask = new ActionListener() {
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -119,12 +175,39 @@ public final class Control2TopComponent extends SongTopComponent {
     putClientProperty(TopComponent.PROP_MAXIMIZATION_DISABLED, Boolean.TRUE);
     putClientProperty(TopComponent.PROP_UNDOCKING_DISABLED, Boolean.TRUE);
     setDisplayName(disabledDisplayName);
-    setEnabledOnComponentAndChildren(this, false);
+    setEnabledOnComponentAndChildrenEx(this, false);
     sliderOrchestra.setVuValue(sliderOrchestra.getMinVuValue());
     sliderVoices.setVuValue(sliderOrchestra.getMinVuValue());
     sliderFeedback.setVuValue(sliderFeedback.getMinVuValue());
     sliderFeedback.setValue(-10);
+    lblWiiMessage.setText("");
 
+  }
+
+  /**
+   * Overwrites the inherited version of setEnabledOnComponentAndChildren in
+   * order to leave the Wii controls always enabled
+   *
+   * @param component
+   * @param enabled
+   */
+  private void setEnabledOnComponentAndChildrenEx(JComponent component, boolean enabled) {
+    super.setEnabledOnComponentAndChildren(component, enabled);
+    lblWiiMessage.setEnabled(true);
+    btnWii.setEnabled(true);
+  }
+
+  private void toggleFeedback() {
+    if (feedbackOn) {
+      feedbackOnAttenuation = sliderFeedback.getValue();
+      sliderFeedback.setValue(sliderFeedback.getMaximum());
+      sliderFeedback.setEnabled(false);
+      feedbackOn = false;
+    } else {
+      sliderFeedback.setValue(feedbackOnAttenuation);
+      sliderFeedback.setEnabled(true);
+      feedbackOn = true;
+    }
   }
 
   /**
@@ -153,6 +236,8 @@ public final class Control2TopComponent extends SongTopComponent {
     jPanel1 = new javax.swing.JPanel();
     sliderFeedback = new de.free_creations.guicomponents.SliderVuMeter();
     jLabel3 = new javax.swing.JLabel();
+    btnWii = new javax.swing.JButton();
+    lblWiiMessage = new javax.swing.JLabel();
 
     setLayout(new java.awt.GridBagLayout());
 
@@ -288,8 +373,8 @@ public final class Control2TopComponent extends SongTopComponent {
           .addGroup(pnlSingstimmenLayout.createSequentialGroup()
             .addComponent(jLabel2)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(sliderVoices, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)))
-        .addContainerGap())
+            .addComponent(sliderVoices, javax.swing.GroupLayout.DEFAULT_SIZE, 508, Short.MAX_VALUE)))
+        .addGap(0, 0, 0))
     );
 
     gridBagConstraints = new java.awt.GridBagConstraints();
@@ -326,15 +411,15 @@ public final class Control2TopComponent extends SongTopComponent {
         .addGroup(pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(sliderOrchestra, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(jLabel1))
-        .addContainerGap(58, Short.MAX_VALUE))
+        .addContainerGap(26, Short.MAX_VALUE))
     );
     pnlOrchestraLayout.setVerticalGroup(
       pnlOrchestraLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlOrchestraLayout.createSequentialGroup()
         .addComponent(jLabel1)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(sliderOrchestra, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
-        .addContainerGap())
+        .addComponent(sliderOrchestra, javax.swing.GroupLayout.DEFAULT_SIZE, 508, Short.MAX_VALUE)
+        .addGap(0, 0, 0))
     );
 
     gridBagConstraints = new java.awt.GridBagConstraints();
@@ -363,6 +448,16 @@ public final class Control2TopComponent extends SongTopComponent {
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(Control2TopComponent.class, "Control2TopComponent.jLabel3.text")); // NOI18N
 
+    org.openide.awt.Mnemonics.setLocalizedText(btnWii, org.openide.util.NbBundle.getMessage(Control2TopComponent.class, "Control2TopComponent.btnWii.text")); // NOI18N
+    btnWii.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnWiiActionPerformed(evt);
+      }
+    });
+
+    org.openide.awt.Mnemonics.setLocalizedText(lblWiiMessage, org.openide.util.NbBundle.getMessage(Control2TopComponent.class, "Control2TopComponent.lblWiiMessage.text")); // NOI18N
+    lblWiiMessage.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
     jPanel1Layout.setHorizontalGroup(
@@ -370,17 +465,28 @@ public final class Control2TopComponent extends SongTopComponent {
       .addGroup(jPanel1Layout.createSequentialGroup()
         .addContainerGap()
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(sliderFeedback, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-          .addComponent(jLabel3))
-        .addContainerGap(110, Short.MAX_VALUE))
+          .addComponent(jLabel3)
+          .addComponent(sliderFeedback, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(btnWii, javax.swing.GroupLayout.DEFAULT_SIZE, 85, Short.MAX_VALUE)
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addGap(7, 7, 7)
+            .addComponent(lblWiiMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
+        .addContainerGap())
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel1Layout.createSequentialGroup()
+        .addContainerGap()
+        .addComponent(btnWii)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+        .addComponent(lblWiiMessage, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+        .addContainerGap(360, Short.MAX_VALUE))
+      .addGroup(jPanel1Layout.createSequentialGroup()
         .addComponent(jLabel3)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(sliderFeedback, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
-        .addContainerGap())
+        .addComponent(sliderFeedback, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
     );
 
     javax.swing.GroupLayout pnlFeedbackLayout = new javax.swing.GroupLayout(pnlFeedback);
@@ -389,14 +495,14 @@ public final class Control2TopComponent extends SongTopComponent {
       pnlFeedbackLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(pnlFeedbackLayout.createSequentialGroup()
         .addGap(0, 0, 0)
-        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 190, Short.MAX_VALUE)
+        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
         .addContainerGap())
     );
     pnlFeedbackLayout.setVerticalGroup(
       pnlFeedbackLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlFeedbackLayout.createSequentialGroup()
         .addGap(0, 0, 0)
-        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 670, Short.MAX_VALUE)
+        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
         .addGap(0, 0, 0))
     );
 
@@ -465,11 +571,25 @@ public final class Control2TopComponent extends SongTopComponent {
       activeSongSession.setAudioAttenuation(sliderFeedback.getValue());
     }
   }//GEN-LAST:event_sliderFeedbackStateChanged
+
+  private void btnWiiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnWiiActionPerformed
+
+    if (!wiiConnected) {
+      lblWiiMessage.setText("<html>Connecting to the Wii controller.<p><em>Press Buttons 1 and 2...</em></p></html>");
+      Manager.connect(wiiListener);
+    } else {
+      lblWiiMessage.setText("");
+      Manager.disconnect(wiiListener);
+
+    }
+  }//GEN-LAST:event_btnWiiActionPerformed
   // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JButton btnWii;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
   private javax.swing.JLabel jLabel3;
   private javax.swing.JPanel jPanel1;
+  private javax.swing.JLabel lblWiiMessage;
   private javax.swing.JPanel pnlFeedback;
   private javax.swing.JPanel pnlOrchestra;
   private javax.swing.JPanel pnlSingstimmen;
@@ -528,10 +648,10 @@ public final class Control2TopComponent extends SongTopComponent {
     activeSongSession = newSession;
     if (newSession == null) {
       setDisplayName(disabledDisplayName);
-      setEnabledOnComponentAndChildren(this, false);
+      setEnabledOnComponentAndChildrenEx(this, false);
     } else {
       setDisplayName(newSession.getName());
-      setEnabledOnComponentAndChildren(this, true);
+      setEnabledOnComponentAndChildrenEx(this, true);
       attachTracks();
     }
   }
@@ -708,7 +828,7 @@ public final class Control2TopComponent extends SongTopComponent {
 
   private void enableVoiceSelection() {
     //this is a hack. To indicate that
-    //currently voices cannont be changed whenn playing
+    //currently voices cannot be changed whenn playing
 
     if (voicesSubTracks.length > 0) {
       voice1.setText(voicesSubTracks[0].getName());
