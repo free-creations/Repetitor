@@ -57,6 +57,18 @@ import org.openide.windows.TopComponent;
 })
 public final class Control2TopComponent extends SongTopComponent {
 
+  /**
+   * Internal identifier for the MS-Windows operating system.
+   */
+  private static final String WIN = "win";
+  /**
+   * Internal identifier for the Linux operating system.
+   */
+  private static final String LINUX = "linux";
+  /**
+   * Internal identifier for the Mac OS X operating system.
+   */
+  private static final String MAC = "mac";
   static final private Logger logger = Logger.getLogger(Control2TopComponent.class.getName());
   static final private String disabledDisplayName = "...";
   static final private String noVoice = "...";
@@ -166,6 +178,7 @@ public final class Control2TopComponent extends SongTopComponent {
     }
   }
 
+  @SuppressWarnings("LeakingThisInConstructor")
   public Control2TopComponent() {
     initComponents();
     setName(Bundle.CTL_Control2TopComponent());
@@ -193,8 +206,15 @@ public final class Control2TopComponent extends SongTopComponent {
    */
   private void setEnabledOnComponentAndChildrenEx(JComponent component, boolean enabled) {
     super.setEnabledOnComponentAndChildren(component, enabled);
-    lblWiiMessage.setEnabled(true);
-    btnWii.setEnabled(true);
+    // currently, the Wii stuff is only available in Linux
+    if (isLinux()) {
+      lblWiiMessage.setEnabled(true);
+      btnWii.setEnabled(true);
+    } else {
+      // on windows we hide the Wii controlls to avoid confusing the user
+      lblWiiMessage.setVisible(false);
+      btnWii.setVisible(false);
+    }
   }
 
   private void toggleFeedback() {
@@ -880,5 +900,28 @@ public final class Control2TopComponent extends SongTopComponent {
       voice6.setEnabled(false);
     }
 
+  }
+
+  private static boolean isLinux() {
+    return (getOsName() == null ? LINUX == null : getOsName().equals(LINUX));
+  }
+
+  /**
+   * Determine the name of the operating system.
+   *
+   * @return either "win" or "linux" or "mac".
+   */
+  private static String getOsName() {
+    String osName = System.getProperty("os.name").toLowerCase();
+    if (osName.indexOf("windows") > -1) {
+      return WIN;
+    }
+    if (osName.indexOf("linux") > -1) {
+      return LINUX;
+    }
+    if (osName.indexOf("mac") > -1) {
+      return MAC;
+    }
+    throw new RuntimeException("Unsupported Operating System \"" + System.getProperty("os.name") + "\".");
   }
 }
