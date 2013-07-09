@@ -31,6 +31,14 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
+                    <code-name-base>de.free_creations.wii4Netbeans</code-name-base>
+                    <build-prerequisite/>
+                    <compile-dependency/>
+                    <run-dependency>
+                        <specification-version>1.0</specification-version>
+                    </run-dependency>
+                </dependency>
+                <dependency>
                     <code-name-base>org.netbeans.modules.settings</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
@@ -74,5 +82,8 @@
             </module-dependencies>
             <public-packages/>
         </data>
+        <spellchecker-wordlist xmlns="http://www.netbeans.org/ns/spellchecker-wordlist/1">
+            <word>Linux</word>
+        </spellchecker-wordlist>
     </configuration>
 </project>
