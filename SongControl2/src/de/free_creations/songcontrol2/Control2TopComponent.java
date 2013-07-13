@@ -73,7 +73,8 @@ public final class Control2TopComponent extends SongTopComponent {
   static final private String disabledDisplayName = "...";
   static final private String noVoice = "...";
   private volatile SongSession activeSongSession = null;
-  private static final int timerDelay = 200;
+  private static final int pollingDelay = 200;
+  private static final int doubleClickDelay = 500;
   private BuiltinSynthesizer oSynth = null;
   private BuiltinSynthesizer vSynth = null;
   private MidiSynthesizerTrack orchestraTrack;
@@ -106,38 +107,60 @@ public final class Control2TopComponent extends SongTopComponent {
     @Override
     public void buttonAChanged(boolean down) {
       if (down) {
-        SwingUtilities.invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            toggleFeedback();
-          }
-        });
+        toggleFeedback();
       }
     }
 
     @Override
     public void buttonBChanged(boolean down) {
       if (down) {
-        SwingUtilities.invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            if (activeSongSession != null) {
-              // toggle the playing mode of the active song session
-              activeSongSession.setPlaying(!activeSongSession.isPlaying());
-            }
+        if (doubleClickTimer.isRunning()) {
+          doubleClickTimer.stop();
+          if (activeSongSession == null) {
+            return;
           }
-        });
+          if (activeSongSession.isPlaying()) {
+            activeSongSession.setPlaying(false);
+            activeSongSession.setPlayingModeStr("PlayRecordAudio");
+          } else {
+            activeSongSession.setPlayingModeStr("PlayAudio");
+            activeSongSession.setPlaying(true);
+          }
+        } else {
+          doubleClickTimer.setRepeats(false);
+          doubleClickTimer.start();
+        }
       }
     }
+
+    @Override
+    public void buttonEvent(int i, int i1) {
+    }
   };
-  private final ActionListener timedTask = new ActionListener() {
+  private final ActionListener pollingTask = new ActionListener() {
     @Override
     public void actionPerformed(ActionEvent e) {
       //Control2TopComponent.this.updateCursorPos();
       Control2TopComponent.this.updateVuMeters();
     }
   };
-  private final Timer timer = new Timer(timerDelay, timedTask);
+  private final ActionListener singleClickTask = new ActionListener() {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      if (activeSongSession == null) {
+        return;
+      }
+      if (activeSongSession.isPlaying()) {
+        activeSongSession.setPlaying(false);
+        activeSongSession.setPlayingModeStr("PlayRecordAudio");
+      } else {
+        activeSongSession.setPlayingModeStr("RecordAudio");
+        activeSongSession.setPlaying(true);
+      }
+    }
+  };
+  private final Timer pollTimer = new Timer(pollingDelay, pollingTask);
+  private final Timer doubleClickTimer = new Timer(doubleClickDelay, singleClickTask);
   private MidiSynthesizerTrack voicesTrack;
   private GenericTrack[] voicesSubTracks;
 
@@ -731,12 +754,12 @@ public final class Control2TopComponent extends SongTopComponent {
     if (newValue instanceof Boolean) {
       boolean isPlaying = (Boolean) newValue;
       if (isPlaying) {
-        timer.start();
+        pollTimer.start();
         disableVoiceSelection();
 
 
       } else {
-        timer.stop();
+        pollTimer.stop();
         sliderOrchestra.setVuValue(sliderOrchestra.getMinVuValue());
         sliderVoices.setVuValue(sliderVoices.getMinVuValue());
         sliderFeedback.setVuValue(sliderFeedback.getMinVuValue());
