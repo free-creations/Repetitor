@@ -47,15 +47,15 @@ public class AudioReaderTest {
   private static File testDir;
   private static final ExecutorService executor = Executors.newSingleThreadExecutor(
           new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-              Thread thread = new Thread(r);
-              thread.setPriority(Thread.MIN_PRIORITY);
-              thread.setDaemon(true);
-              thread.setName("AudioReaderTestBackgroundThread");
-              return thread;
-            }
-          });
+    @Override
+    public Thread newThread(Runnable r) {
+      Thread thread = new Thread(r);
+      thread.setPriority(Thread.MIN_PRIORITY);
+      thread.setDaemon(true);
+      thread.setName("AudioReaderTestBackgroundThread");
+      return thread;
+    }
+  });
 
   public AudioReaderTest() {
   }
@@ -67,7 +67,7 @@ public class AudioReaderTest {
     assertTrue("Uups " + testDir.getAbsolutePath() + " is not a directory.", testDir.isDirectory());
     System.out.println("Test files will be written to:" + testDir.getAbsolutePath());
   }
-  
+
   @AfterClass
   public static void tearDown() {
     executor.shutdown();
@@ -143,6 +143,7 @@ public class AudioReaderTest {
 
     audioReader.close();
   }
+
   /**
    * Verify that the AudioReader correctly processes an empty input.
    *
@@ -157,7 +158,7 @@ public class AudioReaderTest {
    *
    */
   @Test
-  public void testEmpty2() {
+  public void testEmpty2() throws IOException {
     System.out.println("testEmpty2");
 
     int audioArraySize = 1024;
@@ -189,6 +190,7 @@ public class AudioReaderTest {
 
     audioReader.close();
   }
+
   /**
    * Verify that the AudioReader correctly processes when audio array boundaries
    * exactly match the available input.
@@ -786,12 +788,16 @@ public class AudioReaderTest {
   }
 
   /**
-   * Test of start method, of class AudioReader.
+   * Test of "start(AudioWriter.WriterResult fileToRead)" method, of class
+   * AudioReader.
+   *
+   * 1) when the "AudioReader" is started with a "WriterResult"
+   * AudioReader.getNext shall return the samples contained in the WriterResult.
    */
   @Test
-  public void testStart_AudioWriterWriterResult() {
-    System.out.println("testStart_AudioWriterWriterResult");
-    int sampleCount = Const.fileBufferSizeFloat - 13;
+  public void testStart_WriterResult() throws IOException {
+    System.out.println("testStart_WriterResult");
+    int sampleCount = Const.fileBufferSizeFloat - 13; // make sample count just a wee bit smaller than the file buffer size.
     int audioArraySize = 2053;
     SyncBuffer syncBuffer = new SyncBuffer(Const.fileBufferSizeFloat);
 
@@ -801,6 +807,7 @@ public class AudioReaderTest {
       floatBuffer.put(i);
     }
     syncBuffer.flipFloats();
+    //prepare a writer result with kown content (ascending index numbers).
     WriterResult result = new WriterResult(syncBuffer, null, sampleCount);
 
     float[] audioArray = new float[audioArraySize];
@@ -820,6 +827,82 @@ public class AudioReaderTest {
       }
     }
 
+
+  }
+
+  /**
+   * Test that "start(AudioWriter.WriterResult fileToRead)" method, can be be
+   * used several times on the same input.
+   *
+   * 1) when the "AudioReader" is started with a "WriterResult"
+   * AudioReader.getNext shall return the samples contained in the WriterResult.
+   *
+   * 2) when the "AudioReader" is stopped and than re-started with the same
+   * "WriterResult" AudioReader.getNext shall again return the samples contained
+   * in the WriterResult.
+   */
+  @Test
+  public void testStart_WriterResultTwice() throws IOException, InterruptedException, ExecutionException {
+    System.out.println("testStart_WriterResult");
+    int approxSampleCount =  3*Const.fileBufferSizeFloat ;
+    int audioArraySize = 2053;
+    int audioArraysCount = approxSampleCount / audioArraySize;
+    float[] audioArray = new float[audioArraySize];
+    File outFile = new File(testDir, "testStart_WriterResultTwice.test");
+
+    AudioWriter audioWriter = new AudioWriter(executor);
+
+        //prepare a writer result with kown content (ascending index numbers).
+    audioWriter.start(outFile);
+    //... put asceding integers.
+    int sampleCount = 0;
+    for (int i = 0; i < audioArraysCount; i++) {
+      for (int sample = 0; sample < audioArraySize; sample++) {
+        audioArray[sample] = sampleCount;
+        sampleCount++;
+      }
+      audioWriter.waitForBufferReady();
+      //audioWriter.putNext(i * audioArraySize, audioWriterArray);
+      audioWriter.putNext(audioArray);
+    }
+    audioWriter.waitForBufferReady();
+    WriterResult result = audioWriter.stop();
+
+
+    AudioReader instance = new AudioReader(executor);
+    instance.start(result);
+
+    // 1) read the samples for a first time
+    int sampleIdx = 0;
+    while (sampleIdx < sampleCount) {
+      instance.getNext(audioArray);
+      for (float sample : audioArray) {
+        if (sampleIdx < sampleCount) {
+          assertEquals(sampleIdx, (int) sample);
+        } else {
+          assertEquals(0, (int) sample);
+        }
+        sampleIdx++;
+      }
+    }
+    instance.stop();
+
+    // 2) read the samples for a second time
+    instance.start(result);
+    sampleIdx = 0;
+    while (sampleIdx < sampleCount) {
+      instance.getNext(audioArray);
+      for (float sample : audioArray) {
+        if (sampleIdx < sampleCount) {
+          assertEquals(sampleIdx, (int) sample);
+        } else {
+          assertEquals(0, (int) sample);
+        }
+        sampleIdx++;
+      }
+    }
+    
+    assertTrue(outFile.delete()); // make sure an outfile was written
 
   }
 

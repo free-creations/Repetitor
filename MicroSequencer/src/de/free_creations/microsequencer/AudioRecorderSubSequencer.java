@@ -46,14 +46,14 @@ class AudioRecorderSubSequencer implements
   private final long minimumFreeFileSpace = 44100 * 2 * 4 * 60 * 4;//four minutes
   private final ExecutorService executor = Executors.newSingleThreadExecutor(
           new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-              Thread thread = new Thread(r);
-              thread.setPriority(Thread.MIN_PRIORITY);
-              thread.setName("FreeCreationsAudioRecorder");
-              return thread;
-            }
-          });
+    @Override
+    public Thread newThread(Runnable r) {
+      Thread thread = new Thread(r);
+      thread.setPriority(Thread.MIN_PRIORITY);
+      thread.setName("FreeCreationsAudioRecorder");
+      return thread;
+    }
+  });
   private PlayingMode playingMode = PlayingMode.MidiOnly;
   private Exception executionException;
   private float[] outputSamples;
@@ -76,16 +76,16 @@ class AudioRecorderSubSequencer implements
   public static MasterSequencer.SubSequencerFactory getFactory() {
     MasterSequencer.SubSequencerFactory newFactory =
             new MasterSequencer.SubSequencerFactory() {
-              @Override
-              public MasterSequencer.MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
-                throw new UnsupportedOperationException("Cannot make a MidiSubSequencer.");
-              }
+      @Override
+      public MasterSequencer.MidiSubSequencer make(String name, Soundbank soundbank) throws MidiUnavailableException {
+        throw new UnsupportedOperationException("Cannot make a MidiSubSequencer.");
+      }
 
-              @Override
-              public MasterSequencer.AudioRecorderSubSequencerInt makeAudioRecorder(String name) throws IOException {
-                return new AudioRecorderSubSequencer(name);
-              }
-            };
+      @Override
+      public MasterSequencer.AudioRecorderSubSequencerInt makeAudioRecorder(String name) throws IOException {
+        return new AudioRecorderSubSequencer(name);
+      }
+    };
     return newFactory;
   }
   private int processInCount = 0; // (debugging variable) the number of times processIn was called within one session
@@ -375,7 +375,13 @@ class AudioRecorderSubSequencer implements
         case PlayAudio:
           if (writerResult != null) {
             logger.log(Level.FINER, "### prepareSession: PlayAudio");
-            audioReader.start(writerResult);
+            try {
+              audioReader.start(writerResult);
+            } catch (IOException ex) {
+              logger.log(Level.SEVERE, null, ex);
+            }
+            int delayLatency = latency * outputChannelCount;
+            audioReader.skip(delayLatency);
           }
           return;
         case PlayRecordAudio:
@@ -452,7 +458,7 @@ class AudioRecorderSubSequencer implements
       if (playingMode != PlayingMode.PlayRecordAudio) {
         return;
       }
-      int switchSample = ((int) (samplingRate * switchPoint) * outputChannelCount);;
+      int switchSample = ((int) (samplingRate * switchPoint) * outputChannelCount);
 
       logger.log(Level.FINER, ">>>>### prepareSwitch: {0}", switchSample);
 
@@ -464,19 +470,23 @@ class AudioRecorderSubSequencer implements
       }
 
       audioWriter.start(currentTempFile);
-      audioReader.start(writerResult);
-      int delayLatency = latency * outputChannelCount;
-      int exactDelay = delayLatency +previousSwitchSample -switchSample;
-      if(exactDelay>0) {
-        audioReader.skip(exactDelay);
-      }else{
-        audioReader.skip(delayLatency);
-      }
+      try {
+        audioReader.start(writerResult);
 
+        int delayLatency = latency * outputChannelCount;
+        int exactDelay = delayLatency + previousSwitchSample - switchSample;
+        if (exactDelay > 0) {
+          audioReader.skip(exactDelay);
+        } else {
+          audioReader.skip(delayLatency);
+        }
+      } catch (IOException ex) {
+        logger.log(Level.SEVERE, null, ex);
+      }
       File usedFile = currentTempFile;
       currentTempFile = previousTempFile;
       previousTempFile = usedFile;
-      previousSwitchSample  = switchSample;
+      previousSwitchSample = switchSample;
 
     }
   }

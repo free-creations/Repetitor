@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -212,14 +213,53 @@ public class AudioReader {
 
   }
 
-  public void start(AudioWriter.WriterResult fileToRead) {
-    if (fileToRead != null) {
-      start(fileToRead.getStartBuffer().asFloatBuffer(),
-              fileToRead.getChannel(),
-              fileToRead.getSamplesWritten());
+  /**
+   *
+   * @param input
+   * @throws IOException
+   */
+  public void start(AudioWriter.WriterResult input) throws IOException {
+    if (input != null) {
+      SyncBuffer startBuffer = input.getStartBuffer();
+      startBuffer.rewindFloats();
+      /**
+       * @ToDo make this thread save (see ToDo in class WriterResult)
+       */
+      Future<FileChannel> inputChannel = rewindFile(input.getChannel());
+      start(startBuffer.asFloatBuffer(),
+              inputChannel,
+              input.getSamplesWritten());
     } else {
       this.samplesToProcess = 0;
       started = true;
+    }
+  }
+
+  /**
+   * Attempt to rewind the input channel in case we read it for a second time.
+   *
+   * @ToDo this is not thread save!!!
+   *
+   * @param channel
+   * @return
+   */
+  private Future<FileChannel> rewindFile(Future<FileChannel> channel) throws IOException {
+    if (channel == null) {
+      return null;
+    }
+    try {
+      FileChannel file = channel.get(0, TimeUnit.MILLISECONDS);
+      if (file.position() == 0) {
+        return channel;
+      } else {
+        file.position(0);
+      }
+      return channel;
+    } catch (InterruptedException | ExecutionException ex) {
+      throw new IOException(ex);
+    } catch (TimeoutException ignored) {
+      //the channel is still being written to, so return as it is.
+      return channel;
     }
   }
 
@@ -430,7 +470,9 @@ public class AudioReader {
   public void stop() {
     synchronized (processingLock) {
       if (fileInput != null) {
-        executor.submit(new FileClosingTask(fileInput));
+        //@ToDo we cannot close here because we might read the file again
+        // see also the remarques about thread savety
+        //executor.submit(new FileClosingTask(fileInput));
       }
       started = false;
       samplesToProcess = 0;

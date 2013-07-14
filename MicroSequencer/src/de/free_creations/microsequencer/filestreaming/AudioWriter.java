@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
@@ -121,6 +122,15 @@ public class AudioWriter {
     }
   }
 
+  /**
+   * The result returned when the Writer is closed.
+   * The result consists of a start buffer and a pointer to a file that
+   * will contain the following samples.
+   * The writer result can be directly passed to the open method of the audio 
+   * reader.
+   * @ToDo the WriterResult is not thread save Two AudioReader cannot
+   * to access the same result in parallel.
+   */
   public static class WriterResult {
 
     private final Future<FileChannel> channel;
@@ -260,7 +270,7 @@ public class AudioWriter {
     private FileChannel reopenForInput(FileChannel channel) throws IOException {
       channel.close();
       // open the input file
-      FileInputStream inFile = new FileInputStream(file);
+      RandomAccessFile inFile = new RandomAccessFile(file,"r");
       return inFile.getChannel();
     }
   }

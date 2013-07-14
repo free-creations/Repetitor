@@ -188,7 +188,7 @@ public class AudioWriterTest {
     }
     
     audioWriter.close();
-    assertFalse(outFile.delete()); // no should have been written
+    assertFalse(outFile.delete()); // no file should have been written
   }
 
   /**

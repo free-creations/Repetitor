@@ -106,7 +106,9 @@ public class SyncBuffer {
 
   /**
    * Flips the float-buffer and puts the byte-buffer in synchronization with the
-   * float-buffer.
+   * float-buffer. The limit is set to the current position (of the
+   * float-buffer) and then the position is set to zero. If the mark is defined
+   * then it is discarded
    *
    * <p>After a sequence of channel-read or put operations on the float-buffer,
    * invoke this method to prepare for a sequence of channel-write or relative
@@ -116,6 +118,21 @@ public class SyncBuffer {
    */
   public SyncBuffer flipFloats() {
     floatBuffer.flip();
+    return syncBytesWithFloats();
+  }
+
+  /**
+   * Rewinds the float-buffer and puts the byte-buffer in synchronization with
+   * the float-buffer. The position of both buffers is set to zero and the mark
+   * is discarded.
+   *
+   * <p>Invoke this method before a sequence of channel-write or get operations,
+   * assuming that the limit has already been set appropriately</p>
+   *
+   * @return This buffer.
+   */
+  public SyncBuffer rewindFloats() {
+    floatBuffer.rewind();
     return syncBytesWithFloats();
   }
 }
