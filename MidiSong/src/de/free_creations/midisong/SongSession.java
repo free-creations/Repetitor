@@ -128,6 +128,7 @@ public class SongSession {
     }
   };
   private SequencerPort audioRecorderPort = null;
+  private double lastStopingTickPosition = 0;
 
   /**
    * This constructor is package-private, use the SongManager to construct new
@@ -227,6 +228,7 @@ public class SongSession {
     if (playing) {
       sequencer.start(playingMode);
     } else {
+      lastStopingTickPosition = getTickPosition(0);
       sequencer.stop();
     }
 
@@ -623,10 +625,15 @@ public class SongSession {
       return;
     }
     this.startPoint = tick;
+    lastStopingTickPosition = tick;
     if (sequencer != null) {
       sequencer.setTickPosition(tick);
     }
     propertyChangeSupport.firePropertyChange(PROP_STARTPOINT, oldTick, tick);
+  }
+
+  public double getLastStopingTickPosition() {
+    return lastStopingTickPosition;
   }
 
   /**

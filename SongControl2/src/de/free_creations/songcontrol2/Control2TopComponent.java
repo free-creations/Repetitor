@@ -21,6 +21,7 @@ import de.free_creations.guicomponents.SliderVuMeter;
 import de.free_creations.guicomponents.SongTopComponent;
 import de.free_creations.midisong.*;
 import de.free_creations.midisong.GenericTrack.EventHandler;
+import de.free_creations.midiutil.RPositionEx;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -107,7 +108,7 @@ public final class Control2TopComponent extends SongTopComponent {
     @Override
     public void buttonAChanged(boolean down) {
       if (down) {
-        toggleFeedback();
+        setStartToCurrent();
       }
     }
 
@@ -121,7 +122,8 @@ public final class Control2TopComponent extends SongTopComponent {
           }
           if (activeSongSession.isPlaying()) {
             activeSongSession.setPlaying(false);
-            activeSongSession.setPlayingModeStr("PlayRecordAudio");
+            activeSongSession.setPlayingModeStr("PlayAudio");
+            activeSongSession.setPlaying(true);
           } else {
             activeSongSession.setPlayingModeStr("PlayAudio");
             activeSongSession.setPlaying(true);
@@ -240,18 +242,24 @@ public final class Control2TopComponent extends SongTopComponent {
     }
   }
 
-  private void toggleFeedback() {
-    if (feedbackOn) {
-      feedbackOnAttenuation = sliderFeedback.getValue();
-      sliderFeedback.setValue(sliderFeedback.getMaximum());
-      sliderFeedback.setEnabled(false);
-      feedbackOn = false;
-    } else {
-      sliderFeedback.setValue(feedbackOnAttenuation);
-      sliderFeedback.setEnabled(true);
-      feedbackOn = true;
+  private void setStartToCurrent() {
+
+    if (activeSongSession == null) {
+      return;
     }
+    if (activeSongSession.isPlaying()) {
+      activeSongSession.setPlaying(false);
+    }
+    
+    double tickPosition = activeSongSession.getLastStopingTickPosition();
+    RPositionEx currentRPos = activeSongSession.tickToRPositionEx(tickPosition);
+    RPositionEx newRPos = new RPositionEx(currentRPos.getNumerator(), 
+            currentRPos.getDenominator(), currentRPos.getMeasure(), 0);
+    long newPosition = (long)activeSongSession.beatPositionToTick(newRPos);
+    activeSongSession.setStartPoint(newPosition);
+
   }
+  
 
   /**
    * This method is called from within the constructor to initialize the form.
