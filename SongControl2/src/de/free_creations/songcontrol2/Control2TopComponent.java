@@ -82,6 +82,7 @@ public final class Control2TopComponent extends SongTopComponent {
   private volatile boolean wiiConnected = false;
   private volatile boolean feedbackOn = true;
   private volatile int feedbackOnAttenuation = -10;
+  private boolean btnAdown = false;
   private final WiiListener wiiListener = new WiiListener() {
     @Override
     public void connectionChanged(int status) {
@@ -107,30 +108,38 @@ public final class Control2TopComponent extends SongTopComponent {
 
     @Override
     public void buttonAChanged(boolean down) {
-      if (down) {
-        setStartToCurrent();
-      }
+      btnAdown = down;
     }
 
     @Override
     public void buttonBChanged(boolean down) {
       if (down) {
         if (doubleClickTimer.isRunning()) {
+          // this is the second click of a double click
           doubleClickTimer.stop();
           if (activeSongSession == null) {
             return;
           }
+          if (!activeSongSession.isPlaying()) {
+            putStartPointToCurrentPosition();
+          }
+
+        } else {
+          // this is the first click, a second click might follow this one.
           if (activeSongSession.isPlaying()) {
             activeSongSession.setPlaying(false);
-            activeSongSession.setPlayingModeStr("PlayAudio");
-            activeSongSession.setPlaying(true);
+            doubleClickTimer.stop();
           } else {
-            activeSongSession.setPlayingModeStr("PlayAudio");
-            activeSongSession.setPlaying(true);
+            // We start the timer, if the delay elapses without a second click
+            // we will execute a single click (see singleClickTask)
+            doubleClickTimer.setRepeats(false);
+            if (btnAdown) {
+              doubleClickTimer.setActionCommand("RecordAudio");
+            } else {
+              doubleClickTimer.setActionCommand("PlayAudio");
+            }
+            doubleClickTimer.start();
           }
-        } else {
-          doubleClickTimer.setRepeats(false);
-          doubleClickTimer.start();
         }
       }
     }
@@ -146,6 +155,9 @@ public final class Control2TopComponent extends SongTopComponent {
       Control2TopComponent.this.updateVuMeters();
     }
   };
+  /**
+   * This task is executed if after a first click no second click follows.
+   */
   private final ActionListener singleClickTask = new ActionListener() {
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -153,12 +165,14 @@ public final class Control2TopComponent extends SongTopComponent {
         return;
       }
       if (activeSongSession.isPlaying()) {
-        activeSongSession.setPlaying(false);
-        activeSongSession.setPlayingModeStr("PlayRecordAudio");
-      } else {
-        activeSongSession.setPlayingModeStr("RecordAudio");
-        activeSongSession.setPlaying(true);
+        // this should never happen! Just ignore it.
+        return;
       }
+      String command = e.getActionCommand();
+      if (command != null) {
+        activeSongSession.setPlayingModeStr(command);
+      }
+      activeSongSession.setPlaying(true);
     }
   };
   private final Timer pollTimer = new Timer(pollingDelay, pollingTask);
@@ -242,7 +256,7 @@ public final class Control2TopComponent extends SongTopComponent {
     }
   }
 
-  private void setStartToCurrent() {
+  private void putStartPointToCurrentPosition() {
 
     if (activeSongSession == null) {
       return;
@@ -250,16 +264,15 @@ public final class Control2TopComponent extends SongTopComponent {
     if (activeSongSession.isPlaying()) {
       activeSongSession.setPlaying(false);
     }
-    
+
     double tickPosition = activeSongSession.getLastStopingTickPosition();
     RPositionEx currentRPos = activeSongSession.tickToRPositionEx(tickPosition);
-    RPositionEx newRPos = new RPositionEx(currentRPos.getNumerator(), 
+    RPositionEx newRPos = new RPositionEx(currentRPos.getNumerator(),
             currentRPos.getDenominator(), currentRPos.getMeasure(), 0);
-    long newPosition = (long)activeSongSession.beatPositionToTick(newRPos);
+    long newPosition = (long) activeSongSession.beatPositionToTick(newRPos);
     activeSongSession.setStartPoint(newPosition);
 
   }
-  
 
   /**
    * This method is called from within the constructor to initialize the form.

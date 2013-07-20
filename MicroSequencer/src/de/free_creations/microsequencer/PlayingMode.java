@@ -31,7 +31,7 @@ package de.free_creations.microsequencer;
   /**
    * Play Midi and re-play previously recorded Audio.
    */
-  PlayAudio, // play Midi and re-play prevously Audio
+  PlayAudio, // play Midi and re-play prevously recorded Audio
   /**
    * Play Midi in loop mode and, in parallel,
    * re-play Audio and record Audio input. 
