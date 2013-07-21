@@ -70,6 +70,8 @@ public final class Control2TopComponent extends SongTopComponent {
    * Internal identifier for the Mac OS X operating system.
    */
   private static final String MAC = "mac";
+  private static final int BTN_LEFT = 256;
+  private static final int BTN_RIGHT = 512;
   static final private Logger logger = Logger.getLogger(Control2TopComponent.class.getName());
   static final private String disabledDisplayName = "...";
   static final private String noVoice = "...";
@@ -80,9 +82,9 @@ public final class Control2TopComponent extends SongTopComponent {
   private BuiltinSynthesizer vSynth = null;
   private MidiSynthesizerTrack orchestraTrack;
   private volatile boolean wiiConnected = false;
-  private volatile boolean feedbackOn = true;
-  private volatile int feedbackOnAttenuation = -10;
   private boolean btnAdown = false;
+  private static final String BACKWARD = "backward";
+  private static final String FORWARD = "forward";
   private final WiiListener wiiListener = new WiiListener() {
     @Override
     public void connectionChanged(int status) {
@@ -145,7 +147,47 @@ public final class Control2TopComponent extends SongTopComponent {
     }
 
     @Override
-    public void buttonEvent(int i, int i1) {
+    public void buttonEvent(int previousState, int newState) {
+      int changedBtn = previousState ^ newState;
+      switch (changedBtn) {
+        case BTN_LEFT:
+          buttonLeftChanged((newState & BTN_LEFT) != 0);
+          break;
+        case BTN_RIGHT:
+          buttonRightChanged((newState & BTN_RIGHT) != 0);
+          break;
+      }
+
+    }
+
+    private void buttonLeftChanged(boolean down) {
+      if (down) {
+        if (activeSongSession != null) {
+          if (!activeSongSession.isPlaying()) {
+            moveBackward();
+            wiiRepeatTimer.stop();
+            wiiRepeatTimer.setActionCommand(BACKWARD);
+            wiiRepeatTimer.start();
+          }
+        }
+      } else {
+        wiiRepeatTimer.stop();
+      }
+    }
+
+    private void buttonRightChanged(boolean down) {
+      if (down) {
+        if (activeSongSession != null) {
+          if (!activeSongSession.isPlaying()) {
+            moveForward();
+            wiiRepeatTimer.stop();
+            wiiRepeatTimer.setActionCommand(FORWARD);
+            wiiRepeatTimer.start();
+          }
+        }
+      } else {
+        wiiRepeatTimer.stop();
+      }
     }
   };
   private final ActionListener pollingTask = new ActionListener() {
@@ -175,8 +217,30 @@ public final class Control2TopComponent extends SongTopComponent {
       activeSongSession.setPlaying(true);
     }
   };
+  private final ActionListener wiiRepeatTask = new ActionListener() {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      if (activeSongSession == null) {
+        return;
+      }
+      if (activeSongSession.isPlaying()) {
+        // this should never happen! Just ignore it.
+        return;
+      }
+      String command = e.getActionCommand();
+      if (command == null ? FORWARD == null : command.equals(FORWARD)) {
+        moveForward();
+      }
+      if (command == null ? BACKWARD == null : command.equals(BACKWARD)) {
+        moveBackward();
+      }
+    }
+  };
   private final Timer pollTimer = new Timer(pollingDelay, pollingTask);
   private final Timer doubleClickTimer = new Timer(doubleClickDelay, singleClickTask);
+  private final int wiiInitialDelay = 1000;
+  private final int wiiBetweenEventDelay = 100;
+  private final Timer wiiRepeatTimer = new Timer(wiiInitialDelay, wiiRepeatTask);
   private MidiSynthesizerTrack voicesTrack;
   private GenericTrack[] voicesSubTracks;
 
@@ -233,7 +297,41 @@ public final class Control2TopComponent extends SongTopComponent {
     sliderFeedback.setVuValue(sliderFeedback.getMinVuValue());
     sliderFeedback.setValue(-10);
     lblWiiMessage.setText("");
+    wiiRepeatTimer.setInitialDelay(wiiInitialDelay);
+    wiiRepeatTimer.setDelay(wiiBetweenEventDelay);
+    wiiRepeatTimer.setRepeats(true);
 
+  }
+
+  private void moveForward() {
+    if (activeSongSession != null) {
+      if (!activeSongSession.isPlaying()) {
+        double tickPosition = activeSongSession.getStartPoint();
+        RPositionEx currentRPos = activeSongSession.tickToRPositionEx(tickPosition);
+        long newMeasure = currentRPos.getMeasure() + 1;
+        RPositionEx newRPos = new RPositionEx(currentRPos.getNumerator(),
+                currentRPos.getDenominator(), newMeasure, 0);
+        long newPosition = (long) activeSongSession.beatPositionToTick(newRPos);
+        activeSongSession.setStartPoint(newPosition);
+      }
+    }
+  }
+
+  private void moveBackward() {
+    if (activeSongSession != null) {
+      if (!activeSongSession.isPlaying()) {
+        double tickPosition = activeSongSession.getStartPoint();
+        RPositionEx currentRPos = activeSongSession.tickToRPositionEx(tickPosition);
+        long newMeasure = currentRPos.getMeasure();
+        if (currentRPos.getBeat() < 0.5) {
+          newMeasure = newMeasure - 1;
+        }
+        RPositionEx newRPos = new RPositionEx(currentRPos.getNumerator(),
+                currentRPos.getDenominator(), newMeasure, 0);
+        long newPosition = (long) activeSongSession.beatPositionToTick(newRPos);
+        activeSongSession.setStartPoint(newPosition);
+      }
+    }
   }
 
   /**
