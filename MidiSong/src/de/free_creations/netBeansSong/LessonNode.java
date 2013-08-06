@@ -71,6 +71,12 @@ public class LessonNode extends AbstractNode implements PropertyChangeListener {
   public Action getPreferredAction() {
     return lessonOpenAction;
   }
+  
+  @Override
+  public String getHtmlDisplayName(){
+    return lesson.getDescription();
+    
+  }
 
   @Override
   public Image getIcon(int type) {
