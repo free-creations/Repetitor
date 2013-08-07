@@ -88,18 +88,22 @@ public final class Control2TopComponent extends SongTopComponent {
   private final WiiListener wiiListener = new WiiListener() {
     @Override
     public void connectionChanged(int status) {
+      String message1 = "<html><br>";
+      if (activeSongSession != null) {
+        message1 = "<html>Mode: "+activeSongSession.getPlayingModeName()+"<br><br>";
+      }
       switch (status) {
         case WiiListener.ABORTED:
-          lblWiiMessage.setText("<html>Connection broken.</html>");
+          lblWiiMessage.setText(message1+"Connection broken.</html>");
           wiiConnected = false;
           return;
         case WiiListener.CONNECTED:
-          lblWiiMessage.setText("<html>Wii is connected.</html>");
+          lblWiiMessage.setText(message1+"Wii is connected.</html>");
           btnWii.setText("Disconnect Wii");
           wiiConnected = true;
           return;
         case WiiListener.ENDED:
-          lblWiiMessage.setText("<html>Connection terminated.</html>");
+          lblWiiMessage.setText(message1+"Connection terminated.</html>");
           btnWii.setText("Wii");
           wiiConnected = false;
           return;
@@ -136,8 +140,10 @@ public final class Control2TopComponent extends SongTopComponent {
             // we will execute a single click (see singleClickTask)
             doubleClickTimer.setRepeats(false);
             if (btnAdown) {
+              // button A is down -> record audio
               doubleClickTimer.setActionCommand("RecordAudio");
             } else {
+              // button A is up -> play audio
               doubleClickTimer.setActionCommand("PlayAudio");
             }
             doubleClickTimer.start();
@@ -838,8 +844,14 @@ public final class Control2TopComponent extends SongTopComponent {
       updateLoopEndpoint(evt.getNewValue());
     } else if (SongSession.PROP_LOOPING.equals(prop)) {
       updateLoopStatus(evt.getNewValue());
-
+    } else if (SongSession.PROP_PLAYINGMODE.equals(prop)) {
+      updatePlayingMode(evt.getNewValue());
     }
+
+  }
+
+  private void updatePlayingMode(Object newValue) {
+    lblWiiMessage.setText("Mode: " + newValue);
   }
 
   private void updateStartpoint(SongSession session, Object newValue) {

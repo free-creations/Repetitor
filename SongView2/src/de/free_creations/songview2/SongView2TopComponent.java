@@ -27,9 +27,9 @@ import org.openide.windows.TopComponent;
  */
 @ConvertAsProperties(dtd = "-//org.myorg.songview//SongView//EN", autostore = false)
 @TopComponent.Description(preferredID = SongView2TopComponent.PREFERRED_ID,
-iconBase = "de/free_creations/songview/artwork/noteSheet.png",
-//persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
-persistenceType = TopComponent.PERSISTENCE_NEVER)
+        iconBase = "de/free_creations/songview/artwork/noteSheet.png",
+        //persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
+        persistenceType = TopComponent.PERSISTENCE_NEVER)
 @TopComponent.Registration(mode = "editor", openAtStartup = false, position = 100)
 public class SongView2TopComponent extends SongTopComponent {
 
@@ -45,35 +45,34 @@ public class SongView2TopComponent extends SongTopComponent {
    */
   private final PropertyChangeListener songDataSupportListener =
           new PropertyChangeListener() {
-
-            /**
-             * this function will be triggered when songDataSupport-object has
-             * finished loading the song-session.
-             */
-            @Override
-            public void propertyChange(PropertyChangeEvent pce) {
-              if (SongDataSupport.PROP_SESSION_LOADED.equals(pce.getPropertyName())) {
-                try {
-                  songDataSupport.setOpen(true);
-                  session = songDataSupport.getSession();
-                  assert (session != null);
-                  setDisplayName(session.getName());
-                  setPreferedSession(session);
-                  attachRequiemSong(session);
-                  SongSessionManager.activate(session);
+    /**
+     * this function will be triggered when songDataSupport-object has finished
+     * loading the song-session.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent pce) {
+      if (SongDataSupport.PROP_SESSION_LOADED.equals(pce.getPropertyName())) {
+        try {
+          songDataSupport.setOpen(true);
+          session = songDataSupport.getSession();
+          assert (session != null);
+          setDisplayName(session.getName());
+          setPreferedSession(session);
+          attachRequiemSong(session);
+          SongSessionManager.activate(session);
 //                  waitPanel.setMessage("Connecting to Soundcard...");
-                } catch (EInvalidSongFile ex) {
-                  Exceptions.printStackTrace(ex);
-                } catch (InterruptedException ex) {
-                  Exceptions.printStackTrace(ex);
-                } catch (ExecutionException ex) {
-                  Exceptions.printStackTrace(ex);
-                } catch (TimeoutException ex) {
-                  Exceptions.printStackTrace(ex);
-                }
-              }
-            }
-          };
+        } catch (EInvalidSongFile ex) {
+          Exceptions.printStackTrace(ex);
+        } catch (InterruptedException ex) {
+          Exceptions.printStackTrace(ex);
+        } catch (ExecutionException ex) {
+          Exceptions.printStackTrace(ex);
+        } catch (TimeoutException ex) {
+          Exceptions.printStackTrace(ex);
+        }
+      }
+    }
+  };
 
   /**
    * Creates new form SongViewTopComponent and connects to the given song.
@@ -102,7 +101,6 @@ public class SongView2TopComponent extends SongTopComponent {
     //**   waitPanel.setVisible(true);
     setEnabledOnComponentAndChildren(controlContainer, false);
     addComponentListener(new ComponentListener() {
-
       @Override
       public void componentResized(ComponentEvent e) {
 //**        waitPanel.setBounds(0, 0, getWidth(), getHeight());
@@ -374,6 +372,7 @@ public class SongView2TopComponent extends SongTopComponent {
     if (session != null) {
       switch (btnStartStop.getState()) {
         case STARTING:
+          session.setPlayingModeStr("PlayRecordAudio");
           session.setPlaying(true);
           break;
         case STOPPING:
@@ -456,8 +455,8 @@ public class SongView2TopComponent extends SongTopComponent {
     if (newValue < scrollBarHorizontal.getMinimum()) {
       newValue = scrollBarHorizontal.getMinimum();
     }
-    if (newValue > scrollBarHorizontal.getMaximum()-scrollBarHorizontal.getVisibleAmount()) {
-      newValue = scrollBarHorizontal.getMaximum()-scrollBarHorizontal.getVisibleAmount();
+    if (newValue > scrollBarHorizontal.getMaximum() - scrollBarHorizontal.getVisibleAmount()) {
+      newValue = scrollBarHorizontal.getMaximum() - scrollBarHorizontal.getVisibleAmount();
     }
     scrollBarHorizontal.setValue(newValue);
   }//GEN-LAST:event_scrollBarHorizontalMouseWheelMoved
@@ -590,7 +589,7 @@ public class SongView2TopComponent extends SongTopComponent {
   private void updateLoopStatus(SongSession session, Object newValue) {
     if (newValue instanceof Boolean) {
       boolean newStatus = (Boolean) newValue;
-     // btnLoop.setSelected(newStatus);
+      // btnLoop.setSelected(newStatus);
     }
   }
 
