@@ -65,7 +65,7 @@ public class ConductorPanel extends JPanel {
   /**
    * the time-duration the conductor advances on the performance
    */
-  final double totalAdvance = 0.100; // in seconds
+  final double totalAdvance = 0.020; // in seconds
 
   private class LoaderTask extends SwingWorker<Object, Object> {
 
@@ -210,7 +210,8 @@ public class ConductorPanel extends JPanel {
         break;
       case 4:
         if (speed < 100) {
-          currentBeatType = BEAT_4; // four beats per measure
+          //currentBeatType = BEAT_4; // four beats per measure
+          currentBeatType = BEAT_2; // set to two beats to stay synchronised with metronome
         } else {
           currentBeatType = BEAT_2; // two beats per measure
         }
