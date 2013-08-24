@@ -229,7 +229,6 @@ public final class Control2TopComponent extends SongTopComponent {
     private void newAttenuation(int X, int Z, int deltaX, int deltaZ) {
       if (activeSongSession != null) {
         roll = roll + deltaRoll(X, Z, deltaX, deltaZ);
-        System.out.println("<<<<<< roll="+roll);
         int attenuation = (roll * 40) / 2000;
         sliderOrchestra.setValue(initialOrchAttn - attenuation);
         sliderVoices.setValue(initialVoicesAttn - attenuation);
