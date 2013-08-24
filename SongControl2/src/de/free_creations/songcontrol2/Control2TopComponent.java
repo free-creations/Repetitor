@@ -86,24 +86,35 @@ public final class Control2TopComponent extends SongTopComponent {
   private static final String BACKWARD = "backward";
   private static final String FORWARD = "forward";
   private final WiiListener wiiListener = new WiiListener() {
+    private int roll = 0; //the roll angle in arbitrary units
+    int prevX = 0; // previous accelation in x direction
+    int prevZ = 0; // previous accelation in z direction
+    private int initialOrchAttn = 80;
+    private int initialVoicesAttn = 80;
+    /**
+     * There are about 2000 steps in a 180 degree's circle, these are mapped
+     * into 60 decibel.
+     */
+    private final float rollAngleToDecibel = 60 / 2000;
+
     @Override
     public void connectionChanged(int status) {
       String message1 = "<html><br>";
       if (activeSongSession != null) {
-        message1 = "<html>Mode: "+activeSongSession.getPlayingModeName()+"<br><br>";
+        message1 = "<html>Mode: " + activeSongSession.getPlayingModeName() + "<br><br>";
       }
       switch (status) {
         case WiiListener.ABORTED:
-          lblWiiMessage.setText(message1+"Connection broken.</html>");
+          lblWiiMessage.setText(message1 + "Connection broken.</html>");
           wiiConnected = false;
           return;
         case WiiListener.CONNECTED:
-          lblWiiMessage.setText(message1+"Wii is connected.</html>");
+          lblWiiMessage.setText(message1 + "Wii is connected.</html>");
           btnWii.setText("Disconnect Wii");
           wiiConnected = true;
           return;
         case WiiListener.ENDED:
-          lblWiiMessage.setText(message1+"Connection terminated.</html>");
+          lblWiiMessage.setText(message1 + "Connection terminated.</html>");
           btnWii.setText("Wii");
           wiiConnected = false;
           return;
@@ -114,7 +125,13 @@ public final class Control2TopComponent extends SongTopComponent {
 
     @Override
     public void buttonAChanged(boolean down) {
+      if(btnAdown == down){
+        return;
+      }
       btnAdown = down;
+      roll = 0;
+      initialOrchAttn = sliderOrchestra.getValue();
+      initialVoicesAttn = sliderVoices.getValue();
     }
 
     @Override
@@ -194,6 +211,37 @@ public final class Control2TopComponent extends SongTopComponent {
       } else {
         wiiRepeatTimer.stop();
       }
+    }
+
+    @Override
+    public void accelerometerEvent(int accX, int ignore, int accZ) {
+      if (btnAdown) {
+        newAttenuation(
+                accX,
+                accZ,
+                prevX - accX,
+                prevZ - accZ);
+      }
+      prevX = accX;
+      prevZ = accZ;
+    }
+
+    private void newAttenuation(int X, int Z, int deltaX, int deltaZ) {
+      if (activeSongSession != null) {
+        roll = roll + deltaRoll(X, Z, deltaX, deltaZ);
+        System.out.println("<<<<<< roll="+roll);
+        int attenuation = (roll * 40) / 2000;
+        sliderOrchestra.setValue(initialOrchAttn - attenuation);
+        sliderVoices.setValue(initialVoicesAttn - attenuation);
+      }
+    }
+
+    /**
+     * Vector product of the delta vector and the tangent on the "one G circle".
+     */
+    private int deltaRoll(int X, int Z, int deltaX, int deltaZ) {
+      return X * deltaZ - Z * deltaX;
+
     }
   };
   private final ActionListener pollingTask = new ActionListener() {
