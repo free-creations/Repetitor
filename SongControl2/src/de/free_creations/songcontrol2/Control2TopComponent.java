@@ -72,6 +72,9 @@ public final class Control2TopComponent extends SongTopComponent {
   private static final String MAC = "mac";
   private static final int BTN_LEFT = 256;
   private static final int BTN_RIGHT = 512;
+  private static final int BTN_PLUS = 4096;
+  private static final int BTN_MINUS = 16;
+  private static final int DELTA_ATTN = -3;
   static final private Logger logger = Logger.getLogger(Control2TopComponent.class.getName());
   static final private String disabledDisplayName = "...";
   static final private String noVoice = "...";
@@ -86,17 +89,6 @@ public final class Control2TopComponent extends SongTopComponent {
   private static final String BACKWARD = "backward";
   private static final String FORWARD = "forward";
   private final WiiListener wiiListener = new WiiListener() {
-    private int roll = 0; //the roll angle in arbitrary units
-    int prevX = 0; // previous accelation in x direction
-    int prevZ = 0; // previous accelation in z direction
-    private int initialOrchAttn = 80;
-    private int initialVoicesAttn = 80;
-    /**
-     * There are about 2000 steps in a 180 degree's circle, these are mapped
-     * into 60 decibel.
-     */
-    private final float rollAngleToDecibel = 60 / 2000;
-
     @Override
     public void connectionChanged(int status) {
       String message1 = "<html><br>";
@@ -125,13 +117,9 @@ public final class Control2TopComponent extends SongTopComponent {
 
     @Override
     public void buttonAChanged(boolean down) {
-      if(btnAdown == down){
-        return;
-      }
+
       btnAdown = down;
-      roll = 0;
-      initialOrchAttn = sliderOrchestra.getValue();
-      initialVoicesAttn = sliderVoices.getValue();
+
     }
 
     @Override
@@ -179,6 +167,12 @@ public final class Control2TopComponent extends SongTopComponent {
         case BTN_RIGHT:
           buttonRightChanged((newState & BTN_RIGHT) != 0);
           break;
+        case BTN_PLUS:
+          newAttenuation(DELTA_ATTN);
+          break;
+        case BTN_MINUS:
+          newAttenuation(-DELTA_ATTN);
+          break;
       }
 
     }
@@ -215,32 +209,36 @@ public final class Control2TopComponent extends SongTopComponent {
 
     @Override
     public void accelerometerEvent(int accX, int ignore, int accZ) {
-      if (btnAdown) {
-        newAttenuation(
-                accX,
-                accZ,
-                prevX - accX,
-                prevZ - accZ);
-      }
-      prevX = accX;
-      prevZ = accZ;
     }
 
-    private void newAttenuation(int X, int Z, int deltaX, int deltaZ) {
+    private void newAttenuation(int deltaAttn) {
       if (activeSongSession != null) {
-        roll = roll + deltaRoll(X, Z, deltaX, deltaZ);
-        int attenuation = (roll * 40) / 2000;
-        sliderOrchestra.setValue(initialOrchAttn - attenuation);
-        sliderVoices.setValue(initialVoicesAttn - attenuation);
+        // calculate the new values
+        int newOrchestraA = sliderOrchestra.getValue() + deltaAttn;
+        int newVoicesA = sliderVoices.getValue() + deltaAttn;
+
+        // if the new values exceed the maximum, correct and preserve the difference between orchestra and voices
+        if (newOrchestraA > sliderOrchestra.getMaximum()) {
+          newOrchestraA = sliderOrchestra.getMaximum();
+          newVoicesA = sliderVoices.getValue() + newOrchestraA - sliderOrchestra.getValue();
+        }
+        if (newVoicesA > sliderVoices.getMaximum()) {
+          newVoicesA = sliderVoices.getMaximum();
+          newOrchestraA = sliderOrchestra.getValue() + newVoicesA - sliderVoices.getValue();
+        }
+        // if the new values exceed the minimum, correct and preserve the difference between orchestra and voices
+        if (newOrchestraA < sliderOrchestra.getMinimum()) {
+          newOrchestraA = sliderOrchestra.getMinimum();
+          newVoicesA = sliderVoices.getValue() + newOrchestraA - sliderOrchestra.getValue();
+        }
+        if (newVoicesA < sliderVoices.getMinimum()) {
+          newVoicesA = sliderVoices.getMinimum();
+          newOrchestraA = sliderOrchestra.getValue() + newVoicesA - sliderVoices.getValue();
+        }
+
+        sliderOrchestra.setValue(newOrchestraA);
+        sliderVoices.setValue(newVoicesA);
       }
-    }
-
-    /**
-     * Vector product of the delta vector and the tangent on the "one G circle".
-     */
-    private int deltaRoll(int X, int Z, int deltaX, int deltaZ) {
-      return X * deltaZ - Z * deltaX;
-
     }
   };
   private final ActionListener pollingTask = new ActionListener() {
