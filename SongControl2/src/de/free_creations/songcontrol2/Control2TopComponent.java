@@ -74,6 +74,7 @@ public final class Control2TopComponent extends SongTopComponent {
   private static final int BTN_RIGHT = 512;
   private static final int BTN_PLUS = 4096;
   private static final int BTN_MINUS = 16;
+  private static final int BTN_HOME = 128;
   private static final int DELTA_ATTN = -3;
   static final private Logger logger = Logger.getLogger(Control2TopComponent.class.getName());
   static final private String disabledDisplayName = "...";
@@ -86,9 +87,22 @@ public final class Control2TopComponent extends SongTopComponent {
   private MidiSynthesizerTrack orchestraTrack;
   private volatile boolean wiiConnected = false;
   private boolean btnAdown = false;
+  private boolean btnHomeDown = false;
   private static final String BACKWARD = "backward";
   private static final String FORWARD = "forward";
   private final WiiListener wiiListener = new WiiListener() {
+    private float actualRoll = 0; //the actualRoll angle in arbitrary units
+    private float rollEffective = 0; //we use the roll in discrete steps
+    int prevX = 0; // previous accelation in x direction
+    int prevZ = 0; // previous accelation in z direction
+    private float initialTempoFactor = 1;
+    /**
+     * There are about 2000 steps in a 180 degree's circle, these are mapped
+     * into 60 decibel.
+     */
+    private final float rollAngleToDecibel = 60 / 2000;
+    private double currentTempoLog;
+
     @Override
     public void connectionChanged(int status) {
       String message1 = "<html><br>";
@@ -173,8 +187,18 @@ public final class Control2TopComponent extends SongTopComponent {
         case BTN_MINUS:
           newAttenuation(-DELTA_ATTN);
           break;
+        case BTN_HOME:
+          buttonHomeChanged((newState & BTN_HOME) != 0);
+          break;
       }
 
+    }
+
+    private void buttonHomeChanged(boolean down) {
+      btnHomeDown = down;
+      actualRoll = 0F;
+      rollEffective = 0F;
+      currentTempoLog = Math.log(activeSongSession.getTempoFactor());
     }
 
     private void buttonLeftChanged(boolean down) {
@@ -209,6 +233,36 @@ public final class Control2TopComponent extends SongTopComponent {
 
     @Override
     public void accelerometerEvent(int accX, int ignore, int accZ) {
+      if (btnHomeDown) {
+        newTempo(
+                accX,
+                accZ,
+                prevX - accX,
+                prevZ - accZ);
+      }
+      prevX = accX;
+      prevZ = accZ;
+    }
+
+    private void newTempo(int X, int Z, int deltaX, int deltaZ) {
+      final float roll_180 = 3; // the roll value for a 180 degrees turn
+      final float step = roll_180 / 32; // we will process 32 steps in a 180 turn
+      final double logFactor = Math.log(2) / roll_180; // we'll multiply by two for a 180 turn
+      if (activeSongSession != null) {
+        actualRoll = actualRoll + deltaRoll(X, Z, deltaX, deltaZ);
+        if (Math.abs(actualRoll - rollEffective) > step) {
+          rollEffective = actualRoll;
+          double newTempoLog = currentTempoLog + (rollEffective * logFactor);
+          activeSongSession.setTempoFactor(Math.exp(newTempoLog));
+        }
+      }
+    }
+
+    /**
+     * Vector product of the delta vector and the tangent on the "one G circle".
+     */
+    private float deltaRoll(float X, float Z, float deltaX, float deltaZ) {
+      return (X * deltaZ - Z * deltaX) / (X * X + Z * Z);
     }
 
     private void newAttenuation(int deltaAttn) {
