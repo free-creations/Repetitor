@@ -246,8 +246,8 @@ public final class Control2TopComponent extends SongTopComponent {
 
     private void newTempo(int X, int Z, int deltaX, int deltaZ) {
       final float roll_180 = 3; // the roll value for a 180 degrees turn
-      final float step = roll_180 / 32; // we will process 32 steps in a 180 turn
-      final double logFactor = Math.log(2) / roll_180; // we'll multiply by two for a 180 turn
+      final float step = roll_180 / 16; // we will process 32 steps in a 180 turn
+      final double logFactor = Math.log(1.3) / roll_180; // we'll multiply by 1.3 for a 180 turn
       if (activeSongSession != null) {
         actualRoll = actualRoll + deltaRoll(X, Z, deltaX, deltaZ);
         if (Math.abs(actualRoll - rollEffective) > step) {
