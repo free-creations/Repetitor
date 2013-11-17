@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448"
+   height="1052.3622"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="RepetitorLabel.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.44"
+     inkscape:cx="410.5807"
+     inkscape:cy="856.37301"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer3"
+     showgrid="false"
+     units="mm"
+     inkscape:window-width="1280"
+     inkscape:window-height="977"
+     inkscape:window-x="0"
+     inkscape:window-y="281"
+     inkscape:window-maximized="1"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:snap-to-guides="true"
+     inkscape:snap-grids="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2985"
+       units="pt"
+       empspacing="2"
+       dotted="true"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       spacingy="4pt"
+       spacingx="4pt" />
+    <sodipodi:guide
+       orientation="1,-1.6666669e-08"
+       position="162.72727,2105.4545"
+       id="guide3006" />
+    <sodipodi:guide
+       orientation="1,0"
+       position="578.18182,2126.8182"
+       id="guide3027" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="-75.718742,992.04386"
+       id="guide3029" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="-123.20338,583.93267"
+       id="guide3031" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="383.33333,468.25397"
+       id="guide3033" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="123.01587,56.349206"
+       id="guide3035" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="-15.079365,333.33333"
+       id="guide3037" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="113.49206,192.06349"
+       id="guide3039" />
+    <sodipodi:guide
+       orientation="1,0"
+       position="301.5873,206.34921"
+       id="guide3041" />
+    <sodipodi:guide
+       orientation="1,0"
+       position="442.85714,180.95238"
+       id="guide3043" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="366.66667,857.14286"
+       id="guide3045" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="55.555556,715.87302"
+       id="guide3047" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Hintergrund"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-2.5390623e-6)"
+     sodipodi:insensitive="true"
+     style="display:none">
+    <path
+       sodipodi:type="arc"
+       style="color:#000000;fill:#a5a5a5;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:0.70999998;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.37610005;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="path3049"
+       sodipodi:cx="370.45453"
+       sodipodi:cy="264.37393"
+       sodipodi:rx="207.72728"
+       sodipodi:ry="204.05559"
+       d="m 578.18181,264.37393 c 0,112.69679 -93.00267,204.05559 -207.72728,204.05559 -114.72461,0 -207.72728,-91.3588 -207.72728,-204.05559 0,-112.69679 93.00267,-204.055586 207.72728,-204.055586 114.72461,0 207.72728,91.358796 207.72728,204.055586 z"
+       transform="translate(0,2.5390623e-6)" />
+    <path
+       sodipodi:type="arc"
+       style="color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:0.70999998;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.37610005;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="path3051"
+       sodipodi:cx="372.22223"
+       sodipodi:cy="265.85425"
+       sodipodi:rx="70.634918"
+       sodipodi:ry="70.634918"
+       d="m 442.85715,265.85425 c 0,39.01059 -31.62433,70.63492 -70.63492,70.63492 -39.01059,0 -70.63492,-31.62433 -70.63492,-70.63492 0,-39.01059 31.62433,-70.63492 70.63492,-70.63492 39.01059,0 70.63492,31.62433 70.63492,70.63492 z"
+       transform="translate(0,2.5390623e-6)" />
+    <path
+       transform="translate(-7.2167969e-6,524.65798)"
+       d="m 578.18181,264.37393 c 0,112.69679 -93.00267,204.05559 -207.72728,204.05559 -114.72461,0 -207.72728,-91.3588 -207.72728,-204.05559 0,-112.69679 93.00267,-204.055586 207.72728,-204.055586 114.72461,0 207.72728,91.358796 207.72728,204.055586 z"
+       sodipodi:ry="204.05559"
+       sodipodi:rx="207.72728"
+       sodipodi:cy="264.37393"
+       sodipodi:cx="370.45453"
+       id="path5265"
+       style="color:#000000;fill:#a5a5a5;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:0.70999998;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.37610005;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       sodipodi:type="arc" />
+    <path
+       transform="translate(-7.2167969e-6,524.65798)"
+       d="m 442.85715,265.85425 c 0,39.01059 -31.62433,70.63492 -70.63492,70.63492 -39.01059,0 -70.63492,-31.62433 -70.63492,-70.63492 0,-39.01059 31.62433,-70.63492 70.63492,-70.63492 39.01059,0 70.63492,31.62433 70.63492,70.63492 z"
+       sodipodi:ry="70.634918"
+       sodipodi:rx="70.634918"
+       sodipodi:cy="265.85425"
+       sodipodi:cx="372.22223"
+       id="path5267"
+       style="color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:0.70999998;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.37610005;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       sodipodi:type="arc" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Motiv"
+     sodipodi:insensitive="true" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="Text"
+     style="display:inline">
+    <image
+       y="60.318321"
+       x="162.72725"
+       id="image3080"
+       xlink:href="file:///audioVideo/graphicsAsterix/brahmsRequiem/stPaulusBeton3.png"
+       height="422.66266"
+       width="441.10037" />
+    <image
+       width="441.10037"
+       height="422.66266"
+       xlink:href="file:///audioVideo/graphicsAsterix/brahmsRequiem/stPaulusBeton3.png"
+       id="image4045"
+       x="162.72725"
+       y="60.318321" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3084"
+       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       transform="translate(-22.904975,-8.3302429)"><flowRegion
+         id="flowRegion3086"><rect
+           id="rect3088"
+           width="228.45804"
+           height="68.391899"
+           x="301.94296"
+           y="96.330765"
+           style="font-size:48px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria"
+           ry="0" /></flowRegion><flowPara
+         id="flowPara3092">Repetitor</flowPara></flowRoot>    <flowRoot
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.50000000000000000;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       id="flowRoot3862"
+       xml:space="preserve"
+       transform="translate(-0.3502,59.80852)"><flowRegion
+         id="flowRegion3864"><rect
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria"
+           y="96.330765"
+           x="301.94296"
+           height="100.40513"
+           width="185.5312"
+           id="rect3866" /></flowRegion><flowPara
+         id="flowPara3046">Release 15.11.13</flowPara></flowRoot>    <flowRoot
+       transform="translate(148.0625,89.546129)"
+       style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       id="flowRoot3878"
+       xml:space="preserve"><flowRegion
+         id="flowRegion3880"><rect
+           style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria"
+           y="96.330765"
+           x="301.94296"
+           height="100.40513"
+           width="185.5312"
+           id="rect3882" /></flowRegion><flowPara
+         id="flowPara3886">Brahms</flowPara></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3888"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       transform="translate(148.0625,129.80852)"><flowRegion
+         id="flowRegion3890"><rect
+           id="rect3892"
+           width="185.5312"
+           height="100.40513"
+           x="301.94296"
+           y="96.330765"
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria" /></flowRegion><flowPara
+         id="flowPara3896">Ein</flowPara><flowPara
+         id="flowPara3898">deutsches</flowPara><flowPara
+         id="flowPara3900">Requiem</flowPara></flowRoot>    <image
+       y="237.2002"
+       x="526.18512"
+       id="image4042"
+       xlink:href="file:///audioVideo/graphicsAsterix/brahmsRequiem/application-icon256.png"
+       height="51.996693"
+       width="51.996693" />
+    <image
+       width="441.10037"
+       height="422.66266"
+       xlink:href="file:///home/harald/graphics/brahmsRequiem/stPaulusBeton3.png"
+       id="image4074"
+       x="162.72725"
+       y="584.10822" />
+    <image
+       y="584.10822"
+       x="162.72725"
+       id="image4076"
+       xlink:href="file:///audioVideo/graphicsAsterix/brahmsRequiem/stPaulusBeton3.png"
+       height="422.66266"
+       width="441.10037" />
+    <flowRoot
+       transform="translate(-22.904981,515.45965)"
+       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       id="flowRoot4078"
+       xml:space="preserve"><flowRegion
+         id="flowRegion4080"><rect
+           ry="0"
+           style="font-size:48px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria"
+           y="96.330765"
+           x="301.94296"
+           height="68.391899"
+           width="228.45804"
+           id="rect4082" /></flowRegion><flowPara
+         id="flowPara4084">Repetitor</flowPara></flowRoot>    <flowRoot
+       transform="translate(-0.35020643,583.59841)"
+       xml:space="preserve"
+       id="flowRoot4086"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.50000000000000000;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"><flowRegion
+         id="flowRegion4088"><rect
+           id="rect4090"
+           width="185.5312"
+           height="100.40513"
+           x="301.94296"
+           y="96.330765"
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria" /></flowRegion><flowPara
+         id="flowPara3048">Release 15.11.13</flowPara></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4094"
+       style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       transform="translate(148.06249,613.33602)"><flowRegion
+         id="flowRegion4096"><rect
+           id="rect4098"
+           width="185.5312"
+           height="100.40513"
+           x="301.94296"
+           y="96.330765"
+           style="font-size:36px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria" /></flowRegion><flowPara
+         id="flowPara4100">Brahms</flowPara></flowRoot>    <flowRoot
+       transform="translate(148.06249,653.59841)"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.5;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Cambria;-inkscape-font-specification:Cambria"
+       id="flowRoot4102"
+       xml:space="preserve"><flowRegion
+         id="flowRegion4104"><rect
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Cambria;-inkscape-font-specification:Cambria"
+           y="96.330765"
+           x="301.94296"
+           height="100.40513"
+           width="185.5312"
+           id="rect4106" /></flowRegion><flowPara
+         id="flowPara4108">Ein</flowPara><flowPara
+         id="flowPara4110">deutsches</flowPara><flowPara
+         id="flowPara4112">Requiem</flowPara></flowRoot>    <image
+       width="51.996693"
+       height="51.996693"
+       xlink:href="file:///audioVideo/graphicsAsterix/brahmsRequiem/application-icon256.png"
+       id="image4114"
+       x="526.18512"
+       y="760.99011" />
+    <image
+       y="282.9079"
+       x="-632.64508"
+       id="XXXXXXXXXX"
+       xlink:href="file:///audioVideo/graphicsAsterix/brahmsRequiem/application-icon256.png"
+       height="256"
+       width="256"
+       inkscape:label="#image3195" />
+  </g>
+  <g
+     transform="translate(0,-2.5390623e-6)"
+     id="g2999"
+     inkscape:groupmode="layer"
+     inkscape:label="Durchsicht"
+     sodipodi:insensitive="true"
+     style="display:none">
+    <path
+       style="color:#000000;fill:#e8e8e8;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:0.70999998;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:1.37610005;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       d="m 0,-0.1875 0,1057.625 749.15625,0 0,-1057.625 L 0,-0.1875 z m 370.46875,60.5 c 114.72461,0 207.71875,91.36571 207.71875,204.0625 0,112.69679 -92.99414,204.0625 -207.71875,204.0625 -114.72461,0 -207.75,-91.36571 -207.75,-204.0625 0,-112.69679 93.02539,-204.0625 207.75,-204.0625 z m 1.75,134.90625 c -39.01059,0 -70.625,31.61441 -70.625,70.625 0,39.01059 31.61441,70.65625 70.625,70.65625 39.01059,0 70.625,-31.64566 70.625,-70.65625 0,-39.01059 -31.61441,-70.625 -70.625,-70.625 z m -1.75,389.75 c 114.72461,0 207.71875,91.36571 207.71875,204.0625 0,112.69679 -92.99414,204.0625 -207.71875,204.0625 -114.72461,0 -207.75,-91.36571 -207.75,-204.0625 0,-112.69679 93.02539,-204.0625 207.75,-204.0625 z m 1.75,134.90625 c -39.01059,0 -70.625,31.61441 -70.625,70.625 0,39.01059 31.61441,70.65625 70.625,70.65625 39.01059,0 70.625,-31.64566 70.625,-70.65625 0,-39.01059 -31.61441,-70.625 -70.625,-70.625 z"
+       transform="translate(0,2.5390623e-6)"
+       id="rect3009"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

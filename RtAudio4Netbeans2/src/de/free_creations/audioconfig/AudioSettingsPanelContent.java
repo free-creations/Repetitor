@@ -53,6 +53,7 @@ public class AudioSettingsPanelContent extends javax.swing.JPanel implements Con
   }
   //
   private final StoredConfig storedConfig;
+  private final Object storedConfigLock = new Object();
   private AudioArchitecturePane[] architecurePanes;
   private volatile AssocModel audioArchitectureModel;
   private AudioSettingsPanelListener audioSettingsPanelListener;
@@ -167,7 +168,9 @@ public class AudioSettingsPanelContent extends javax.swing.JPanel implements Con
    * setup().
    */
   public AudioSettingsPanelContent() {
-    storedConfig = new StoredConfig();
+    synchronized (storedConfigLock) {
+      storedConfig = new StoredConfig();
+    }
     initComponents();
     disableAllComponents();
     architecurePanes = new AudioArchitecturePane[]{defaultSystemPanel};
@@ -231,17 +234,19 @@ public class AudioSettingsPanelContent extends javax.swing.JPanel implements Con
     if (!EventQueue.isDispatchThread()) {
       throw new RuntimeException("Called on wrong thread.");
     }
-    int storedConfigNumber = storedConfig.getArchitectureNumber();
-    boolean success = audioArchitectureModel.setSelectedNumber(storedConfigNumber);
-    //
-    if (success) {
-      cbxAudioSystemActionPerformed(null);
-      AudioArchitecturePane selectedPane = getSelectedArchitecturePane();
-      if (selectedPane != null) {
-        selectedPane.showPreferedConfiguration();
+    synchronized (storedConfigLock) {
+      int storedConfigNumber = storedConfig.getArchitectureNumber();
+      boolean success = audioArchitectureModel.setSelectedNumber(storedConfigNumber);
+
+      //
+      if (success) {
+        cbxAudioSystemActionPerformed(null);
+        AudioArchitecturePane selectedPane = getSelectedArchitecturePane();
+        if (selectedPane != null) {
+          selectedPane.showPreferedConfiguration();
+        }
       }
     }
-
   }
 
   /**
@@ -251,31 +256,36 @@ public class AudioSettingsPanelContent extends javax.swing.JPanel implements Con
    * successfully populated. The calling thread must be the AWT thread.
    */
   public void savePreferedConfiguration() throws BackingStoreException {
-    getConfig();
-    //......
-    storedConfig.flush();
+    synchronized (storedConfigLock) {
+      getConfig();
+      //......
+      storedConfig.flush();
+    }
   }
 
   public StoredConfig getConfig() {
     if (!setupOK) {
       throw new RuntimeException("AudioSettingsPanel not yet set-up.");
     }
-    if (!EventQueue.isDispatchThread()) {
-      throw new RuntimeException("Called on wrong thread.");
-    }
+    // since Netbeans 7.4 savePreferedConfiguration() is not anymore executed on the AWT thread
+//    if (!EventQueue.isDispatchThread()) {
+//      throw new RuntimeException("Called on wrong thread.");
+//    }
+    synchronized (storedConfigLock) {
 
-    //
-    AudioArchitecturePane selectedPane = getSelectedArchitecturePane();
-    if (selectedPane != null) {
-      if (!selectedPane.hasConfiguration()) {
-        return null;
+      //
+      AudioArchitecturePane selectedPane = getSelectedArchitecturePane();
+      if (selectedPane != null) {
+        if (!selectedPane.hasConfiguration()) {
+          return null;
+        }
+        selectedPane.savePreferedConfiguration();
       }
-      selectedPane.savePreferedConfiguration();
+      int architecture = audioArchitectureModel.getSelectedNumber();
+      storedConfig.putArchitectureNumber(architecture);
+      //......
+      return storedConfig;
     }
-    int architecture = audioArchitectureModel.getSelectedNumber();
-    storedConfig.putArchitectureNumber(architecture);
-    //......
-    return storedConfig;
   }
 
   private AudioArchitecturePane getSelectedArchitecturePane() {
@@ -303,22 +313,24 @@ public class AudioSettingsPanelContent extends javax.swing.JPanel implements Con
     cbxAudioSystem.removeAllItems();
     int architectureCount = systemInfo.size();
     architecurePanes = new AudioArchitecturePane[architectureCount];
-    for (int i = 0; i < architectureCount; i++) {
-      AudioArchitecturePane systemPannel = new AudioArchitecturePane(storedConfig);
-      systemPannel.populateArchitecturePane(systemInfo.get(i).getDeviceInfos(), this);
-      architecurePanes[i] = systemPannel;
-      audioSystemPane.add(systemPannel, javax.swing.JLayeredPane.DEFAULT_LAYER);
+    synchronized (storedConfigLock) {
+      for (int i = 0; i < architectureCount; i++) {
+        AudioArchitecturePane systemPannel = new AudioArchitecturePane(storedConfig);
+        systemPannel.populateArchitecturePane(systemInfo.get(i).getDeviceInfos(), this);
+        architecurePanes[i] = systemPannel;
+        audioSystemPane.add(systemPannel, javax.swing.JLayeredPane.DEFAULT_LAYER);
+      }
+      audioArchitectureModel = new AssocModel();
+      for (int i = 0; i < architectureCount; i++) {
+        audioArchitectureModel.addPair(
+                systemInfo.get(i).getApiNumber(),
+                systemInfo.get(i).getApiDescription());
+      }
+      cbxAudioSystem.setModel(audioArchitectureModel);
+      cbxAudioSystem.setSelectedIndex(0);
+      setEnabledOnComponent(this, true);
+      cbxAudioSystemActionPerformed(null);
     }
-    audioArchitectureModel = new AssocModel();
-    for (int i = 0; i < architectureCount; i++) {
-      audioArchitectureModel.addPair(
-              systemInfo.get(i).getApiNumber(),
-              systemInfo.get(i).getApiDescription());
-    }
-    cbxAudioSystem.setModel(audioArchitectureModel);
-    cbxAudioSystem.setSelectedIndex(0);
-    setEnabledOnComponent(this, true);
-    cbxAudioSystemActionPerformed(null);
   }
 
   public final void disableAllComponents() {
