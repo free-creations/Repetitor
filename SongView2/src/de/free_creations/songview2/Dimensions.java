@@ -377,7 +377,7 @@ class Dimensions {
    */
   public void setMinimumPixel(int newValue) {
     if (newValue != getMinimumPixel()) {
-      setMinimumMidi(pixelToMidi(newValue));
+      setMinimumMidiDep(pixelToMidi(newValue));
     }
   }
 
@@ -445,9 +445,20 @@ class Dimensions {
     if (doubleEquals(newPixelToMidiFactor, getPixelToMidiFactor())) {
       return;
     }
-    if (newPixelToMidiFactor < 10E-6) {
+    /**
+     * since Version 8 there seems to be a bug that makes problems when drawing
+     * larger than 64k pixels.
+     *
+     * Therefore we limit
+     *
+     * if (newPixelToMidiFactor < 10E-6) { throw new
+     * IllegalArgumentException("pixelToMidiFactor too small"); }
+     */
+
+    if (newPixelToMidiFactor < 4d) {
       throw new IllegalArgumentException("pixelToMidiFactor too small");
     }
+
     if (newPixelToMidiFactor > 10E6) {
       throw new IllegalArgumentException("pixelToMidiFactor too large");
     }
@@ -467,7 +478,6 @@ class Dimensions {
     int oldViewportLeftPixel = getViewportLeftPixel();
     long oldViewportWidthMidi = getViewportWidthMidi();
 
-
 //    long newViewportLeftMidi = pixelToMidi(getViewportLeftPixel(), newPixelToMidiFactor);
 //    if (getMinimumMidi() > newViewportLeftMidi) {
 //      long oldMinimumMidi = this.minimumMidi;
@@ -482,10 +492,8 @@ class Dimensions {
 //      logger.log(Level.FINER, "setPixelToMidiFactor newMaximumMidi ={0}; oldMaximumMidi= {1}", new Object[]{this.maximumMidi, oldMaximumMidi});
 //      propertyChangeSupport.firePropertyChange(Prop.MAXIMUM_MIDI, oldMaximumMidi, getMaximumMidi());
 //    }
-
     this.pixelToMidiFactor = newPixelToMidiFactor;
     this.midiToPixelFactor = newMidiToPixeFactor;
-
 
     propertyChangeSupport.firePropertyChange(Prop.PIXELTOMIDIFACTOR, oldPixelToMidiFactor, newPixelToMidiFactor);
     propertyChangeSupport.firePropertyChange(Prop.MIDITOPIXELFACTOR, oldMidiToPixelFactor, getMidiToPixelFactor());
@@ -645,7 +653,9 @@ class Dimensions {
    * Get the value of minimumMidi
    *
    * @return the value of minimumMidi
+   * @deprecated minimum Midi is always zero
    */
+  @Deprecated
   public long getMinimumMidi() {
     return minimumMidi;
   }
@@ -654,8 +664,10 @@ class Dimensions {
    * Set the value of minimumMidi
    *
    * @param minimumMidi new value of minimumMidi
+   * @deprecated minimum Midi is always zero
    */
-  public void setMinimumMidi(long newMinimumMidi) {
+    @Deprecated
+  public void setMinimumMidiDep(long newMinimumMidi) {
     long oldMinimumMidi = this.minimumMidi;
     int oldMinimumPixel = getMinimumPixel();
     if (getViewportLeftMidi() < newMinimumMidi) {
@@ -711,7 +723,7 @@ class Dimensions {
     }
 
     if (newMaximumMidi < getMinimumMidi()) {
-      setMinimumMidi(newMaximumMidi);
+      setMinimumMidiDep(newMaximumMidi);
     }
     if (newMaximumMidi < getLoopEndMidi()) {
       setLoopEndMidi(newMaximumMidi);

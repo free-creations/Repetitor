@@ -40,7 +40,7 @@ public class TestJFrame extends javax.swing.JFrame {
     File midiFileS = new File("/home/harald/NetBeansProjects/Repetitor/"
             + "SongView2/test/unit/src/de/free_creations/songview2/resources/MissaAfricana_Kyrie.mid");
     try {
-      Sequence sequence = MidiSystem.getSequence(midiFileL);
+      Sequence sequence = MidiSystem.getSequence(midiFileS);
       Track[] tracks = new Track[4];
       tracks[0] = sequence.getTracks()[0];
       tracks[1] = sequence.getTracks()[1]; //S

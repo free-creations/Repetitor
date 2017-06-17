@@ -129,7 +129,7 @@ public class DimensionsTest {
   public void setUp() {
     instance = new Dimensions();
     listener = new DimensionsPropertyListener();
-    instance.setMinimumMidi(-10L);
+    instance.setMinimumMidiDep(-10L);
     instance.setMaximumMidi(100L);
     instance.addPropertyChangeListener(listener);
   }
@@ -436,12 +436,12 @@ public class DimensionsTest {
     verifySequence(instance);
     //attempt to set the minimum beyond the LeftVoidEnd
     instance.setViewportLeftMidi(60L);
-    instance.setMinimumMidi(50L);
+    instance.setMinimumMidiDep(50L);
     verifySequence(instance);
     assertEquals(50L, instance.getMinimumMidi());
     //attempt to set the minimum beyond the Maximum
     instance.setViewportLeftMidi(200L);
-    instance.setMinimumMidi(200L);
+    instance.setMinimumMidiDep(200L);
     verifySequence(instance);
     assertTrue(200L <= instance.getMaximumMidi());
 
@@ -450,12 +450,12 @@ public class DimensionsTest {
 
     long oldVal = -10;
     long newVal = -20;
-    instance.setMinimumMidi(oldVal);
+    instance.setMinimumMidiDep(oldVal);
     assertEquals(oldVal,
             instance.getMinimumMidi());
 
     listener.reset();
-    instance.setMinimumMidi(newVal);
+    instance.setMinimumMidiDep(newVal);
     assertEquals(newVal,
             instance.getMinimumMidi());
     assertEquals(oldVal,
@@ -567,7 +567,7 @@ public class DimensionsTest {
     assertEquals(10, instance.getCursorMidi()); // just to make sure
     verifySequence(instance); //just to make sure that all is OK
     instance.setViewportLeftMidi(30); // so we can move the min in the next step
-    instance.setMinimumMidi(20); // so here we do it
+    instance.setMinimumMidiDep(20); // so here we do it
     assertEquals(20, instance.getMinimumMidi()); // just to make the minb was moved
     verifySequence(instance); // again, this will check that cursor is still between min and max
   }
