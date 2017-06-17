@@ -23,6 +23,14 @@ import javax.swing.UIManager;
  */
 public class ColorManager {
 
+  /**
+   * Derive a color from the base color.
+   * @param hueOffset
+   * @param saturationOffset
+   * @param brightnessOffset
+   * @param alpha
+   * @return 
+   */
   static public Color DerivedColor(float hueOffset, float saturationOffset, float brightnessOffset, float alpha) {
 
     Color color = getHighlightColor();
@@ -42,7 +50,7 @@ public class ColorManager {
    * {@link RightVoidZone } shall use when active.
    */
   static public Color getVoidZoneActiveColor() {
-    return Color.GRAY;
+    return new Color(0.0f, 0.0f, 0.0f, 0.3f);
   }
 
   /**
@@ -50,9 +58,7 @@ public class ColorManager {
    * {@link RightVoidZone } shall use when inactive.
    */
   static public Color getVoidZoneInactiveColor() {
-    return new Color(0.9F, //red
-            0.9F,//green
-            0.9F);//red
+    return new Color(0.0f, 0.0f, 0.0f, 0.3f);
   }
 
   static private float clampFloat(float x) {
@@ -76,6 +82,10 @@ public class ColorManager {
     return result;
   }
 
+  /**
+   * Get a base color of the current style.
+   * @return either nimbusBase, activeCaption  or textHighlight color whatever is defined.
+   */
   static public Color getHighlightColor() {
     Color result;
     result = UIManager.getColor("nimbusBase");

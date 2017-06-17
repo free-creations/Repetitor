@@ -50,6 +50,12 @@ public class SongPanel extends SongCanvasImpl {
    */
   private double defaultPixelToMidiFactor = 10.0D;
 
+  private double verticalZoomFactor = 1.0D;
+  private final double zoomStep = 0.1d;
+  private static final int BETWEEN_TRACK_DIST_PIXELS = 10;
+  private static final int DIRECTOR_TO_FIRST_TRACK_DIST = 10;
+  private static final int DEFAULT_MIDI_BANDHEIGHT = 30;
+
   private static class TrackToBandConnector implements EventHandler {
 
     private final TrackBand trackBand;
@@ -73,11 +79,11 @@ public class SongPanel extends SongCanvasImpl {
    * cursor moves into this margin the display will shift to the next page.
    */
   //private final long JUMPMARGIN = 20;
-    /**
+  /**
    * The size (in midiTick) of the jump- margin on both window borders. When the
    * cursor moves into this margin the display will shift to the next page.
    */
-  private final long JUMPMARGINMIDI = 3*480; // one bar (assuming 3/4)
+  private final long JUMPMARGINMIDI = 3 * 480; // one bar (assuming 3/4)
 
   private DirectorBand directorBand;
   private ArrayList<TrackBand> trackBands = new ArrayList<TrackBand>();
@@ -227,6 +233,13 @@ public class SongPanel extends SongCanvasImpl {
     leftVoidZone.setActive(active);
   }
 
+  /**
+   * Indicate that the given track is enabled. An enabled track is shown a more
+   * prominent way.
+   *
+   * @param trackIndex
+   * @param enabled
+   */
   public void setEnabled(int trackIndex, boolean enabled) {
     if (!SwingUtilities.isEventDispatchThread()) {
       throw new RuntimeException("Must be called from EventDispatchThread.");
@@ -234,6 +247,27 @@ public class SongPanel extends SongCanvasImpl {
     TrackBand track = trackBands.get(trackIndex);
     track.setEnabled(enabled);
   }
+
+  /**
+   *
+   * @param value
+   */
+  public void setVerticalZoom(double newValue) {
+    if (!SwingUtilities.isEventDispatchThread()) {
+      throw new RuntimeException("Must be called from EventDispatchThread.");
+    }
+    double oldValue = verticalZoomFactor;
+    if (Math.abs(oldValue - newValue) < Math.abs(oldValue * zoomStep)) {
+      return;
+    }
+
+    verticalZoomFactor = newValue;
+    System.out.println("Zoom now:" + newValue);
+  }
+
+  private Track[] tracks;
+  private int resolution;
+  private GenericTrack[] trackDescriptions;
 
   /**
    * Set the tracks for this song. All tracks should belong to the same
@@ -248,22 +282,21 @@ public class SongPanel extends SongCanvasImpl {
     if (!SwingUtilities.isEventDispatchThread()) {
       throw new RuntimeException("Must be called from EventDispatchThread.");
     }
+
     try {
       clear();
       defaultPixelToMidiFactor = (4 * resolution) / MAESUREDEFAULTPX;
-      leftVoidZone = new LeftVoidZone(SongPanel.this);
-      addZone(leftVoidZone);
-      //addZone(new LeadInZone(SongPanel.this));
-      //addZone(new LeadOutZone(SongPanel.this));
-      rightVoidZone = new RightVoidZone(SongPanel.this);
-      addZone(rightVoidZone);
-      int YPos = Band.PREF_BANDHEIGHT + 10;
+
+      int YPos = Band.PREF_BANDHEIGHT + DIRECTOR_TO_FIRST_TRACK_DIST;
       for (int i = 1; i < tracks.length; i++) {
         TrackBand trackBand = new TrackBand(SongPanel.this);
         trackBand.setTrack(tracks[i], resolution);
-        trackBand.setBandHeight(25);//<<<<<<<<<<<< make this configurable
+        trackBand.setBandHeight(DEFAULT_MIDI_BANDHEIGHT);
+        trackBand.setLyricsHeightPixels((int)(TrackBand.defaultLyricsHeightPixels * verticalZoomFactor));
         trackBand.setY(YPos);
-        YPos = YPos + trackBand.getTotalHeight() + 20;
+        
+        // calculate y pos for the next track
+        YPos = YPos + trackBand.getTotalHeight() + BETWEEN_TRACK_DIST_PIXELS;
         addBand(trackBand);
         trackBands.add(trackBand);
         if (trackDescriptions != null) {
@@ -276,6 +309,11 @@ public class SongPanel extends SongCanvasImpl {
           }
         }
       }
+      leftVoidZone = new LeftVoidZone(SongPanel.this);
+      addZone(leftVoidZone);
+      rightVoidZone = new RightVoidZone(SongPanel.this);
+      addZone(rightVoidZone);
+
       directorBand = new DirectorBand(SongPanel.this);
       addBand(directorBand);
       setDefaultDraggingLayer(directorBand);
@@ -339,7 +377,6 @@ public class SongPanel extends SongCanvasImpl {
     long rightBorder = getDimensions().getViewportLeftMidi() + getDimensions().getViewportWidthMidi();
     long leftBorder = getDimensions().getViewportLeftMidi();
 
-
     long margin = JUMPMARGINMIDI;//getDimensions().pixelToMidi(JUMPMARGIN);
     if ((rightBorder - leftBorder) <= 2 * margin) {
 
@@ -377,7 +414,7 @@ public class SongPanel extends SongCanvasImpl {
 
   private void synchronizeCursor() {
     if (session != null) {
-      setCursorVisible((long)session.getTickPosition(0.05));
+      setCursorVisible((long) session.getTickPosition(0.05));
     }
   }
 
@@ -406,7 +443,6 @@ public class SongPanel extends SongCanvasImpl {
 
     ViewToSessionConnector viewToSession = new ViewToSessionConnector(session);
     getDimensions().addPropertyChangeListener(viewToSession);
-
 
   }
 }

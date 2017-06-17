@@ -33,24 +33,26 @@ public class TestJFrame extends javax.swing.JFrame {
    */
   public TestJFrame() {
     initComponents();
-    // /home/harald/NetBeansProjects/Repetitor/SongView2/build/test/unit/results/
-  //  File midiFile = new File("../../../../test/unit/src/de/free_creations/songview2/resources/choir2.mid");
 
-File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test/unit/src/de/free_creations/songview2/resources/choir2.mid");
+
+    File midiFileL = new File("/home/harald/NetBeansProjects/Repetitor/"
+            + "SongView2/test/unit/src/de/free_creations/songview2/resources/choir2.mid");
+    File midiFileS = new File("/home/harald/NetBeansProjects/Repetitor/"
+            + "SongView2/test/unit/src/de/free_creations/songview2/resources/MissaAfricana_Kyrie.mid");
     try {
-      Sequence sequence = MidiSystem.getSequence(midiFile);
-      Track[] tracks = new Track[5];
+      Sequence sequence = MidiSystem.getSequence(midiFileL);
+      Track[] tracks = new Track[4];
       tracks[0] = sequence.getTracks()[0];
       tracks[1] = sequence.getTracks()[1]; //S
       tracks[2] = sequence.getTracks()[2]; //A
       tracks[3] = sequence.getTracks()[3]; //T
-      tracks[4] = sequence.getTracks()[4]; //B
+      // tracks[4] = sequence.getTracks()[4]; //B
 
       songPanel.setRequiemTracks(tracks, sequence.getResolution(), null);
       //songPanel.setPixelToMidiFactor(30D);
-      zoomSlider.setMinimum((int)(songPanel.getDefaultPixelToMidiFactor()/5));
-      zoomSlider.setMaximum((int)(songPanel.getDefaultPixelToMidiFactor()*5));
-      zoomSlider.setValue((int)(songPanel.getDefaultPixelToMidiFactor()));
+      vertZoomSlider.setMinimum((int) (songPanel.getDefaultPixelToMidiFactor() / 5));
+      vertZoomSlider.setMaximum((int) (songPanel.getDefaultPixelToMidiFactor() * 5));
+      vertZoomSlider.setValue((int) (songPanel.getDefaultPixelToMidiFactor()));
       songPanel.setEnabled(1, true);
       jScrollBar.setModel(songPanel.getHorizontalScrollModel());
 
@@ -81,11 +83,13 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
     sliderLabel = new javax.swing.JLabel();
     startPointLabel = new javax.swing.JLabel();
     startPointSlider = new javax.swing.JSlider();
-    zoomSlider = new javax.swing.JSlider();
+    vertZoomSlider = new javax.swing.JSlider();
     jLabel1 = new javax.swing.JLabel();
     cbTrack3 = new javax.swing.JCheckBox();
     loopActivateCheckBox = new javax.swing.JCheckBox();
     animatedCheckBox = new javax.swing.JCheckBox();
+    horizZoomSlider = new javax.swing.JSlider();
+    jLabel2 = new javax.swing.JLabel();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
     getContentPane().setLayout(new java.awt.GridBagLayout());
@@ -131,11 +135,11 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
       }
     });
 
-    zoomSlider.setMinimum(1);
-    zoomSlider.setValue(30);
-    zoomSlider.addChangeListener(new javax.swing.event.ChangeListener() {
+    vertZoomSlider.setMinimum(1);
+    vertZoomSlider.setValue(30);
+    vertZoomSlider.addChangeListener(new javax.swing.event.ChangeListener() {
       public void stateChanged(javax.swing.event.ChangeEvent evt) {
-        zoomSliderStateChanged(evt);
+        vertZoomSliderStateChanged(evt);
       }
     });
 
@@ -162,6 +166,16 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
       }
     });
 
+    horizZoomSlider.setMaximum(400);
+    horizZoomSlider.setMinimum(100);
+    horizZoomSlider.addChangeListener(new javax.swing.event.ChangeListener() {
+      public void stateChanged(javax.swing.event.ChangeEvent evt) {
+        horizZoomSliderStateChanged(evt);
+      }
+    });
+
+    jLabel2.setText(org.openide.util.NbBundle.getMessage(TestJFrame.class, "TestJFrame.jLabel2.text")); // NOI18N
+
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
     jPanel1Layout.setHorizontalGroup(
@@ -177,9 +191,15 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(startPointLabel)
           .addGroup(jPanel1Layout.createSequentialGroup()
-            .addComponent(jLabel1)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(zoomSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+              .addGroup(jPanel1Layout.createSequentialGroup()
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(vertZoomSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+              .addGroup(jPanel1Layout.createSequentialGroup()
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(horizZoomSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
             .addGap(46, 46, 46)
             .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
               .addComponent(loopActivateCheckBox)
@@ -187,7 +207,7 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
                 .addComponent(cbTrack3)
                 .addGap(18, 18, 18)
                 .addComponent(animatedCheckBox)))))
-        .addContainerGap(200, Short.MAX_VALUE))
+        .addContainerGap(179, Short.MAX_VALUE))
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -204,13 +224,20 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
         .addComponent(startPointSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(zoomSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-          .addComponent(jLabel1)
-          .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-            .addComponent(cbTrack3)
-            .addComponent(animatedCheckBox)))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(loopActivateCheckBox)
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+              .addComponent(cbTrack3)
+              .addComponent(animatedCheckBox))
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(loopActivateCheckBox))
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addComponent(vertZoomSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(horizZoomSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addComponent(jLabel1)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(jLabel2)))
         .addContainerGap(27, Short.MAX_VALUE))
     );
 
@@ -236,10 +263,10 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
     songPanel.getDimensions().setStartPointMidi(sliderValue);
   }//GEN-LAST:event_startPointSliderStateChanged
 
-  private void zoomSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_zoomSliderStateChanged
-    songPanel.setPixelToMidiFactor(zoomSlider.getValue());
+  private void vertZoomSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_vertZoomSliderStateChanged
+    songPanel.setPixelToMidiFactor(vertZoomSlider.getValue());
 
-  }//GEN-LAST:event_zoomSliderStateChanged
+  }//GEN-LAST:event_vertZoomSliderStateChanged
 
   private void cbTrack3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbTrack3ActionPerformed
     songPanel.setEnabled(2, cbTrack3.isSelected());
@@ -253,6 +280,10 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
     songPanel.setAnimated(animatedCheckBox.isSelected());
   }//GEN-LAST:event_animatedCheckBoxActionPerformed
 
+  private void horizZoomSliderStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_horizZoomSliderStateChanged
+    songPanel.setVerticalZoom(horizZoomSlider.getValue() / 100D);
+  }//GEN-LAST:event_horizZoomSliderStateChanged
+
   /**
    * @param args the command line arguments
    */
@@ -261,7 +292,7 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
      * Set the Nimbus look and feel
      */
     //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /*
+    /*
      * If Nimbus (introduced in Java SE 6) is not available, stay with the
      * default look and feel. For details see
      * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
@@ -299,7 +330,9 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
   private javax.swing.JCheckBox animatedCheckBox;
   private javax.swing.JCheckBox cbTrack3;
   private javax.swing.JSlider cursorSlider;
+  private javax.swing.JSlider horizZoomSlider;
   private javax.swing.JLabel jLabel1;
+  private javax.swing.JLabel jLabel2;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JScrollBar jScrollBar;
   private javax.swing.JCheckBox loopActivateCheckBox;
@@ -307,6 +340,6 @@ File midiFile = new File("/home/harald/NetBeansProjects/Repetitor/SongView2/test
   private de.free_creations.songview2.SongPanel songPanel;
   private javax.swing.JLabel startPointLabel;
   private javax.swing.JSlider startPointSlider;
-  private javax.swing.JSlider zoomSlider;
+  private javax.swing.JSlider vertZoomSlider;
   // End of variables declaration//GEN-END:variables
 }

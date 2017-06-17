@@ -30,22 +30,56 @@ import javax.sound.midi.Track;
  */
 public class TrackBand extends Band {
 
+  /**
+   * the text color for the lyrics in an inactive track
+   */
   static private final Color activeTextColor = Color.WHITE;
-  static private final Color inactiveTextColor = new Color(255, 255, 255, 80);
-  private Color usedTextColor = inactiveTextColor;
+  /**
+   * the text color for the lyrics in an active track
+   */
+  static private final Color inactiveTextColor = new Color(0, 0, 0, 200);
+  /**
+   * the text color that this track currently uses
+   */
+  private Color currentTextColor = inactiveTextColor;
   private LinearGradientPaint background = null;
   private LinearGradientPaint inactiveBackground = null;
   private NoteTrack noteTrack = null;
   private LyricTrack lyricsTrack = null;
   private ArrayList<LyricBox> lyricBoxes = null;
   private float pitchToPixelFactor;
+
+  /**
+   * the font to be used for the lyrics. Can only be determined once we have a
+   * paint context.
+   */
+  private Font lyricsFont = null;
   /**
    * the highest pitch that will be represented in this band
    */
   private int maxPitch;
   // the update-lyricboxes function stores the last MidiToPixelFactor here
   private double previousMidiToPixelFactor = 0.0D;
-  private int lyricsHeight = 10;
+  public static final int defaultLyricsHeightPixels = 15;
+  private int lyricsHeightPixels = defaultLyricsHeightPixels; // 
+
+  public int getLyricsHeightPixels() {
+    return lyricsHeightPixels;
+  }
+
+  public void setLyricsHeightPixels(int lyricsHeightPixels) {
+    if (lyricsHeightPixels < 3) {
+      lyricsHeightPixels = 3;
+    }
+    int oldVal = this.lyricsHeightPixels;
+    if (oldVal == lyricsHeightPixels) {
+      return;
+    }
+    this.lyricsHeightPixels = lyricsHeightPixels;
+    this.lyricsFont = null;
+    invalidate();
+  }
+
   private String trackName = "";
   private boolean forceLyricRepaint = false;
 
@@ -79,9 +113,9 @@ public class TrackBand extends Band {
     }
     super.setActive(active);
     if (active) {
-      usedTextColor = activeTextColor;
+      currentTextColor = activeTextColor;
     } else {
-      usedTextColor = inactiveTextColor;
+      currentTextColor = inactiveTextColor;
     }
     forceLyricRepaint = true;
     invalidate();
@@ -89,7 +123,7 @@ public class TrackBand extends Band {
 
   @Override
   public int getTotalHeight() {
-    return getBandHeight() + lyricsHeight + 3;
+    return getBandHeight() + lyricsHeightPixels + 3;
   }
 
   /**
@@ -125,17 +159,17 @@ public class TrackBand extends Band {
     }
     // OK, there was an overlap; calculate the squeeze-factor
     int originalTextWidth = fontMetrics.stringWidth(maxOverlapText);
-    int newTextWidth = originalTextWidth - ((maxOverlap*90)/100);
+    int newTextWidth = originalTextWidth - ((maxOverlap * 90) / 100);
     double stretch = (double) newTextWidth / (double) originalTextWidth;
     return stretch;
   }
 
   private class LyricBox {
 
-    private Image image;
-    private int x;
-    private boolean connectToPrevious;
-    private int width;
+    private final Image image;
+    private final int x;
+    private final boolean connectToPrevious;
+    private final int width;
 
     LyricBox(Image image, int x, int width, boolean connectToPrevious) {
       this.image = image;
@@ -168,6 +202,38 @@ public class TrackBand extends Band {
     updatePitchToPixelFactor();
   }
 
+  /**
+   * Helper routine that calculates the required font size in points for a font
+   * with a given height in pixels.
+   *
+   * @param g the graphic context that contains the desired font
+   * @param pixelHeight the requested text height
+   * @return the new font size in point
+   */
+  private double fontPixelToPoint(Graphics2D g, double pixelHeight) {
+    Font currentFont = g.getFont();
+    double currentPoints = currentFont.getSize2D();
+    Rectangle2D maxCharBounds = currentFont.getMaxCharBounds(g.getFontRenderContext());
+    double currentHeightPixel = maxCharBounds.getHeight();
+    return (pixelHeight * currentPoints) / currentHeightPixel;
+  }
+
+  /**
+   * Applies the lyrics font into the graphic context. If an appropriate font
+   * has not yet been determined, such a font will be created.
+   *
+   * @param g
+   */
+  private void applyLyricsFont(Graphics2D g) {
+
+    if (lyricsFont == null) {
+      Font contextFont = g.getFont();
+      double newSizePoint = fontPixelToPoint(g, lyricsHeightPixels);
+      lyricsFont = contextFont.deriveFont((float) newSizePoint);
+    }
+    g.setFont(lyricsFont);
+  }
+
   @Override
   public void draw(Graphics2D g) {
     // cache current rendering characteristics
@@ -180,9 +246,12 @@ public class TrackBand extends Band {
     int canvasright = canvas.getDimensions().getMaximumPixel();
     int canvasWidth = canvasright - canvasleft;
 
+    // set the font to a larger font if required
+    applyLyricsFont(g);
+
     // draw the background
     FontMetrics fontMetrics = g.getFontMetrics();
-    lyricsHeight = fontMetrics.getHeight();
+    lyricsHeightPixels = fontMetrics.getHeight();
     g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
     if (isActive()) {
@@ -191,8 +260,6 @@ public class TrackBand extends Band {
       g.setPaint(getInactiveBackground());
     }
     g.fillRect(canvasleft, getY(), canvasWidth, getTotalHeight());
-
-
 
     drawName(g);
     drawNotes(g);
@@ -208,16 +275,26 @@ public class TrackBand extends Band {
   private void drawName(Graphics2D g) {
     FontMetrics fontMetrics = g.getFontMetrics();
     int canvasleft = canvas.getDimensions().getMinimumPixel();
-    g.setColor(usedTextColor);
+    g.setColor(currentTextColor);
     g.drawString(trackName, canvasleft, getY() + fontMetrics.getHeight());
   }
 
+  /**
+   * Draw the notes.
+   *
+   * @param g the graphic context to draw on.
+   */
   private void drawNotes(Graphics2D g) {
     if (noteTrack.isEmpty()) {
       return;
     }
-    // draw the notes
-    g.setPaint(Color.WHITE);
+
+    if (isActive()) {
+      g.setPaint(Color.WHITE);
+    } else {
+      g.setPaint(Color.gray);
+    }
+
     float noteHeight = pitchToPixelFactor;
     if (noteHeight < 1.0F) {
       noteHeight = 1.0F;
@@ -241,7 +318,7 @@ public class TrackBand extends Band {
     FontMetrics fontMetrics = g.getFontMetrics();
     updateLyricBoxes(g);
 
-    g.setColor(usedTextColor);
+    g.setColor(currentTextColor);
     int lyricY = getY() + getBandHeight();
     int connectionY = lyricY + fontMetrics.getAscent();
     int previousX = Integer.MIN_VALUE;
@@ -292,14 +369,13 @@ public class TrackBand extends Band {
     //Image image = canvas.createImage(width, height);
     Image image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
 
-
     Graphics2D imageG = (Graphics2D) image.getGraphics();
     imageG.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 
     imageG.setColor(new Color(0, 0, 0, 0)); // transparent
     imageG.fillRect(0, 0, width, height);
-    imageG.setColor(usedTextColor);
+    imageG.setColor(currentTextColor);
     imageG.setFont(g.getFont());
     AffineTransform at = new AffineTransform();
 
@@ -335,12 +411,10 @@ public class TrackBand extends Band {
             || (background.getStartPoint().getX() != canvasleft)
             || (background.getEndPoint().getX() != canvasright)) {
 
-
-      Color backgroundLeft =
-              ColorManager.DerivedColor(0.0f, 0.0f, -0.05f, 1f);
-      Color backgroundRight =
-              ColorManager.DerivedColor(0.0f, -0.1f, -0.05f, 1f);
-
+      Color backgroundLeft
+              = ColorManager.DerivedColor(0.0f, 0.0f, -0.05f, 1f);
+      Color backgroundRight
+              = ColorManager.DerivedColor(0.0f, -0.1f, -0.05f, 1f);
 
       background = new LinearGradientPaint(
               canvasleft, 0,
@@ -361,12 +435,12 @@ public class TrackBand extends Band {
             || (inactiveBackground.getStartPoint().getX() != canvasleft)
             || (inactiveBackground.getEndPoint().getX() != canvasright)) {
 
-
-      Color inactiveBackgroundLeft =
-              ColorManager.DerivedColor(0.0f, 0.0f, -0.2f, 0.5f);
-      Color inactiveBackgroundRight =
-              ColorManager.DerivedColor(0.0f, -0.5f, -0.2f, 0.5f);
-
+      Color inactiveBackgroundLeft
+              = ColorManager.DerivedColor(0.0f, -0.5f, 0.3f, 0.5f);
+      //ColorManager.DerivedColor(0.0f, 0.0f, -0.2f, 0.5f);
+      Color inactiveBackgroundRight
+              = ColorManager.DerivedColor(0.0f, -0.5f, 0.1f, 0.5f);
+      // ColorManager.DerivedColor(0.0f, -0.5f, -0.2f, 0.5f);
 
       inactiveBackground = new LinearGradientPaint(
               canvasleft, 0,
