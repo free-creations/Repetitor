@@ -55,6 +55,8 @@ public class SongPanel extends SongCanvasImpl {
   private static final int BETWEEN_TRACK_DIST_PIXELS = 10;
   private static final int DIRECTOR_TO_FIRST_TRACK_DIST = 10;
   private static final int DEFAULT_MIDI_BANDHEIGHT = 30;
+  private static final double MAX_VERTICAL_ZOOM = 10.0;
+  private static final double MIN_VERTICAL_ZOOM = 1.0 / 2.0;
 
   private static class TrackToBandConnector implements EventHandler {
 
@@ -248,6 +250,10 @@ public class SongPanel extends SongCanvasImpl {
     track.setEnabled(enabled);
   }
 
+  public double getVerticalZoom() {
+    return verticalZoomFactor;
+  }
+
   /**
    *
    * @param value
@@ -255,6 +261,13 @@ public class SongPanel extends SongCanvasImpl {
   public void setVerticalZoom(double newValue) {
     if (!SwingUtilities.isEventDispatchThread()) {
       throw new RuntimeException("Must be called from EventDispatchThread.");
+    }
+
+    if (newValue > MAX_VERTICAL_ZOOM) {
+      newValue = MAX_VERTICAL_ZOOM;
+    }
+    if (newValue < MIN_VERTICAL_ZOOM) {
+      newValue = MIN_VERTICAL_ZOOM;
     }
     double oldValue = verticalZoomFactor;
     if (Math.abs(oldValue - newValue) < Math.abs(oldValue * zoomStep)) {

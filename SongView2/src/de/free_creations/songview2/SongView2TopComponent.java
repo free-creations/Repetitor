@@ -181,6 +181,9 @@ public class SongView2TopComponent extends SongTopComponent {
   private void initComponents() {
     java.awt.GridBagConstraints gridBagConstraints;
 
+    verticalZoomControls = new javax.swing.JPanel();
+    btnVerticalBigger = new javax.swing.JButton();
+    btnVerticalSmaller = new javax.swing.JButton();
     trackViewContainer = new javax.swing.JPanel();
     jLabel2 = new javax.swing.JLabel();
     songPanel = new de.free_creations.songview2.SongPanel();
@@ -198,6 +201,53 @@ public class SongView2TopComponent extends SongTopComponent {
 
     setLayout(new java.awt.BorderLayout());
 
+    org.openide.awt.Mnemonics.setLocalizedText(btnVerticalBigger, org.openide.util.NbBundle.getMessage(SongView2TopComponent.class, "SongView2TopComponent.btnVerticalBigger.text")); // NOI18N
+    btnVerticalBigger.setMargin(new java.awt.Insets(2, 2, 2, 2));
+    btnVerticalBigger.setMinimumSize(new java.awt.Dimension(25, 25));
+    btnVerticalBigger.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnVerticalBiggerActionPerformed(evt);
+      }
+    });
+
+    org.openide.awt.Mnemonics.setLocalizedText(btnVerticalSmaller, org.openide.util.NbBundle.getMessage(SongView2TopComponent.class, "SongView2TopComponent.btnVerticalSmaller.text")); // NOI18N
+    btnVerticalSmaller.setMargin(new java.awt.Insets(2, 2, 2, 2));
+    btnVerticalSmaller.setMinimumSize(new java.awt.Dimension(25, 25));
+    btnVerticalSmaller.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnVerticalSmallerActionPerformed(evt);
+      }
+    });
+
+    javax.swing.GroupLayout verticalZoomControlsLayout = new javax.swing.GroupLayout(verticalZoomControls);
+    verticalZoomControls.setLayout(verticalZoomControlsLayout);
+    verticalZoomControlsLayout.setHorizontalGroup(
+      verticalZoomControlsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, verticalZoomControlsLayout.createSequentialGroup()
+        .addGap(0, 0, 0)
+        .addComponent(btnVerticalSmaller, javax.swing.GroupLayout.PREFERRED_SIZE, 20, Short.MAX_VALUE)
+        .addGap(0, 0, 0))
+      .addGroup(verticalZoomControlsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(verticalZoomControlsLayout.createSequentialGroup()
+          .addGap(0, 0, 0)
+          .addComponent(btnVerticalBigger, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addGap(0, 0, 0)))
+    );
+    verticalZoomControlsLayout.setVerticalGroup(
+      verticalZoomControlsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, verticalZoomControlsLayout.createSequentialGroup()
+        .addGap(0, 0, Short.MAX_VALUE)
+        .addComponent(btnVerticalSmaller, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+        .addContainerGap())
+      .addGroup(verticalZoomControlsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGroup(verticalZoomControlsLayout.createSequentialGroup()
+          .addGap(0, 0, 0)
+          .addComponent(btnVerticalBigger, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addGap(0, 0, Short.MAX_VALUE)))
+    );
+
+    add(verticalZoomControls, java.awt.BorderLayout.EAST);
+
     trackViewContainer.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
     org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(SongView2TopComponent.class, "SongView2TopComponent.jLabel2.text")); // NOI18N
@@ -212,7 +262,7 @@ public class SongView2TopComponent extends SongTopComponent {
     );
     songPanelLayout.setVerticalGroup(
       songPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 241, Short.MAX_VALUE)
+      .addGap(0, 300, Short.MAX_VALUE)
     );
 
     sliderZoom.setMaximum(200);
@@ -237,7 +287,7 @@ public class SongView2TopComponent extends SongTopComponent {
       trackViewContainerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(trackViewContainerLayout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(scrollBarHorizontal, javax.swing.GroupLayout.DEFAULT_SIZE, 193, Short.MAX_VALUE)
+        .addComponent(scrollBarHorizontal, javax.swing.GroupLayout.DEFAULT_SIZE, 539, Short.MAX_VALUE)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
         .addComponent(jLabel2)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -329,7 +379,7 @@ public class SongView2TopComponent extends SongTopComponent {
     spacer.setLayout(spacerLayout);
     spacerLayout.setHorizontalGroup(
       spacerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 114, Short.MAX_VALUE)
+      .addGap(0, 480, Short.MAX_VALUE)
     );
     spacerLayout.setVerticalGroup(
       spacerLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -460,8 +510,20 @@ public class SongView2TopComponent extends SongTopComponent {
     }
     scrollBarHorizontal.setValue(newValue);
   }//GEN-LAST:event_scrollBarHorizontalMouseWheelMoved
+
+  private void btnVerticalBiggerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVerticalBiggerActionPerformed
+    
+    songPanel.setVerticalZoom(1.2 * songPanel.getVerticalZoom());
+  }//GEN-LAST:event_btnVerticalBiggerActionPerformed
+
+  private void btnVerticalSmallerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVerticalSmallerActionPerformed
+        songPanel.setVerticalZoom(0.8 * songPanel.getVerticalZoom());
+  }//GEN-LAST:event_btnVerticalSmallerActionPerformed
+
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private de.free_creations.guicomponents.StartStopButton btnStartStop;
+  private javax.swing.JButton btnVerticalBigger;
+  private javax.swing.JButton btnVerticalSmaller;
   private javax.swing.JPanel controlContainer;
   private de.free_creations.guicomponents.RPositionSpinner edLoopEnd;
   private de.free_creations.guicomponents.RPositionSpinner edLoopStart;
@@ -475,6 +537,7 @@ public class SongView2TopComponent extends SongTopComponent {
   private de.free_creations.songview2.SongPanel songPanel;
   private javax.swing.JPanel spacer;
   private javax.swing.JPanel trackViewContainer;
+  private javax.swing.JPanel verticalZoomControls;
   // End of variables declaration//GEN-END:variables
 
   @Override
