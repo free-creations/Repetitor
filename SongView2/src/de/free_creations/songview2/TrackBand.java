@@ -77,11 +77,16 @@ public class TrackBand extends Band {
     }
     this.lyricsHeightPixels = lyricsHeightPixels;
     this.lyricsFont = null;
+    forceLyricRepaint = true;
     invalidate();
   }
 
   private String trackName = "";
   private boolean forceLyricRepaint = false;
+  
+  public String getName(){
+    return trackName;
+  }
 
   /**
    * @deprecated use isActive instead

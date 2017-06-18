@@ -262,10 +262,24 @@ public class SongPanel extends SongCanvasImpl {
     }
 
     verticalZoomFactor = newValue;
-    System.out.println("Zoom now:" + newValue);
+
+    int newY = Band.PREF_BANDHEIGHT + DIRECTOR_TO_FIRST_TRACK_DIST;
+    for (TrackBand t : trackBands) {
+      newY = zoomTrackBand(t, newY);
+    }
+    repaint();
+
   }
 
-  private Track[] tracks;
+  private int zoomTrackBand(TrackBand trackBand, int newY) {
+
+    trackBand.setBandHeight((int) (DEFAULT_MIDI_BANDHEIGHT * verticalZoomFactor));
+    trackBand.setLyricsHeightPixels((int) (TrackBand.defaultLyricsHeightPixels * verticalZoomFactor));
+
+    trackBand.setY(newY);
+    return newY + trackBand.getTotalHeight() + BETWEEN_TRACK_DIST_PIXELS;
+  }
+
   private int resolution;
   private GenericTrack[] trackDescriptions;
 
@@ -285,6 +299,7 @@ public class SongPanel extends SongCanvasImpl {
 
     try {
       clear();
+      trackBands.clear();
       defaultPixelToMidiFactor = (4 * resolution) / MAESUREDEFAULTPX;
 
       int YPos = Band.PREF_BANDHEIGHT + DIRECTOR_TO_FIRST_TRACK_DIST;
@@ -292,9 +307,9 @@ public class SongPanel extends SongCanvasImpl {
         TrackBand trackBand = new TrackBand(SongPanel.this);
         trackBand.setTrack(tracks[i], resolution);
         trackBand.setBandHeight(DEFAULT_MIDI_BANDHEIGHT);
-        trackBand.setLyricsHeightPixels((int)(TrackBand.defaultLyricsHeightPixels * verticalZoomFactor));
+        trackBand.setLyricsHeightPixels((int) (TrackBand.defaultLyricsHeightPixels * verticalZoomFactor));
         trackBand.setY(YPos);
-        
+
         // calculate y pos for the next track
         YPos = YPos + trackBand.getTotalHeight() + BETWEEN_TRACK_DIST_PIXELS;
         addBand(trackBand);
